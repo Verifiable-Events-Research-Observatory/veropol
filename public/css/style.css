@@ -86,7 +86,7 @@ h4 {
 
 .nav-container.scrolled {
     top: 12px;
-    max-width: 680px;
+    max-width: 800px;
     padding: 8px 20px;
     box-shadow: var(--shadow-lg);
 }
@@ -138,6 +138,75 @@ h4 {
 
 .btn-nav:hover {
     background: var(--accent);
+}
+
+.lang-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.lang-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--radius-pill);
+    transition: all 0.3s;
+}
+
+.lang-btn:hover {
+    color: var(--accent);
+    background: var(--bg-body);
+}
+
+.lang-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 50%;
+    transform: translateX(50%) translateY(10px);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    overflow: hidden;
+    padding: 8px 0;
+}
+
+.lang-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(50%) translateY(0);
+}
+
+.lang-item {
+    padding: 10px 16px;
+    color: var(--text-main) !important;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.lang-item:hover {
+    background: var(--bg-body);
+    color: var(--accent) !important;
 }
 
 .theme-toggle-btn {
@@ -420,6 +489,11 @@ h4 {
 .cv-sahel {
     background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Between_Mopti_and_Timbuktu_%286865110%29.jpg/1280px-Between_Mopti_and_Timbuktu_%286865110%29.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 55%;
+}
+
+.cv-yemen {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/F-15E_Strike_Eagle_dropping_2000_pound_JDAM.jpg/1280px-F-15E_Strike_Eagle_dropping_2000_pound_JDAM.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-position: center 60%;
 }
 
 .banner-wrap {
@@ -1079,6 +1153,10 @@ footer {
 
     .nav-links a:not(.btn-nav) {
         display: none;
+    }
+
+    .lang-dropdown {
+        display: inline-block;
     }
 
     .top-banner {
