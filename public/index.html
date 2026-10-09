@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" dir="ltr" data-theme="light">
 
 <head>
     <meta charset="UTF-8">
@@ -8,44 +8,63 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="./css/style.css?v=5">
+    <link rel="stylesheet" href="./css/style.css?v=6">
 </head>
 
 <body>
     <nav class="nav-container" id="navbar">
         <a href="#" class="brand">
-            <img src="./assets/VERO.png" alt="VERO Logo" class="brand-logo" onerror="this.style.display='none'">
+            <img src="./assets/VERO.png" data-i18n-alt="logoAlt" alt="VERO Logo" class="brand-logo"
+                onerror="this.style.display='none'">
             <span>VERO</span>
         </a>
         <div class="nav-links">
-            <a href="#theaters">Strategic Theaters</a>
-            <a href="#intelligence">Feed</a>
+            <a href="#theaters" data-i18n="navTheaters">Strategic Theaters</a>
+            <a href="#intelligence" data-i18n="navFeed">Feed</a>
             <div class="lang-dropdown">
-                <button class="lang-btn" id="langToggle">
-                    🇬🇧 EN <i class="ph ph-caret-down"></i>
+                <button class="lang-btn" id="langToggle" type="button" aria-haspopup="true" data-i18n-aria="langToggle"
+                    aria-label="Change language">
+                    <img class="flag-icon" id="langFlag" src="https://hatscripts.github.io/circle-flags/flags/gb.svg"
+                        alt="" width="20" height="20">
+                    <span id="langCode">EN</span>
+                    <i class="ph ph-caret-down"></i>
                 </button>
                 <div class="lang-menu" id="langMenu">
-                    <a href="#" class="lang-item">🇬🇧 English</a>
-                    <a href="#" class="lang-item">🇫🇷 Français</a>
-                    <a href="#" class="lang-item">🇪🇸 Español</a>
-                    <a href="#" class="lang-item">🇷🇺 Русский</a>
-                    <a href="#" class="lang-item">🇸🇦 العربية</a>
-                    <a href="#" class="lang-item">🇨🇳 中文</a>
-                    <a href="#" class="lang-item">🇹🇷 Türkçe</a>
+                    <button type="button" class="lang-item" data-lang="en"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/gb.svg" alt="" width="22"
+                            height="22"><span>English</span></button>
+                    <button type="button" class="lang-item" data-lang="fr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/fr.svg" alt="" width="22"
+                            height="22"><span>Français</span></button>
+                    <button type="button" class="lang-item" data-lang="es"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/es.svg" alt="" width="22"
+                            height="22"><span>Español</span></button>
+                    <button type="button" class="lang-item" data-lang="ru"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/ru.svg" alt="" width="22"
+                            height="22"><span>Русский</span></button>
+                    <button type="button" class="lang-item" data-lang="ar"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/sa.svg" alt="" width="22"
+                            height="22"><span>العربية</span></button>
+                    <button type="button" class="lang-item" data-lang="zh"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/cn.svg" alt="" width="22"
+                            height="22"><span>中文</span></button>
+                    <button type="button" class="lang-item" data-lang="tr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/tr.svg" alt="" width="22"
+                            height="22"><span>Türkçe</span></button>
                 </div>
             </div>
-            <a href="#contact" class="btn-nav">Contact</a>
-            <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle Theme">
+            <a href="#contact" class="btn-nav" data-i18n="navContact">Contact</a>
+            <button id="themeToggle" class="theme-toggle-btn" data-i18n-aria="themeToggle" aria-label="Toggle Theme">
                 <i class="ph ph-moon" id="themeIcon"></i>
             </button>
         </div>
     </nav>
 
     <div class="banner-wrap top-banner">
-        <img src="./assets/BANNER.png" alt="VERO Banner" class="banner-img"
+        <img src="./assets/BANNER.png" data-i18n-alt="bannerAlt" alt="VERO Banner" class="banner-img"
             onerror="this.parentElement.style.display='none'">
     </div>
 
@@ -55,13 +74,15 @@
                 <h2>Good Morning, Strategist.</h2>
             </div>
             <p class="hero-slogan" id="heroSlogan">Unfiltered Global Signals. Zero Noise.</p>
-            <h1>Global Operations & Policy Briefing</h1>
+            <h1 data-i18n="heroTitle">Global Operations & Policy Briefing</h1>
 
             <div class="search-hero-container">
                 <div class="search-bar massive">
                     <i class="ph ph-magnifying-glass search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="Initialize global scan..." aria-label="Search">
-                    <button class="search-pulse-btn" id="searchTrigger" aria-label="Search Radar">
+                    <input type="text" id="searchInput" placeholder="Initialize global scan..."
+                        data-i18n-aria="searchAria" aria-label="Search">
+                    <button class="search-pulse-btn" id="searchTrigger" data-i18n-aria="radarAria"
+                        aria-label="Search Radar">
                         <svg class="radar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="9" />
@@ -84,37 +105,41 @@
     <main class="container">
         <section class="theaters-section" id="theaters">
             <div class="section-title">
-                <h2><i class="ph ph-globe-hemisphere-west"></i> Active Conflict Theaters & Strategic Analysis</h2>
-                <p>Real-time situation maps, theater breakdowns, and dynamic operational monitoring.</p>
+                <h2><i class="ph ph-globe-hemisphere-west"></i> <span data-i18n="theatersTitle">Active Conflict Theaters
+                        & Strategic Analysis</span></h2>
+                <p data-i18n="theatersSub">Real-time situation maps, theater breakdowns, and dynamic operational
+                    monitoring.</p>
             </div>
 
             <div class="theaters-grid grid-layout-6" id="theatersGrid">
 
                 <div class="theater-card">
                     <div class="theater-cover cv-ukraine">
-                        <div class="theater-badge danger"><i class="ph ph-warning-diamond"></i> Active War Zone</div>
+                        <div class="theater-badge danger"><i class="ph ph-warning-diamond"></i> <span
+                                data-i18n="ukBadge">Active War Zone</span></div>
                     </div>
                     <div class="theater-info">
-                        <h3>Russo-Ukrainian Conflict</h3>
-                        <p class="theater-desc">Frontline monitoring, territory changes, and tactical air/artillery
-                            activity.</p>
+                        <h3 data-i18n="ukTitle">Russo-Ukrainian Conflict</h3>
+                        <p class="theater-desc" data-i18n="ukDesc">Frontline monitoring, territory changes, and tactical
+                            air/artillery activity.</p>
                         <div class="theater-stats">
                             <div class="stat-box">
-                                <span class="stat-label">Artillery Posture</span>
-                                <span class="stat-val alert">Heavy</span>
+                                <span class="stat-label" data-i18n="ukL1">Artillery Posture</span>
+                                <span class="stat-val alert" data-i18n="vHeavy">Heavy</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Air Defense</span>
-                                <span class="stat-val">Active</span>
+                                <span class="stat-label" data-i18n="ukL2">Air Defense</span>
+                                <span class="stat-val" data-i18n="vActive">Active</span>
                             </div>
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('Ukraine war Russia conflict')">
-                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                                <i class="ph ph-arrows-clockwise"></i> <span data-i18n="loadIntel">Load
+                                    Intelligence</span>
                             </button>
                             <a href="https://liveuamap.com/" target="_blank" rel="noopener noreferrer"
                                 class="theater-link">
-                                Live Map <i class="ph ph-arrow-square-out"></i>
+                                <span data-i18n="liveMap">Live Map</span> <i class="ph ph-arrow-square-out"></i>
                             </a>
                         </div>
                     </div>
@@ -122,25 +147,27 @@
 
                 <div class="theater-card">
                     <div class="theater-cover cv-mideast">
-                        <div class="theater-badge danger"><i class="ph ph-crosshair"></i> Escalation Index</div>
+                        <div class="theater-badge danger"><i class="ph ph-crosshair"></i> <span
+                                data-i18n="meBadge">Escalation Index</span></div>
                     </div>
                     <div class="theater-info">
-                        <h3>Middle East Conflict</h3>
-                        <p class="theater-desc">US-Israeli military stance, Lebanese front, Iranian proxy strikes, and
-                            naval security.</p>
+                        <h3 data-i18n="meTitle">Middle East Conflict</h3>
+                        <p class="theater-desc" data-i18n="meDesc">US-Israeli military stance, Lebanese front, Iranian
+                            proxy strikes, and naval security.</p>
                         <div class="theater-stats">
                             <div class="stat-box">
-                                <span class="stat-label">Interceptions</span>
-                                <span class="stat-val alert">Active</span>
+                                <span class="stat-label" data-i18n="meL1">Interceptions</span>
+                                <span class="stat-val alert" data-i18n="vActive">Active</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Naval Posture</span>
-                                <span class="stat-val">CSG Deployed</span>
+                                <span class="stat-label" data-i18n="meL2">Naval Posture</span>
+                                <span class="stat-val" data-i18n="vCsg">CSG Deployed</span>
                             </div>
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('Israel Lebanon Iran Middle East')">
-                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                                <i class="ph ph-arrows-clockwise"></i> <span data-i18n="loadIntel">Load
+                                    Intelligence</span>
                             </button>
                         </div>
                     </div>
@@ -148,51 +175,59 @@
 
                 <div class="theater-card">
                     <div class="theater-cover cv-yemen">
-                        <div class="theater-badge danger"><i class="ph ph-anchor"></i> Chokepoint Crisis</div>
+                        <div class="theater-badge danger"><i class="ph ph-anchor"></i> <span
+                                data-i18n="yeBadge">Chokepoint Crisis</span></div>
                     </div>
                     <div class="theater-info">
-                        <h3>Yemeni Civil War & Red Sea</h3>
-                        <p class="theater-desc">Houthi anti-ship ballistic missile strikes, naval coalition defenses,
-                            and maritime trade disruption.</p>
+                        <h3 data-i18n="yeTitle">Yemeni Civil War & Red Sea</h3>
+                        <p class="theater-desc" data-i18n="yeDesc">Houthi anti-ship ballistic missile strikes, naval
+                            coalition defenses, and maritime trade disruption.</p>
                         <div class="theater-stats">
                             <div class="stat-box">
-                                <span class="stat-label">Shipping Risk</span>
-                                <span class="stat-val alert">Critical</span>
+                                <span class="stat-label" data-i18n="yeL1">Shipping Risk</span>
+                                <span class="stat-val alert" data-i18n="vCritical">Critical</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Naval Escort</span>
-                                <span class="stat-val">Active</span>
+                                <span class="stat-label" data-i18n="yeL2">Naval Escort</span>
+                                <span class="stat-val" data-i18n="vActive">Active</span>
                             </div>
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('Yemen Houthi Red Sea military')">
-                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                                <i class="ph ph-arrows-clockwise"></i> <span data-i18n="loadIntel">Load
+                                    Intelligence</span>
                             </button>
+                            <a href="https://yemen.liveuamap.com/" target="_blank" rel="noopener noreferrer"
+                                class="theater-link">
+                                <span data-i18n="liveMap">Live Map</span> <i class="ph ph-arrow-square-out"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
 
                 <div class="theater-card">
                     <div class="theater-cover cv-taiwan">
-                        <div class="theater-badge warning"><i class="ph ph-eye"></i> Indo-Pacific Watch</div>
+                        <div class="theater-badge warning"><i class="ph ph-eye"></i> <span
+                                data-i18n="twBadge">Indo-Pacific Watch</span></div>
                     </div>
                     <div class="theater-info">
-                        <h3>China - Taiwan Strait</h3>
-                        <p class="theater-desc">PLA naval encirclement exercises, ADIZ incursions, and US deterrence
-                            shifts.</p>
+                        <h3 data-i18n="twTitle">China - Taiwan Strait</h3>
+                        <p class="theater-desc" data-i18n="twDesc">PLA naval encirclement exercises, ADIZ incursions,
+                            and US deterrence shifts.</p>
                         <div class="theater-stats">
                             <div class="stat-box">
-                                <span class="stat-label">ADIZ Incursions</span>
-                                <span class="stat-val warning">Elevated</span>
+                                <span class="stat-label" data-i18n="twL1">ADIZ Incursions</span>
+                                <span class="stat-val warning" data-i18n="vElevated">Elevated</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Chokepoint</span>
-                                <span class="stat-val">Monitored</span>
+                                <span class="stat-label" data-i18n="twL2">Chokepoint</span>
+                                <span class="stat-val" data-i18n="vMonitored">Monitored</span>
                             </div>
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('China Taiwan US military')">
-                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                                <i class="ph ph-arrows-clockwise"></i> <span data-i18n="loadIntel">Load
+                                    Intelligence</span>
                             </button>
                         </div>
                     </div>
@@ -200,25 +235,27 @@
 
                 <div class="theater-card">
                     <div class="theater-cover cv-brics">
-                        <div class="theater-badge info"><i class="ph ph-currency-dollar-simple"></i> Geo-Economics</div>
+                        <div class="theater-badge info"><i class="ph ph-currency-dollar-simple"></i> <span
+                                data-i18n="brBadge">Geo-Economics</span></div>
                     </div>
                     <div class="theater-info">
-                        <h3>BRICS & Multipolarity</h3>
-                        <p class="theater-desc">De-dollarization initiatives, alternative payment routing, and resource
-                            corridors.</p>
+                        <h3 data-i18n="brTitle">BRICS & Multipolarity</h3>
+                        <p class="theater-desc" data-i18n="brDesc">De-dollarization initiatives, alternative payment
+                            routing, and resource corridors.</p>
                         <div class="theater-stats">
                             <div class="stat-box">
-                                <span class="stat-label">Trade Currency</span>
-                                <span class="stat-val">Local Pivot</span>
+                                <span class="stat-label" data-i18n="brL1">Trade Currency</span>
+                                <span class="stat-val" data-i18n="vLocalPivot">Local Pivot</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Sanctions</span>
-                                <span class="stat-val">Systemic</span>
+                                <span class="stat-label" data-i18n="brL2">Sanctions</span>
+                                <span class="stat-val" data-i18n="vSystemic">Systemic</span>
                             </div>
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('BRICS economy sanctions trade')">
-                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                                <i class="ph ph-arrows-clockwise"></i> <span data-i18n="loadIntel">Load
+                                    Intelligence</span>
                             </button>
                         </div>
                     </div>
@@ -226,25 +263,27 @@
 
                 <div class="theater-card">
                     <div class="theater-cover cv-korea">
-                        <div class="theater-badge warning"><i class="ph ph-warning"></i> East Asia Watch</div>
+                        <div class="theater-badge warning"><i class="ph ph-warning"></i> <span data-i18n="koBadge">East
+                                Asia Watch</span></div>
                     </div>
                     <div class="theater-info">
-                        <h3>Korean Peninsula</h3>
-                        <p class="theater-desc">Ballistic missile tests, demilitarized zone tensions, and trilateral
-                            defense pacts.</p>
+                        <h3 data-i18n="koTitle">Korean Peninsula</h3>
+                        <p class="theater-desc" data-i18n="koDesc">Ballistic missile tests, demilitarized zone tensions,
+                            and trilateral defense pacts.</p>
                         <div class="theater-stats">
                             <div class="stat-box">
-                                <span class="stat-label">Missile Tests</span>
-                                <span class="stat-val alert">Frequent</span>
+                                <span class="stat-label" data-i18n="koL1">Missile Tests</span>
+                                <span class="stat-val alert" data-i18n="vFrequent">Frequent</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Border Status</span>
-                                <span class="stat-val">Tense</span>
+                                <span class="stat-label" data-i18n="koL2">Border Status</span>
+                                <span class="stat-val" data-i18n="vTense">Tense</span>
                             </div>
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('North Korea South Korea military')">
-                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                                <i class="ph ph-arrows-clockwise"></i> <span data-i18n="loadIntel">Load
+                                    Intelligence</span>
                             </button>
                         </div>
                     </div>
@@ -252,25 +291,27 @@
 
                 <div class="theater-card">
                     <div class="theater-cover cv-sahel">
-                        <div class="theater-badge danger"><i class="ph ph-fire"></i> High Instability</div>
+                        <div class="theater-badge danger"><i class="ph ph-fire"></i> <span data-i18n="saBadge">High
+                                Instability</span></div>
                     </div>
                     <div class="theater-info">
-                        <h3>Sahel Region Crisis</h3>
-                        <p class="theater-desc">Military juntas, insurgent expansions, and shifts in foreign military
-                            influence.</p>
+                        <h3 data-i18n="saTitle">Sahel Region Crisis</h3>
+                        <p class="theater-desc" data-i18n="saDesc">Military juntas, insurgent expansions, and shifts in
+                            foreign military influence.</p>
                         <div class="theater-stats">
                             <div class="stat-box">
-                                <span class="stat-label">Regime Status</span>
-                                <span class="stat-val alert">Transitional</span>
+                                <span class="stat-label" data-i18n="saL1">Regime Status</span>
+                                <span class="stat-val alert" data-i18n="vTransitional">Transitional</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Insurgency</span>
-                                <span class="stat-val">Expanding</span>
+                                <span class="stat-label" data-i18n="saL2">Insurgency</span>
+                                <span class="stat-val" data-i18n="vExpanding">Expanding</span>
                             </div>
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('Sahel Africa military coup')">
-                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                                <i class="ph ph-arrows-clockwise"></i> <span data-i18n="loadIntel">Load
+                                    Intelligence</span>
                             </button>
                         </div>
                     </div>
@@ -281,40 +322,42 @@
 
         <section class="controls-section" id="intelligence">
             <div class="filters" id="filterContainer">
-                <button class="filter-btn active" data-filter="all">Global Overview</button>
-                <button class="filter-btn" data-filter="diplomacy">Diplomacy</button>
-                <button class="filter-btn" data-filter="military">Military</button>
-                <button class="filter-btn" data-filter="economy">Economy</button>
+                <button class="filter-btn active" data-filter="all" data-i18n="fAll">Global Overview</button>
+                <button class="filter-btn" data-filter="diplomacy" data-i18n="fDiplomacy">Diplomacy</button>
+                <button class="filter-btn" data-filter="military" data-i18n="fMilitary">Military</button>
+                <button class="filter-btn" data-filter="economy" data-i18n="fEconomy">Economy</button>
             </div>
             <div class="range-filters" id="rangeContainer">
-                <span class="range-label"><i class="ph ph-clock"></i> Timeframe</span>
-                <button class="range-btn active" data-range="all">Any time</button>
-                <button class="range-btn" data-range="24h">24h</button>
-                <button class="range-btn" data-range="7d">7 days</button>
-                <button class="range-btn" data-range="30d">30 days</button>
+                <span class="range-label"><i class="ph ph-clock"></i> <span
+                        data-i18n="timeframe">Timeframe</span></span>
+                <button class="range-btn active" data-range="all" data-i18n="rAny">Any time</button>
+                <button class="range-btn" data-range="24h" data-i18n="r24">24h</button>
+                <button class="range-btn" data-range="7d" data-i18n="r7">7 days</button>
+                <button class="range-btn" data-range="30d" data-i18n="r30">30 days</button>
             </div>
         </section>
 
         <section class="archives-header" id="archives">
-            <h2>Intelligence Feed & Archives</h2>
-            <p>Click on any intelligence card to access verified reporting at source.</p>
+            <h2 data-i18n="archivesTitle">Intelligence Feed & Archives</h2>
+            <p data-i18n="archivesSub">Click on any intelligence card to access verified reporting at source.</p>
             <p class="results-meta" id="resultsMeta"></p>
         </section>
 
         <section class="grid-container" id="newsGrid"></section>
 
-        <nav class="pagination" id="pagination" aria-label="Pagination" hidden></nav>
+        <nav class="pagination" id="pagination" data-i18n-aria="pagAria" aria-label="Pagination" hidden></nav>
 
         <section class="contact-section" id="contact">
             <div class="contact-card">
                 <div class="contact-info">
-                    <h2>Establish Secure Channel</h2>
-                    <p>Request data access, report anomalies, or contact our operations team directly.</p>
+                    <h2 data-i18n="contactTitle">Establish Secure Channel</h2>
+                    <p data-i18n="contactDesc">Request data access, report anomalies, or contact our operations team
+                        directly.</p>
                     <div class="contact-details">
                         <a href="mailto:veropol@proton.me" class="contact-item">
                             <i class="ph ph-envelope-simple"></i>
                             <div>
-                                <strong>Secure Email</strong>
+                                <strong data-i18n="emailLabel">Secure Email</strong>
                                 <span>veropol@proton.me</span>
                             </div>
                         </a>
@@ -322,7 +365,7 @@
                             class="contact-item">
                             <i class="ph ph-github-logo"></i>
                             <div>
-                                <strong>Organization Repository</strong>
+                                <strong data-i18n="repoLabel">Organization Repository</strong>
                                 <span>github.com/verointels</span>
                             </div>
                         </a>
@@ -330,7 +373,7 @@
                             class="contact-item">
                             <i class="ph ph-code-simple"></i>
                             <div>
-                                <strong>Lead Developer</strong>
+                                <strong data-i18n="devLabel">Lead Developer</strong>
                                 <span>github.com/leclavier</span>
                             </div>
                         </a>
@@ -339,25 +382,25 @@
                 <form class="contact-form" id="contactForm">
                     <div class="input-group">
                         <input type="text" id="name" required placeholder=" ">
-                        <label for="name">Full Name / Callsign</label>
+                        <label for="name" data-i18n="fName">Full Name / Callsign</label>
                     </div>
                     <div class="input-group">
                         <input type="email" id="email" required placeholder=" ">
-                        <label for="email">Secure Email</label>
+                        <label for="email" data-i18n="fEmail">Secure Email</label>
                     </div>
                     <div class="input-group">
                         <select id="topic" required>
-                            <option value="" disabled selected>Select Transmission Topic</option>
-                            <option value="data">Data Access Request</option>
-                            <option value="report">Intelligence Report</option>
-                            <option value="press">Press & Media</option>
+                            <option value="" disabled selected data-i18n="fTopic">Select Transmission Topic</option>
+                            <option value="data" data-i18n="optData">Data Access Request</option>
+                            <option value="report" data-i18n="optReport">Intelligence Report</option>
+                            <option value="press" data-i18n="optPress">Press & Media</option>
                         </select>
                     </div>
                     <div class="input-group">
                         <textarea id="message" rows="4" required placeholder=" "></textarea>
-                        <label for="message">Transmission Body</label>
+                        <label for="message" data-i18n="fMessage">Transmission Body</label>
                     </div>
-                    <button type="submit" class="btn-submit">Transmit Encrypted <i
+                    <button type="submit" class="btn-submit"><span data-i18n="submit">Transmit Encrypted</span> <i
                             class="ph ph-paper-plane-right"></i></button>
                 </form>
             </div>
@@ -366,24 +409,27 @@
 
     <footer>
         <div class="banner-wrap footer-banner">
-            <img src="./assets/BANNER.png" alt="VERO Banner" class="banner-img"
+            <img src="./assets/BANNER.png" data-i18n-alt="bannerAlt" alt="VERO Banner" class="banner-img"
                 onerror="this.parentElement.style.display='none'">
         </div>
         <div class="footer-content">
             <div class="footer-brand">
                 <div class="brand-line">
-                    <img src="./assets/VERO.png" alt="VERO Logo" class="brand-logo" onerror="this.style.display='none'">
+                    <img src="./assets/VERO.png" data-i18n-alt="logoAlt" alt="VERO Logo" class="brand-logo"
+                        onerror="this.style.display='none'">
                     <span>VERO</span>
                 </div>
-                <p>Independent global intelligence and diplomatic monitoring observatory.</p>
+                <p data-i18n="footerDesc">Independent global intelligence and diplomatic monitoring observatory.</p>
             </div>
             <div class="footer-links">
-                <button type="button" class="footer-link-btn" id="openPrivacy">Privacy Policy</button>
-                <button type="button" class="footer-link-btn" id="openTerms">Terms of Service</button>
+                <button type="button" class="footer-link-btn" id="openPrivacy" data-i18n="privacy">Privacy
+                    Policy</button>
+                <button type="button" class="footer-link-btn" id="openTerms" data-i18n="terms">Terms of Service</button>
                 <a href="https://github.com/verointels" target="_blank" rel="noopener noreferrer"
                     class="footer-social-link"><i class="ph ph-github-logo"></i> VERO</a>
                 <a href="https://github.com/leclavier" target="_blank" rel="noopener noreferrer"
-                    class="footer-social-link"><i class="ph ph-user"></i> Maintainer</a>
+                    class="footer-social-link"><i class="ph ph-user"></i> <span
+                        data-i18n="maintainer">Maintainer</span></a>
             </div>
         </div>
     </footer>
@@ -391,14 +437,17 @@
     <div class="modal-overlay" id="modalPrivacy">
         <div class="modal-card">
             <div class="modal-header">
-                <h3><i class="ph ph-shield-check"></i> Privacy Policy</h3>
-                <button class="modal-close" id="closePrivacy">&times;</button>
+                <h3><i class="ph ph-shield-check"></i> <span data-i18n="privTitle">Privacy Policy</span></h3>
+                <button class="modal-close" id="closePrivacy" data-i18n-aria="closeAria"
+                    aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
-                <p><strong>Zero Tracking Guarantee:</strong> VERO operates under a strict privacy-first architecture. We
-                    do not track user IP addresses, install cookies, or sell telemetric usage data.</p>
-                <p><strong>Data Handling:</strong> Transmissions are processed solely to respond to inquiries and stored
-                    on encrypted infrastructure.</p>
+                <p><strong data-i18n="privP1T">Zero Tracking Guarantee:</strong> <span data-i18n="privP1">VERO operates
+                        under a strict privacy-first architecture. We
+                        do not track user IP addresses, install cookies, or sell telemetric usage data.</span></p>
+                <p><strong data-i18n="privP2T">Data Handling:</strong> <span data-i18n="privP2">Transmissions are
+                        processed solely to respond to inquiries and stored
+                        on encrypted infrastructure.</span></p>
             </div>
         </div>
     </div>
@@ -406,17 +455,19 @@
     <div class="modal-overlay" id="modalTerms">
         <div class="modal-card">
             <div class="modal-header">
-                <h3><i class="ph ph-file-text"></i> Terms of Service</h3>
-                <button class="modal-close" id="closeTerms">&times;</button>
+                <h3><i class="ph ph-file-text"></i> <span data-i18n="termsTitle">Terms of Service</span></h3>
+                <button class="modal-close" id="closeTerms" data-i18n-aria="closeAria"
+                    aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
-                <p><strong>Open Intelligence:</strong> Information is aggregated from open public feeds for monitoring
-                    and research. VERO does not alter source materials.</p>
+                <p><strong data-i18n="termsP1T">Open Intelligence:</strong> <span data-i18n="termsP1">Information is
+                        aggregated from open public feeds for monitoring
+                        and research. VERO does not alter source materials.</span></p>
             </div>
         </div>
     </div>
 
-    <script src="./javascript/script.js?v=5"></script>
+    <script src="./javascript/script.js?v=6"></script>
 </body>
 
 </html>
