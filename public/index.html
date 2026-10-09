@@ -11,7 +11,7 @@
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="./css/style.css?v=4">
+    <link rel="stylesheet" href="./css/style.css?v=5">
 </head>
 
 <body>
@@ -23,6 +23,20 @@
         <div class="nav-links">
             <a href="#theaters">Strategic Theaters</a>
             <a href="#intelligence">Feed</a>
+            <div class="lang-dropdown">
+                <button class="lang-btn" id="langToggle">
+                    🇬🇧 EN <i class="ph ph-caret-down"></i>
+                </button>
+                <div class="lang-menu" id="langMenu">
+                    <a href="#" class="lang-item">🇬🇧 English</a>
+                    <a href="#" class="lang-item">🇫🇷 Français</a>
+                    <a href="#" class="lang-item">🇪🇸 Español</a>
+                    <a href="#" class="lang-item">🇷🇺 Русский</a>
+                    <a href="#" class="lang-item">🇸🇦 العربية</a>
+                    <a href="#" class="lang-item">🇨🇳 中文</a>
+                    <a href="#" class="lang-item">🇹🇷 Türkçe</a>
+                </div>
+            </div>
             <a href="#contact" class="btn-nav">Contact</a>
             <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle Theme">
                 <i class="ph ph-moon" id="themeIcon"></i>
@@ -61,8 +75,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="search-suggestions" id="searchSuggestions">
-                </div>
+                <div class="search-suggestions" id="searchSuggestions"></div>
                 <div class="search-suggestions recent-searches" id="recentSearches"></div>
             </div>
         </div>
@@ -127,6 +140,32 @@
                         </div>
                         <div class="theater-actions">
                             <button class="btn-theater-action" onclick="quickFetch('Israel Lebanon Iran Middle East')">
+                                <i class="ph ph-arrows-clockwise"></i> Load Intelligence
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theater-card">
+                    <div class="theater-cover cv-yemen">
+                        <div class="theater-badge danger"><i class="ph ph-anchor"></i> Chokepoint Crisis</div>
+                    </div>
+                    <div class="theater-info">
+                        <h3>Yemeni Civil War & Red Sea</h3>
+                        <p class="theater-desc">Houthi anti-ship ballistic missile strikes, naval coalition defenses,
+                            and maritime trade disruption.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box">
+                                <span class="stat-label">Shipping Risk</span>
+                                <span class="stat-val alert">Critical</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">Naval Escort</span>
+                                <span class="stat-val">Active</span>
+                            </div>
+                        </div>
+                        <div class="theater-actions">
+                            <button class="btn-theater-action" onclick="quickFetch('Yemen Houthi Red Sea military')">
                                 <i class="ph ph-arrows-clockwise"></i> Load Intelligence
                             </button>
                         </div>
@@ -377,7 +416,7 @@
         </div>
     </div>
 
-    <script src="./javascript/script.js?v=4"></script>
+    <script src="./javascript/script.js?v=5"></script>
 </body>
 
 </html>
