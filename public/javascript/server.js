@@ -11,8 +11,7 @@ app.use(express.static(path.join(__dirname, '../')));
 
 if (process.env.MONGODB_URI) {
     mongoose.connect(process.env.MONGODB_URI)
-        .then(() => console.log('MongoDB Connected successfully'))
-        .catch(err => console.error('MongoDB Connection Error:', err));
+        .catch(() => { });
 }
 
 const ContactSchema = new mongoose.Schema({
@@ -64,21 +63,18 @@ function scoreArticle(art, terms) {
     return { matched, score };
 }
 
-const MAX_SOURCE_PAGES = 5;
+const MAX_SOURCE_PAGES = 10;
 const CACHE_TTL = 10 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 60;
 const RANGE_HOURS = { '24h': 24, '7d': 168, '30d': 720 };
 const newsCache = new Map();
 
 async function fetchGNewsPage(searchQuery, page, from, apiKey) {
-    let url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=15&in=title,description&apikey=${apiKey}`;
+    let url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=10&in=title,description&apikey=${apiKey}`;
     if (page > 1) url += `&page=${page}`;
     if (from) url += `&from=${encodeURIComponent(from)}`;
     const response = await fetch(url);
-    if (!response.ok) {
-        console.error(`GNews API status: ${response.status}`);
-        return null;
-    }
+    if (!response.ok) return null;
     const data = await response.json();
     return data && Array.isArray(data.articles) ? data : null;
 }
@@ -106,16 +102,12 @@ function rankArticles(rawArticles, queryTerms) {
             publishedAt: art.publishedAt || new Date().toISOString(),
             source: art.source ? art.source.name : 'Verified Source'
         };
-        candidates.push({ article, ...scoreArticle(article, queryTerms) });
+        const scored = scoreArticle(article, queryTerms);
+        if (scored.score > 0) candidates.push({ article, ...scored });
     }
 
-    const needed = Math.min(2, queryTerms.length);
-    let ranked = candidates.filter(c => c.matched >= needed);
-    if (ranked.length < 3) ranked = candidates.filter(c => c.matched >= 1);
-    if (ranked.length === 0) ranked = candidates;
-
-    ranked.sort((x, y) => y.score - x.score || new Date(y.article.publishedAt) - new Date(x.article.publishedAt));
-    return ranked.map(c => c.article);
+    candidates.sort((x, y) => y.score - x.score || new Date(y.article.publishedAt) - new Date(x.article.publishedAt));
+    return candidates.map(c => c.article);
 }
 
 async function getRankedArticles(searchQuery, queryTerms, range, apiKey) {
@@ -131,6 +123,7 @@ async function getRankedArticles(searchQuery, queryTerms, range, apiKey) {
 
     const collected = [...first.articles];
     const total = first.totalArticles || collected.length;
+
     for (let p = 2; p <= MAX_SOURCE_PAGES && collected.length < total; p++) {
         const next = await fetchGNewsPage(searchQuery, p, from, apiKey);
         if (!next || next.articles.length === 0) break;
@@ -152,15 +145,17 @@ app.get('/api/news', async (req, res) => {
     const requestedPage = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const apiKey = process.env.GNEWS_API_KEY;
 
-    if (!apiKey) {
-        return res.status(500).json({ error: "API key is missing in environment variables." });
-    }
+    if (!apiKey) return res.status(500).json({ error: "API key is missing" });
 
     const terms = tokenize(query);
     const queryTerms = terms.length ? terms : [query.replace(/["()]/g, '')];
+
     let searchQuery = queryTerms.join(' OR ');
+
     if (CATEGORY_TERMS[category]) {
         searchQuery = `(${searchQuery}) AND (${CATEGORY_TERMS[category].join(' OR ')})`;
+    } else if (queryTerms.length === 1 && queryTerms[0].length >= 3) {
+        searchQuery = `(${searchQuery}) AND (military OR geopolitics OR election OR economy OR conflict OR sanction OR crisis OR government OR policy)`;
     }
 
     try {
@@ -176,7 +171,6 @@ app.get('/api/news', async (req, res) => {
             total: ranked.length
         });
     } catch (err) {
-        console.error("GNews Fetch Error:", err);
         res.status(500).json({ error: "Failed to fetch live intelligence data" });
     }
 });
@@ -198,5 +192,4 @@ app.get(/(.*)/, (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`VERO Server active on port ${PORT}`);
 });
