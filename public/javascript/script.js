@@ -31,6 +31,22 @@ if (themeToggleBtn) {
 
 initTheme();
 
+const langBtn = document.getElementById('langToggle');
+const langMenu = document.getElementById('langMenu');
+
+if (langBtn && langMenu) {
+    langBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        langMenu.classList.toggle('show');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!langMenu.contains(e.target) && e.target !== langBtn) {
+            langMenu.classList.remove('show');
+        }
+    });
+}
+
 const navbar = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
     if (window.scrollY > 50) {
@@ -346,7 +362,6 @@ async function fetchLiveNews(query = '', category = 'all', page = 1, scrollToFee
         updateMeta(data);
     } catch (error) {
         if (id !== requestId) return;
-        console.error("Fetch error:", error);
         if (resultsMeta) resultsMeta.textContent = '';
         newsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--danger); font-weight:600; padding: 40px 0;">Transmission standby. Verify connection or query parameters.</p>';
     }
