@@ -20,6 +20,21 @@
     --font-body: 'Plus Jakarta Sans', sans-serif;
 }
 
+html[lang="ar"] {
+    --font-head: 'Noto Sans Arabic', 'Outfit', sans-serif;
+    --font-body: 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+}
+
+html[lang="zh"] {
+    --font-head: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Outfit', sans-serif;
+    --font-body: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Plus Jakarta Sans', sans-serif;
+}
+
+html[lang="ar"] *,
+html[lang="zh"] * {
+    letter-spacing: 0 !important;
+}
+
 [data-theme="dark"] {
     --bg-body: #0B0F19;
     --bg-surface: #111827;
@@ -193,20 +208,53 @@ h4 {
 }
 
 .lang-item {
+    width: 100%;
     padding: 10px 16px;
+    background: transparent;
+    border: none;
     color: var(--text-main) !important;
     text-decoration: none;
+    text-align: start;
+    font-family: var(--font-body);
     font-size: 0.85rem;
     font-weight: 600;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 10px;
+    white-space: nowrap;
     transition: background 0.2s;
 }
 
 .lang-item:hover {
     background: var(--bg-body);
     color: var(--accent) !important;
+}
+
+.lang-item.active {
+    background: var(--bg-body);
+    color: var(--accent) !important;
+}
+
+.flag-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12), 0 2px 5px rgba(15, 23, 42, 0.18);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lang-btn .flag-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.lang-btn:hover .flag-icon,
+.lang-item:hover .flag-icon {
+    transform: scale(1.12) rotate(-6deg);
 }
 
 .theme-toggle-btn {
@@ -492,8 +540,8 @@ h4 {
 }
 
 .cv-yemen {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/F-15E_Strike_Eagle_dropping_2000_pound_JDAM.jpg/1280px-F-15E_Strike_Eagle_dropping_2000_pound_JDAM.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
-    background-position: center 60%;
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/USS_Carney_engages_Houthi_missiles.jpg/1280px-USS_Carney_engages_Houthi_missiles.jpg'), url('https://commons.wikimedia.org/wiki/Special:FilePath/USS_Carney_engages_Houthi_missiles.jpg?width=1280'), url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/USS_Carney_engages_Houthi_missiles_2.jpg/1280px-USS_Carney_engages_Houthi_missiles_2.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-position: center 55%;
 }
 
 .banner-wrap {
@@ -529,7 +577,7 @@ h4 {
 .theater-badge {
     position: absolute;
     top: 12px;
-    left: 12px;
+    inset-inline-start: 12px;
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -774,7 +822,7 @@ h4 {
 .card-tag {
     position: absolute;
     top: 12px;
-    left: 12px;
+    inset-inline-start: 12px;
     z-index: 5;
     background: rgba(15, 23, 42, 0.82);
     backdrop-filter: blur(8px);
@@ -958,7 +1006,7 @@ h4 {
 
 .input-group label {
     position: absolute;
-    left: 14px;
+    inset-inline-start: 14px;
     top: 14px;
     color: var(--text-muted);
     pointer-events: none;
@@ -970,7 +1018,7 @@ h4 {
 .input-group textarea:focus~label,
 .input-group textarea:not(:placeholder-shown)~label {
     top: -10px;
-    left: 10px;
+    inset-inline-start: 10px;
     font-size: 0.75rem;
     background: var(--bg-surface);
     padding: 0 4px;
@@ -1020,7 +1068,7 @@ footer {
     .footer-content {
         flex-direction: row;
         justify-content: space-between;
-        text-align: left;
+        text-align: start;
     }
 
     .footer-brand {
@@ -1288,7 +1336,7 @@ footer {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-right: 4px;
+    margin-inline-end: 4px;
 }
 
 .range-btn {
@@ -1427,8 +1475,8 @@ footer {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding-left: 14px;
-    border-left: 1px solid var(--border);
+    padding-inline-start: 14px;
+    border-inline-start: 1px solid var(--border);
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--text-muted);
@@ -1462,12 +1510,36 @@ footer {
     }
 
     .page-jump {
-        border-left: none;
-        padding-left: 0;
+        border-inline-start: none;
+        padding-inline-start: 0;
     }
 
     .page-num {
         min-width: 34px;
         height: 34px;
     }
+}
+
+[dir="rtl"] .page-arrow i,
+[dir="rtl"] .theater-link i,
+[dir="rtl"] .read-more i,
+[dir="rtl"] .btn-submit i {
+    transform: scaleX(-1);
+}
+
+[dir="rtl"] .search-bar input,
+[dir="rtl"] .input-group input,
+[dir="rtl"] .input-group textarea,
+[dir="rtl"] .input-group select {
+    text-align: start;
+}
+
+[dir="rtl"] .page-jump input {
+    text-align: center;
+}
+
+[dir="rtl"] .stat-box,
+[dir="rtl"] .theater-info,
+[dir="rtl"] .card-content {
+    text-align: start;
 }
