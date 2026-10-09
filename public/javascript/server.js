@@ -69,6 +69,93 @@ const MAX_CACHE_ENTRIES = 60;
 const RANGE_HOURS = { '24h': 24, '7d': 168, '30d': 720 };
 const newsCache = new Map();
 
+const SUPPORTED_LANGS = { en: 'en', fr: 'fr', es: 'es', ru: 'ru', ar: 'ar', zh: 'zh-CN', tr: 'tr' };
+const MAX_TRANSLATION_CACHE = 4000;
+const translationCache = new Map();
+
+function cacheTranslation(key, value) {
+    if (translationCache.size >= MAX_TRANSLATION_CACHE) translationCache.delete(translationCache.keys().next().value);
+    translationCache.set(key, value);
+}
+
+async function translateOfficial(texts, target, apiKey) {
+    const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: texts, source: 'en', target, format: 'text' }),
+        signal: AbortSignal.timeout(8000)
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const list = data && data.data && data.data.translations;
+    return Array.isArray(list) && list.length === texts.length ? list.map(item => item.translatedText) : null;
+}
+
+async function translateFree(text, target) {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(text)}`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!Array.isArray(data) || !Array.isArray(data[0])) return null;
+    return data[0].map(part => (part && part[0]) ? part[0] : '').join('');
+}
+
+async function translateTexts(texts, lang) {
+    const target = SUPPORTED_LANGS[lang];
+    if (!target || lang === 'en') return texts;
+
+    const result = new Array(texts.length);
+    const pending = [];
+    texts.forEach((text, i) => {
+        if (!text) {
+            result[i] = text;
+            return;
+        }
+        const hit = translationCache.get(`${target}|${text}`);
+        if (hit !== undefined) result[i] = hit;
+        else pending.push(i);
+    });
+
+    if (pending.length) {
+        const pendingTexts = pending.map(i => texts[i]);
+        let translated = null;
+        try {
+            if (process.env.GOOGLE_TRANSLATE_API_KEY) {
+                translated = await translateOfficial(pendingTexts, target, process.env.GOOGLE_TRANSLATE_API_KEY);
+            } else {
+                translated = await Promise.all(pendingTexts.map(text => translateFree(text, target).catch(() => null)));
+            }
+        } catch (err) {
+            translated = null;
+        }
+        pending.forEach((index, k) => {
+            const value = translated && translated[k];
+            if (value) {
+                cacheTranslation(`${target}|${texts[index]}`, value);
+                result[index] = value;
+            } else {
+                result[index] = texts[index];
+            }
+        });
+    }
+    return result;
+}
+
+async function localizeArticles(articles, lang) {
+    if (lang === 'en' || !articles.length) return articles;
+    const texts = [];
+    articles.forEach(art => {
+        texts.push(art.title === 'Untitled Report' ? '' : art.title);
+        texts.push(art.description);
+    });
+    const translated = await translateTexts(texts, lang);
+    return articles.map((art, i) => ({
+        ...art,
+        title: translated[i * 2] || art.title,
+        description: translated[i * 2 + 1] || art.description
+    }));
+}
+
 async function fetchGNewsPage(searchQuery, page, from, apiKey) {
     let url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=10&in=title,description&apikey=${apiKey}`;
     if (page > 1) url += `&page=${page}`;
@@ -143,6 +230,7 @@ app.get('/api/news', async (req, res) => {
     const range = RANGE_HOURS[req.query.range] ? req.query.range : 'all';
     const size = Math.min(Math.max(parseInt(req.query.size, 10) || 9, 1), 30);
     const requestedPage = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const lang = SUPPORTED_LANGS[req.query.lang] ? req.query.lang : 'en';
     const apiKey = process.env.GNEWS_API_KEY;
 
     if (!apiKey) return res.status(500).json({ error: "API key is missing" });
@@ -164,8 +252,9 @@ app.get('/api/news', async (req, res) => {
 
         const totalPages = Math.max(1, Math.ceil(ranked.length / size));
         const page = Math.min(requestedPage, totalPages);
+        const articles = await localizeArticles(ranked.slice((page - 1) * size, page * size), lang);
         res.json({
-            articles: ranked.slice((page - 1) * size, page * size),
+            articles,
             page,
             totalPages,
             total: ranked.length
