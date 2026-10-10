@@ -7,7 +7,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
+const ROOT = path.join(__dirname, '../');
+
+app.use('/api', (req, res, next) => {
+    res.set('X-Robots-Tag', 'noindex');
+    next();
+});
+
+app.use('/assets', express.static(path.join(ROOT, 'assets'), { maxAge: '7d' }));
+app.use('/css', express.static(path.join(ROOT, 'css'), { maxAge: '1d' }));
+app.use('/javascript', express.static(path.join(ROOT, 'javascript'), { maxAge: '1d' }));
+
+['robots.txt', 'sitemap.xml', 'favicon.ico'].forEach(file => {
+    app.get('/' + file, (req, res) => {
+        res.set('Cache-Control', 'public, max-age=86400');
+        res.sendFile(path.join(ROOT, file));
+    });
+});
 
 if (process.env.MONGODB_URI) {
     mongoose.connect(process.env.MONGODB_URI)
@@ -276,8 +292,13 @@ app.post('/api/contact', async (req, res) => {
     }
 });
 
-app.get(/(.*)/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../index.html'));
+app.get(['/', '/index.html'], (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(ROOT, 'index.html'));
+});
+
+app.use((req, res) => {
+    res.status(404).type('text/plain').send('Not Found');
 });
 
 app.listen(PORT, () => {
