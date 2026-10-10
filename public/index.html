@@ -111,7 +111,8 @@
     <nav class="nav-container" id="navbar">
         <a href="#" class="brand">
             <img src="./assets/logo-96.webp" width="32" height="32" data-i18n-alt="logoAlt" alt="VERO Logo"
-                class="brand-logo" onerror="this.style.display='none'">
+                class="brand-logo"
+                onerror="if(!this.dataset.f){this.dataset.f=1;this.src='./assets/VERO.png'}else{this.style.display='none'}">
             <span>VERO</span>
         </a>
         <div class="nav-links">
@@ -158,7 +159,7 @@
     <div class="banner-wrap top-banner">
         <img src="./assets/BANNER.webp" width="1584" height="672" fetchpriority="high" decoding="async"
             data-i18n-alt="bannerAlt" alt="VERO Banner" class="banner-img"
-            onerror="this.parentElement.style.display='none'">
+            onerror="if(!this.dataset.f){this.dataset.f=1;this.src='./assets/BANNER.png'}else{this.parentElement.style.display='none'}">
     </div>
     <header class="hero">
         <div class="hero-content">
@@ -499,13 +500,14 @@
         <div class="banner-wrap footer-banner">
             <img src="./assets/BANNER.webp" width="1584" height="672" loading="lazy" decoding="async"
                 data-i18n-alt="bannerAlt" alt="VERO Banner" class="banner-img"
-                onerror="this.parentElement.style.display='none'">
+                onerror="if(!this.dataset.f){this.dataset.f=1;this.src='./assets/BANNER.png'}else{this.parentElement.style.display='none'}">
         </div>
         <div class="footer-content">
             <div class="footer-brand">
                 <div class="brand-line">
                     <img src="./assets/logo-96.webp" width="32" height="32" data-i18n-alt="logoAlt" alt="VERO Logo"
-                        class="brand-logo" onerror="this.style.display='none'">
+                        class="brand-logo"
+                        onerror="if(!this.dataset.f){this.dataset.f=1;this.src='./assets/VERO.png'}else{this.style.display='none'}">
                     <span>VERO</span>
                 </div>
                 <p data-i18n="footerDesc">Independent global intelligence and diplomatic monitoring observatory.</p>
