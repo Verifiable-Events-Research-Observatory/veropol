@@ -132,6 +132,7 @@ I18N.en = {
     contactTitle: "Establish Secure Channel",
     contactDesc: "Request data access, report anomalies, or contact our operations team directly.",
     emailLabel: "Secure Email",
+    devEmailLabel: "Developer Email",
     repoLabel: "Organization Repository",
     devLabel: "Lead Developer",
     fName: "Full Name / Callsign",
@@ -282,6 +283,7 @@ I18N.fr = {
     contactTitle: "Établir un canal sécurisé",
     contactDesc: "Demandez un accès aux données, signalez des anomalies ou contactez directement notre équipe des opérations.",
     emailLabel: "E-mail sécurisé",
+    devEmailLabel: "E-mail développeur",
     repoLabel: "Dépôt de l'organisation",
     devLabel: "Développeur principal",
     fName: "Nom complet / Indicatif",
@@ -432,6 +434,7 @@ I18N.es = {
     contactTitle: "Establecer canal seguro",
     contactDesc: "Solicita acceso a datos, reporta anomalías o contacta directamente con nuestro equipo de operaciones.",
     emailLabel: "Correo seguro",
+    devEmailLabel: "Correo del desarrollador",
     repoLabel: "Repositorio de la organización",
     devLabel: "Desarrollador principal",
     fName: "Nombre completo / Indicativo",
@@ -582,6 +585,7 @@ I18N.ru = {
     contactTitle: "Установить защищённый канал",
     contactDesc: "Запросите доступ к данным, сообщите об аномалиях или свяжитесь напрямую с нашей оперативной командой.",
     emailLabel: "Защищённая почта",
+    devEmailLabel: "Почта разработчика",
     repoLabel: "Репозиторий организации",
     devLabel: "Ведущий разработчик",
     fName: "Полное имя / Позывной",
@@ -732,6 +736,7 @@ I18N.ar = {
     contactTitle: "إنشاء قناة آمنة",
     contactDesc: "اطلب الوصول إلى البيانات، أو أبلغ عن حالات شاذة، أو تواصل مع فريق العمليات لدينا مباشرة.",
     emailLabel: "بريد آمن",
+    devEmailLabel: "بريد المطوّر",
     repoLabel: "مستودع المؤسسة",
     devLabel: "المطوّر الرئيسي",
     fName: "الاسم الكامل / الاسم الرمزي",
@@ -882,6 +887,7 @@ I18N.zh = {
     contactTitle: "建立安全通道",
     contactDesc: "申请数据访问、报告异常，或直接联系我们的运营团队。",
     emailLabel: "安全邮箱",
+    devEmailLabel: "开发者邮箱",
     repoLabel: "组织代码仓库",
     devLabel: "首席开发者",
     fName: "全名 / 呼号",
@@ -1032,6 +1038,7 @@ I18N.tr = {
     contactTitle: "Güvenli Kanal Kur",
     contactDesc: "Veri erişimi talep edin, anormallikleri bildirin veya operasyon ekibimizle doğrudan iletişime geçin.",
     emailLabel: "Güvenli E-posta",
+    devEmailLabel: "Geliştirici E-postası",
     repoLabel: "Organizasyon Deposu",
     devLabel: "Baş Geliştirici",
     fName: "Ad Soyad / Çağrı Adı",
@@ -1273,8 +1280,8 @@ const WM = 'https://upload.wikimedia.org/wikipedia/commons/thumb/';
 const coverFallbacks = {
     military: WM + 'b/b2/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG/960px-USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG',
     economy: WM + 'd/df/Pudong_Shanghai_November_2017_panorama.jpg/960px-Pudong_Shanghai_November_2017_panorama.jpg',
-    diplomacy: WM + 'e/ea/070401_Panmunjeom3.jpg/960px-070401_Panmunjeom3.jpg',
-    intel: WM + 'b/bc/Taipei_Landscape.jpg/960px-Taipei_Landscape.jpg'
+    diplomacy: WM + '4/4e/P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg/960px-P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg',
+    intel: WM + '0/08/NASA_Visible_Earth_satellite_map_of_Earth.jpg/960px-NASA_Visible_Earth_satellite_map_of_Earth.jpg'
 };
 
 function analyzeContentTag(title, desc) {
