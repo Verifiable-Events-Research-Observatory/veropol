@@ -3,13 +3,13 @@
     --bg-surface: #FFFFFF;
     --bg-glass: rgba(255, 255, 255, 0.85);
     --text-main: #0F172A;
-    --text-muted: #64748B;
+    --text-muted: #526173;
     --accent: #2563EB;
     --accent-hover: #1D4ED8;
     --accent-glow: rgba(37, 99, 235, 0.25);
     --danger: #DC2626;
-    --success: #16A34A;
-    --warning: #D97706;
+    --success: #15803D;
+    --warning: #B45309;
     --border: #E2E8F0;
     --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.08);
@@ -123,6 +123,8 @@ h4 {
     width: 32px;
     object-fit: contain;
     border-radius: 50%;
+    image-rendering: -webkit-optimize-contrast;
+    transform: translateZ(0);
 }
 
 .nav-links {
@@ -510,37 +512,37 @@ h4 {
 }
 
 .cv-ukraine {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/M777_in_Ukraine_MMXXII.jpg/1280px-M777_in_Ukraine_MMXXII.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/M777_in_Ukraine_MMXXII.jpg/640px-M777_in_Ukraine_MMXXII.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 55%;
 }
 
 .cv-mideast {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG/1280px-USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG/640px-USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 50%;
 }
 
 .cv-taiwan {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Taipei_Landscape.jpg/1280px-Taipei_Landscape.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Taipei_Landscape.jpg/640px-Taipei_Landscape.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 60%;
 }
 
 .cv-brics {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Pudong_Shanghai_November_2017_panorama.jpg/1280px-Pudong_Shanghai_November_2017_panorama.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Pudong_Shanghai_November_2017_panorama.jpg/640px-Pudong_Shanghai_November_2017_panorama.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 55%;
 }
 
 .cv-korea {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/070401_Panmunjeom3.jpg/1280px-070401_Panmunjeom3.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/070401_Panmunjeom3.jpg/640px-070401_Panmunjeom3.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 40%;
 }
 
 .cv-sahel {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Between_Mopti_and_Timbuktu_%286865110%29.jpg/1280px-Between_Mopti_and_Timbuktu_%286865110%29.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Between_Mopti_and_Timbuktu_%286865110%29.jpg/640px-Between_Mopti_and_Timbuktu_%286865110%29.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 55%;
 }
 
 .cv-yemen {
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/USS_Carney_engages_Houthi_missiles.jpg/1280px-USS_Carney_engages_Houthi_missiles.jpg'), url('https://commons.wikimedia.org/wiki/Special:FilePath/USS_Carney_engages_Houthi_missiles.jpg?width=1280'), url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/USS_Carney_engages_Houthi_missiles_2.jpg/1280px-USS_Carney_engages_Houthi_missiles_2.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/USS_Carney_engages_Houthi_missiles.jpg/640px-USS_Carney_engages_Houthi_missiles.jpg'), url('https://commons.wikimedia.org/wiki/Special:FilePath/USS_Carney_engages_Houthi_missiles.jpg?width=640'), url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/USS_Carney_engages_Houthi_missiles_2.jpg/640px-USS_Carney_engages_Houthi_missiles_2.jpg'), linear-gradient(135deg, #1e293b, #0f172a);
     background-position: center 55%;
 }
 
@@ -559,11 +561,12 @@ h4 {
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-md);
+    image-rendering: -webkit-optimize-contrast;
+    transform: translateZ(0);
 }
 
 .top-banner {
     margin-top: 100px;
-    animation: fadeUp 0.8s ease-out;
 }
 
 .top-banner+.hero {
