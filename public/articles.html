@@ -30,12 +30,13 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icon-180.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap">
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=9">
-    <link rel="stylesheet" href="/css/articles.css?v=9">
+    <link rel="stylesheet" href="/css/style.css?v=10">
+    <link rel="stylesheet" href="/css/articles.css?v=10">
 </head>
 
 <body class="articles-body">
@@ -86,6 +87,8 @@
                 </div>
             </div>
             <a href="/#feedback" class="btn-nav" data-tr>Feedback</a>
+            <a href="/articles#account" class="icon-btn" id="accountBtn" data-tr-aria aria-label="Account"><i
+                    class="ph ph-user-circle"></i></a>
             <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme">
                 <i class="ph ph-moon" id="themeIcon"></i>
             </button>
@@ -125,10 +128,12 @@
                     <span class="card-tag static" id="rdTag"></span>
                     <h1 id="rdTitle" dir="auto"></h1>
                     <p class="reader-summary" id="rdSummary" dir="auto"></p>
+                    <img class="reader-cover" id="rdCover" alt="" hidden>
                     <div class="byline">
-                        <span class="avatar" id="rdAvatar"></span>
+                        <img class="avatar-img" id="rdAvatar" alt="" width="44" height="44">
                         <div>
-                            <strong id="rdAuthor"></strong>
+                            <strong><span id="rdAuthor"></span> <i class="ph-fill ph-seal-check verified-icon"
+                                    id="rdVerified" hidden></i></strong>
                             <span id="rdMeta"></span>
                         </div>
                         <button type="button" class="btn-ghost small" id="shareBtn"><i class="ph ph-share-network"></i>
@@ -150,78 +155,169 @@
             </article>
         </section>
 
+        <section id="view-auth" hidden>
+            <a href="/articles" class="back-link" data-back><i class="ph ph-arrow-left"></i> <span data-tr>All
+                    articles</span></a>
+            <div class="auth-shell">
+                <header class="write-head">
+                    <span class="kicker" data-tr>Contributor account</span>
+                    <h1 data-tr>Sign in to write</h1>
+                    <p data-tr>An account lets us keep authorship accountable and lets you manage your own articles. It
+                        is free.</p>
+                </header>
+                <div class="auth-tabs" id="authTabs">
+                    <button type="button" class="active" data-tab="login" data-tr>Sign in</button>
+                    <button type="button" data-tab="register" data-tr>Create account</button>
+                </div>
+                <form class="panel-form" id="loginForm" novalidate>
+                    <div class="input-group">
+                        <input type="email" id="lEmail" maxlength="120" placeholder=" " autocomplete="email">
+                        <label for="lEmail" data-tr>Email</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="lPass" maxlength="128" placeholder=" "
+                            autocomplete="current-password">
+                        <label for="lPass" data-tr>Password</label>
+                    </div>
+                    <p class="form-error" id="lError" role="alert" hidden></p>
+                    <button type="submit" class="btn-submit" id="lSubmit"><span data-tr>Sign in</span> <i
+                            class="ph ph-sign-in"></i></button>
+                </form>
+                <form class="panel-form" id="registerForm" novalidate hidden>
+                    <div class="avatar-pick">
+                        <img class="avatar-img big" id="regAvatarPreview" alt="" width="84" height="84">
+                        <div class="avatar-actions">
+                            <label class="btn-ghost small" for="regAvatar"><i class="ph ph-camera"></i> <span
+                                    data-tr>Profile photo (optional)</span></label>
+                            <input type="file" id="regAvatar" accept="image/*" hidden>
+                            <button type="button" class="link-btn" id="regAvatarClear" hidden data-tr>Remove
+                                photo</button>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <input type="text" id="rFirst" maxlength="60" placeholder=" " autocomplete="given-name">
+                            <label for="rFirst" data-tr>First name</label>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="rLast" maxlength="60" placeholder=" " autocomplete="family-name">
+                            <label for="rLast" data-tr>Last name</label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <input type="number" id="rAge" min="1" max="110" inputmode="numeric" placeholder=" ">
+                            <label for="rAge" data-tr>Age</label>
+                        </div>
+                        <div class="input-group">
+                            <input type="email" id="rEmail" maxlength="120" placeholder=" " autocomplete="email">
+                            <label for="rEmail" data-tr>Email (never published)</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="rPass" maxlength="128" placeholder=" " autocomplete="new-password">
+                        <label for="rPass" data-tr>Password (at least 8 characters)</label>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <input type="text" id="rNationality" maxlength="80" placeholder=" ">
+                            <label for="rNationality" data-tr>Nationality</label>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="rResidence" maxlength="80" placeholder=" "
+                                autocomplete="country-name">
+                            <label for="rResidence" data-tr>Country of residence</label>
+                        </div>
+                    </div>
+                    <fieldset class="id-docs">
+                        <legend data-tr>Identity verification (optional)</legend>
+                        <p class="field-help" data-tr>Tick the official documents you could show if an editor needs to
+                            confirm who you are. Never upload or send documents here. We only record the type, and any
+                            check happens privately by email. Verified authors get a badge.</p>
+                        <div class="topic-chips">
+                            <label class="chip"><input type="checkbox" name="idDocs" value="passport"><span><i
+                                        class="ph ph-airplane-tilt"></i> <b data-tr>Passport</b></span></label>
+                            <label class="chip"><input type="checkbox" name="idDocs" value="drivers_license"><span><i
+                                        class="ph ph-car-profile"></i> <b data-tr>Driver's licence</b></span></label>
+                            <label class="chip"><input type="checkbox" name="idDocs" value="national_id"><span><i
+                                        class="ph ph-identification-card"></i> <b data-tr>National ID
+                                        card</b></span></label>
+                        </div>
+                    </fieldset>
+                    <label class="check-row"><input type="checkbox" id="rConsent"><span><span data-tr>I am 18 or older
+                                and I agree to the terms and the privacy policy.</span> <a href="/#modal-terms"
+                                target="_blank" rel="noopener" data-tr>Terms</a> · <a href="/#modal-privacy"
+                                target="_blank" rel="noopener" data-tr>Privacy</a></span></label>
+                    <input type="text" id="rWebsite" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                    <p class="form-error" id="rError" role="alert" hidden></p>
+                    <button type="submit" class="btn-submit" id="rSubmit"><span data-tr>Create account</span> <i
+                            class="ph ph-user-plus"></i></button>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-account" hidden>
+            <a href="/articles" class="back-link" data-back><i class="ph ph-arrow-left"></i> <span data-tr>All
+                    articles</span></a>
+            <div class="account-card">
+                <div class="account-head">
+                    <img class="avatar-img big" id="acAvatar" alt="" width="84" height="84">
+                    <div>
+                        <h1 id="acName"></h1>
+                        <p id="acMeta"></p>
+                        <span class="verified-pill" id="acVerified" hidden><i class="ph-fill ph-seal-check"></i> <span
+                                data-tr>Verified author</span></span>
+                    </div>
+                </div>
+                <div class="account-actions">
+                    <a href="#write" class="btn-primary small" id="acWrite"><i class="ph ph-pen-nib"></i> <span
+                            data-tr>Write an article</span></a>
+                    <label class="btn-ghost small" for="acPhoto"><i class="ph ph-camera"></i> <span data-tr>Change
+                            photo</span></label>
+                    <input type="file" id="acPhoto" accept="image/*" hidden>
+                    <button type="button" class="btn-ghost small" id="acRemovePhoto"><i class="ph ph-trash"></i> <span
+                            data-tr>Remove photo</span></button>
+                    <a href="/admin" class="btn-ghost small" id="acAdmin" hidden><i class="ph ph-shield-star"></i> <span
+                            data-tr>Admin panel</span></a>
+                    <button type="button" class="btn-ghost small" id="acLogout"><i class="ph ph-sign-out"></i> <span
+                            data-tr>Sign out</span></button>
+                </div>
+                <h2 class="account-sub" data-tr>My articles</h2>
+                <ul class="my-articles" id="acArticles"></ul>
+                <details class="danger-zone">
+                    <summary data-tr>Delete my account</summary>
+                    <p data-tr>This permanently deletes your account, photo and every article you wrote. It cannot be
+                        undone.</p>
+                    <div class="input-group">
+                        <input type="password" id="acDelPw" maxlength="128" placeholder=" "
+                            autocomplete="current-password">
+                        <label for="acDelPw" data-tr>Confirm with your password</label>
+                    </div>
+                    <p class="form-error" id="acError" role="alert" hidden></p>
+                    <button type="button" class="btn-danger" id="acDelete"><i class="ph ph-warning"></i> <span
+                            data-tr>Delete everything</span></button>
+                </details>
+            </div>
+        </section>
+
         <section id="view-write" hidden>
-            <a href="/articles" class="back-link" id="backLink2"><i class="ph ph-arrow-left"></i> <span data-tr>All
+            <a href="/articles" class="back-link" data-back><i class="ph ph-arrow-left"></i> <span data-tr>All
                     articles</span></a>
             <div class="write-shell">
                 <header class="write-head">
                     <span class="kicker" data-tr>Contributor desk</span>
                     <h1 data-tr>Write for VERO</h1>
-                    <p data-tr>We publish signed work only. Tell us who you are first, then submit your article. Every
-                        submission is read by an editor before it goes live.</p>
+                    <p data-tr>Write your article, add an optional cover and send it. An editor reads every submission
+                        before it goes live.</p>
                 </header>
                 <ol class="stepper" id="stepper">
-                    <li class="active" data-step="1"><b>1</b> <span data-tr>About you</span></li>
-                    <li data-step="2"><b>2</b> <span data-tr>Your article</span></li>
+                    <li class="active" data-step="1"><b>1</b> <span data-tr>Your article</span></li>
+                    <li data-step="2"><b>2</b> <span data-tr>Cover</span></li>
                     <li data-step="3"><b>3</b> <span data-tr>Review & send</span></li>
                 </ol>
                 <form id="writeForm" novalidate>
+                    <p class="form-error" id="wError" role="alert" hidden></p>
                     <div class="pane" data-pane="1">
-                        <div class="form-row">
-                            <div class="input-group">
-                                <input type="text" id="wFirst" maxlength="60" placeholder=" " autocomplete="given-name">
-                                <label for="wFirst" data-tr>First name</label>
-                            </div>
-                            <div class="input-group">
-                                <input type="text" id="wLast" maxlength="60" placeholder=" " autocomplete="family-name">
-                                <label for="wLast" data-tr>Last name</label>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="input-group">
-                                <input type="number" id="wAge" min="1" max="110" inputmode="numeric" placeholder=" ">
-                                <label for="wAge" data-tr>Age</label>
-                            </div>
-                            <div class="input-group">
-                                <input type="email" id="wEmail" maxlength="120" placeholder=" " autocomplete="email">
-                                <label for="wEmail" data-tr>Email (never published)</label>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="input-group">
-                                <input type="text" id="wNationality" maxlength="80" placeholder=" ">
-                                <label for="wNationality" data-tr>Nationality</label>
-                            </div>
-                            <div class="input-group">
-                                <input type="text" id="wResidence" maxlength="80" placeholder=" "
-                                    autocomplete="country-name">
-                                <label for="wResidence" data-tr>Country of residence</label>
-                            </div>
-                        </div>
-                        <fieldset class="id-docs">
-                            <legend data-tr>Identity verification (optional)</legend>
-                            <p class="field-help" data-tr>If an editor needs to confirm that you are who you say you
-                                are, which official documents could you show? Tick all that apply. Do not upload or send
-                                documents here; we only record the type and would ask you privately by email.</p>
-                            <div class="topic-chips">
-                                <label class="chip"><input type="checkbox" name="idDocs" value="passport"><span><i
-                                            class="ph ph-airplane-tilt"></i> <b data-tr>Passport</b></span></label>
-                                <label class="chip"><input type="checkbox" name="idDocs"
-                                        value="drivers_license"><span><i class="ph ph-car-profile"></i> <b
-                                            data-tr>Driver's licence</b></span></label>
-                                <label class="chip"><input type="checkbox" name="idDocs" value="national_id"><span><i
-                                            class="ph ph-identification-card"></i> <b data-tr>National ID
-                                            card</b></span></label>
-                            </div>
-                        </fieldset>
-                        <div class="pane-actions">
-                            <span></span>
-                            <button type="button" class="btn-primary" data-next><span data-tr>Continue</span> <i
-                                    class="ph ph-arrow-right"></i></button>
-                        </div>
-                    </div>
-
-                    <div class="pane" data-pane="2" hidden>
                         <div class="input-group">
                             <input type="text" id="wTitle" maxlength="140" placeholder=" ">
                             <label for="wTitle" data-tr>Headline</label>
@@ -264,7 +360,29 @@
                         <ul class="tips">
                             <li data-tr>Minimum 600 characters. Separate paragraphs with a blank line.</li>
                             <li data-tr>Name your sources and distinguish facts from opinion.</li>
-                            <li data-tr>Your draft text is saved on this device while you write.</li>
+                            <li data-tr>Your draft is saved on this device while you write.</li>
+                        </ul>
+                        <div class="pane-actions">
+                            <span></span>
+                            <button type="button" class="btn-primary" data-next><span data-tr>Continue</span> <i
+                                    class="ph ph-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="pane" data-pane="2" hidden>
+                        <div class="cover-pick">
+                            <img class="cover-preview" id="coverPreview" alt="" hidden>
+                            <label class="cover-drop" for="wCover" id="coverDrop">
+                                <i class="ph ph-image"></i>
+                                <b data-tr>Add a cover image (optional)</b>
+                                <small data-tr>JPG, PNG or WebP. It is resized automatically.</small>
+                            </label>
+                            <input type="file" id="wCover" accept="image/*" hidden>
+                            <button type="button" class="link-btn" id="coverClear" hidden data-tr>Remove cover</button>
+                        </div>
+                        <ul class="tips">
+                            <li data-tr>Use an image you own or have the right to publish.</li>
+                            <li data-tr>A wide image works best. You can skip this step.</li>
                         </ul>
                         <div class="pane-actions">
                             <button type="button" class="btn-ghost" data-prev><i class="ph ph-arrow-left"></i> <span
@@ -277,13 +395,14 @@
                     <div class="pane" data-pane="3" hidden>
                         <div class="review-box">
                             <h3 data-tr>What readers will see</h3>
-                            <p><i class="ph ph-user-circle"></i> <strong id="rvName"></strong></p>
-                            <p class="field-help" data-tr>Only your first name, the initial of your last name and your
-                                nationality are public. Your age, email, residence and verification options are never
+                            <div class="review-author">
+                                <img class="avatar-img" id="rvAvatar" alt="" width="44" height="44">
+                                <strong id="rvName"></strong>
+                            </div>
+                            <p class="field-help" data-tr>Only your first name, the initial of your last name, your
+                                nationality and your photo are public. Your age, email and residence are never
                                 shown.</p>
                         </div>
-                        <label class="check-row"><input type="checkbox" id="cAge"><span data-tr>I confirm that I am 18
-                                years old or older.</span></label>
                         <label class="check-row"><input type="checkbox" id="cOriginal"><span data-tr>This is my own
                                 original work, and I believe it to be accurate.</span></label>
                         <label class="check-row"><input type="checkbox" id="cTerms"><span><span data-tr>I agree to the
@@ -291,7 +410,6 @@
                                     target="_blank" rel="noopener" data-tr>Terms</a> · <a href="/#modal-privacy"
                                     target="_blank" rel="noopener" data-tr>Privacy</a></span></label>
                         <input type="text" id="wWebsite" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-                        <p class="form-error" id="wError" role="alert" hidden></p>
                         <div class="pane-actions">
                             <button type="button" class="btn-ghost" data-prev><i class="ph ph-arrow-left"></i> <span
                                     data-tr>Back</span></button>
@@ -304,8 +422,8 @@
                     <i class="ph ph-check-circle"></i>
                     <h2 data-tr>Submission received</h2>
                     <p data-tr>Thank you. An editor will review your article. If it is approved it will appear in the
-                        articles section, and we may contact you by email first.</p>
-                    <a href="/articles" class="btn-primary"><span data-tr>Back to articles</span></a>
+                        articles section.</p>
+                    <a href="/articles#account" class="btn-primary"><span data-tr>See my articles</span></a>
                 </div>
             </div>
         </section>
@@ -386,8 +504,8 @@
         </div>
     </div>
 
-    <script defer src="/javascript/common.js?v=9"></script>
-    <script defer src="/javascript/articles.js?v=9"></script>
+    <script defer src="/javascript/common.js?v=10"></script>
+    <script defer src="/javascript/articles.js?v=10"></script>
 </body>
 
 </html>
