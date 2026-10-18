@@ -480,3 +480,385 @@
         display: inline;
     }
 }
+
+.avatar-img {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #262630;
+    box-shadow: 0 0 0 1px var(--line);
+}
+
+.byline .avatar-img {
+    width: 44px;
+    height: 44px;
+}
+
+.avatar-img.big {
+    width: 84px;
+    height: 84px;
+}
+
+.verified-icon {
+    color: var(--accent-2);
+    font-size: 1.05em;
+    vertical-align: -2px;
+}
+
+.verified-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(94, 230, 219, 0.14);
+    color: var(--accent-2);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.art-top.has-cover {
+    padding: 0;
+    align-items: flex-start;
+    height: 170px;
+}
+
+.art-top.has-cover::after {
+    display: none;
+}
+
+.art-cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.art-top.has-cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(9, 9, 11, 0.5), transparent 50%);
+    z-index: 1;
+}
+
+.art-top.has-cover .card-tag,
+.art-top.has-cover .lang-badge {
+    position: absolute;
+    top: 14px;
+    z-index: 2;
+}
+
+.art-top.has-cover .card-tag {
+    inset-inline-start: 14px;
+}
+
+.art-top.has-cover .lang-badge {
+    inset-inline-end: 14px;
+}
+
+.reader-cover {
+    width: 100%;
+    max-height: 420px;
+    margin: 0 0 24px;
+    border-radius: var(--r-md);
+    object-fit: cover;
+    border: 1px solid var(--line);
+}
+
+.reader-cover[hidden] {
+    display: none;
+}
+
+.auth-shell {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 6px;
+    margin-bottom: 18px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.auth-tabs button {
+    padding: 11px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.auth-tabs button.active {
+    background: var(--text);
+    color: var(--bg);
+}
+
+.panel-form {
+    display: grid;
+    gap: 18px;
+    padding: clamp(22px, 4vw, 38px);
+    border-radius: 30px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+}
+
+.panel-form[hidden] {
+    display: none;
+}
+
+.avatar-pick {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.avatar-actions {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+}
+
+.btn-ghost.small,
+.btn-primary.small {
+    padding: 9px 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.link-btn {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.link-btn[hidden] {
+    display: none;
+}
+
+.link-btn.danger,
+.btn-danger {
+    color: var(--danger);
+}
+
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: start;
+    padding: 11px 20px;
+    border-radius: 999px;
+    border: 1px solid var(--danger);
+    background: transparent;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background: rgba(255, 90, 90, 0.12);
+}
+
+.account-card {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: clamp(22px, 4vw, 40px);
+    border-radius: 30px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+}
+
+.account-head {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.account-head h1 {
+    font-size: 1.5rem;
+}
+
+.account-head p {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 24px 0 8px;
+}
+
+.account-actions [hidden] {
+    display: none;
+}
+
+.account-sub {
+    margin: 30px 0 14px;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.my-articles {
+    list-style: none;
+    display: grid;
+    gap: 10px;
+}
+
+.my-article {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--line);
+    background: var(--bg);
+}
+
+.my-info {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.my-info strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.my-actions {
+    display: flex;
+    gap: 16px;
+    flex: none;
+}
+
+.my-empty {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.status-chip {
+    justify-self: start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.status-chip.approved {
+    background: rgba(74, 222, 128, 0.14);
+    color: var(--success);
+}
+
+.status-chip.rejected {
+    background: rgba(255, 90, 90, 0.14);
+    color: var(--danger);
+}
+
+.danger-zone {
+    margin-top: 34px;
+    padding: 16px 18px;
+    border-radius: var(--r-md);
+    border: 1px dashed var(--danger);
+}
+
+.danger-zone summary {
+    font-weight: 800;
+    color: var(--danger);
+    cursor: pointer;
+}
+
+.danger-zone p {
+    margin: 12px 0;
+    font-size: 0.88rem;
+    color: var(--muted);
+}
+
+.danger-zone .input-group {
+    margin-bottom: 14px;
+}
+
+.cover-pick {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+}
+
+.cover-drop {
+    width: 100%;
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    padding: 40px 20px;
+    border-radius: var(--r-md);
+    border: 1.5px dashed var(--line);
+    background: var(--bg);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.cover-drop[hidden] {
+    display: none;
+}
+
+.cover-drop:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.cover-drop i {
+    font-size: 2.2rem;
+    color: var(--accent);
+}
+
+.cover-drop small {
+    color: var(--muted);
+}
+
+.cover-preview {
+    width: 100%;
+    max-height: 340px;
+    border-radius: var(--r-md);
+    object-fit: cover;
+    border: 1px solid var(--line);
+}
+
+.cover-preview[hidden] {
+    display: none;
+}
+
+.review-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+#wError {
+    margin-bottom: 4px;
+}
