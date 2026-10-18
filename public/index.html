@@ -59,16 +59,17 @@
     <meta name="twitter:image" content="https://veropol.onrender.com/assets/BANNER.png">
     <meta name="twitter:image:alt" content="VERO Banner">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style"
-        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap"
         onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
         <link rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+            href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap">
     </noscript>
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=9">
+    <link rel="stylesheet" href="/css/style.css?v=10">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -149,6 +150,8 @@
                 </div>
             </div>
             <a href="#feedback" class="btn-nav" data-tr>Feedback</a>
+            <a href="/articles#account" class="icon-btn" id="accountBtn" data-tr-aria aria-label="Account"><i
+                    class="ph ph-user-circle"></i></a>
             <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme">
                 <i class="ph ph-moon" id="themeIcon"></i>
             </button>
@@ -186,9 +189,12 @@
                             <circle class="radar-blip" cx="15.8" cy="16" r="1.1" fill="currentColor" stroke="none" />
                         </svg>
                     </button>
+                    <div class="search-popup" id="searchPopup" role="alert"><i class="ph ph-hand-pointing"></i><span
+                            data-tr>Type a region, leader or crisis first, then search.</span></div>
                 </div>
                 <p class="search-hint"><i class="ph ph-translate"></i><span data-tr>Search in any language</span>
-                    <span class="hint-samples" dir="auto">Syria · Syrie · Suriye · سوريا · Сирия · 叙利亚</span>
+                    <span class="hint-samples" dir="auto">Brazil · Brésil · Brasil · Brezilya · البرازيل · Бразилия ·
+                        巴西</span>
                 </p>
                 <div class="search-suggestions" id="searchSuggestions"></div>
                 <div class="search-suggestions recent-searches" id="recentSearches"></div>
@@ -568,9 +574,10 @@
             </div>
             <div class="modal-body">
                 <h4 data-tr>How information reaches VERO</h4>
-                <p data-tr>VERO does not write news. We query a licensed news aggregation interface for headlines,
-                    short descriptions and cover images published by outlets, then filter the results so that only
-                    outlets on our vetted list can appear.</p>
+                <p data-tr>VERO does not write news. We read the public RSS feeds that vetted outlets publish in several
+                    languages, and we add results from a licensed news aggregation interface. Only outlets on our vetted
+                    list can appear, and articles are shown in their original language first, then machine-translated
+                    into yours on request.</p>
                 <h4 data-tr>How outlets are chosen</h4>
                 <p data-tr>We select established outlets with a public editorial process, a large audience and a
                     track record of issuing corrections. We deliberately mix perspectives: Arab regional media, European
@@ -619,11 +626,13 @@
                 <p data-tr>If you send feedback, we store your message and, if you provide them, your name and email so
                     that we can reply. Both are optional.</p>
                 <h4 data-tr>Article contributors</h4>
-                <p data-tr>Contributors must be 18 or older. We collect name, age, nationality, country of residence and
-                    email to verify authorship. Only the first name, the initial of the last name and nationality appear
-                    publicly. Age, email and residence are never published. We do not collect copies of identity
-                    documents; we may ask you to confirm identity by one of the document types you tick, through a
-                    private email exchange.</p>
+                <p data-tr>To write articles you create an account with your email, a password, your name, age (18 or
+                    older), nationality and country of residence. Passwords are stored only as salted hashes. A session
+                    cookie keeps you signed in. A profile photo and an article cover are optional. Publicly, only your
+                    first name, the initial of your last name, your nationality, your photo and a verification badge
+                    appear. Your age, email, residence and verification options are never shown. We do not collect
+                    copies of identity documents; if we need to confirm your identity we will ask privately by email,
+                    and you can delete your account and all of your articles at any time.</p>
                 <h4 data-tr>Your rights</h4>
                 <p data-tr>You can ask to access, correct or delete your data at any time by emailing
                     veropol@proton.me.</p>
@@ -654,8 +663,8 @@
         </div>
     </div>
 
-    <script defer src="/javascript/common.js?v=9"></script>
-    <script defer src="/javascript/script.js?v=9"></script>
+    <script defer src="/javascript/common.js?v=10"></script>
+    <script defer src="/javascript/script.js?v=10"></script>
 </body>
 
 </html>
