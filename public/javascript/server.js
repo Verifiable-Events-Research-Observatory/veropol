@@ -37,6 +37,11 @@ app.use('/javascript', express.static(path.join(ROOT, 'javascript'), { maxAge: '
     });
 });
 
+app.get('/.well-known/discord', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.type('text/plain').send(process.env.DISCORD_VERIFICATION_TOKEN || 'dh=b646c3f52446820d5104e44cae97c6f6...');
+});
+
 if (process.env.MONGODB_URI) {
     mongoose.connect(process.env.MONGODB_URI).catch(() => { });
 }
