@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark" data-noi18n>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>VERO Admin</title>
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('vero_theme');
+                if (t) document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+    </script>
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap">
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="/css/style.css?v=10">
+    <link rel="stylesheet" href="/css/articles.css?v=10">
+    <link rel="stylesheet" href="/css/admin.css?v=10">
+</head>
+
+<body>
+    <nav class="nav-container" id="navbar">
+        <a href="/" class="brand" aria-label="VERO">
+            <img src="/assets/logo-96.webp" width="34" height="34" alt="VERO" class="brand-logo">
+            <span>VERO</span>
+        </a>
+        <div class="nav-links open" id="navLinks" style="display:flex">
+            <a href="/articles">Articles</a>
+            <a href="/articles#account" id="accountBtn" class="icon-btn"><i class="ph ph-user-circle"></i></a>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Toggle theme"><i
+                    class="ph ph-moon" id="themeIcon"></i></button>
+        </div>
+    </nav>
+    <main class="admin-page">
+        <div class="admin-head">
+            <h1>Admin panel</h1>
+            <span id="adminWho" class="admin-meta"></span>
+        </div>
+        <div class="admin-tabs" id="adminTabs">
+            <button type="button" class="active" data-tab="pending">Pending</button>
+            <button type="button" data-tab="approved">Published</button>
+            <button type="button" data-tab="rejected">Rejected</button>
+            <button type="button" data-tab="users">Users</button>
+        </div>
+        <div id="adminRoot"></div>
+    </main>
+    <script defer src="/javascript/common.js?v=10"></script>
+    <script defer src="/javascript/admin.js?v=10"></script>
+</body>
+
+</html>
