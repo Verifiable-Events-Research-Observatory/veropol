@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('vero_theme');
+                if (!t) {
+                    var hr = new Date().getHours();
+                    t = (hr >= 19 || hr < 6) ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PJW06HEYF5"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-PJW06HEYF5');
+    </script>
+    <!--SEO-->
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0A0A0C">
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="/css/style.css?v=9">
+    <link rel="stylesheet" href="/css/articles.css?v=9">
+</head>
+
+<body class="articles-body">
+    <div class="toast-box" id="toastBox" role="status"></div>
+    <nav class="nav-container" id="navbar">
+        <a href="/" class="brand" aria-label="VERO">
+            <img src="/assets/logo-96.webp" width="34" height="34" alt="VERO" class="brand-logo"
+                onerror="if(!this.dataset.f){this.dataset.f=1;this.src='/assets/VERO.png'}else{this.style.display='none'}">
+            <span>VERO</span>
+        </a>
+        <button class="nav-burger" id="navBurger" type="button" aria-expanded="false" aria-controls="navLinks"
+            data-tr-aria aria-label="Menu"><i class="ph ph-list"></i></button>
+        <div class="nav-links" id="navLinks">
+            <a href="/#theaters" data-tr>Strategic Theaters</a>
+            <a href="/#intelligence" data-tr>Feed</a>
+            <a href="/articles" data-tr>Articles</a>
+            <a href="#modal-methodology" data-modal="methodology" data-tr>Methodology</a>
+            <div class="lang-dropdown">
+                <button class="lang-btn" id="langToggle" type="button" aria-haspopup="true" aria-expanded="false"
+                    data-tr-aria aria-label="Change language">
+                    <img class="flag-icon" id="langFlag" src="https://hatscripts.github.io/circle-flags/flags/gb.svg"
+                        alt="" width="20" height="20">
+                    <span id="langCode">EN</span>
+                    <i class="ph ph-caret-down"></i>
+                </button>
+                <div class="lang-menu" id="langMenu">
+                    <button type="button" class="lang-item" data-lang="en"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/gb.svg" alt="" width="22"
+                            height="22"><span>English</span></button>
+                    <button type="button" class="lang-item" data-lang="fr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/fr.svg" alt="" width="22"
+                            height="22"><span>Français</span></button>
+                    <button type="button" class="lang-item" data-lang="es"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/es.svg" alt="" width="22"
+                            height="22"><span>Español</span></button>
+                    <button type="button" class="lang-item" data-lang="ru"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/ru.svg" alt="" width="22"
+                            height="22"><span>Русский</span></button>
+                    <button type="button" class="lang-item" data-lang="ar"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/sa.svg" alt="" width="22"
+                            height="22"><span>العربية</span></button>
+                    <button type="button" class="lang-item" data-lang="zh"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/cn.svg" alt="" width="22"
+                            height="22"><span>中文</span></button>
+                    <button type="button" class="lang-item" data-lang="tr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/tr.svg" alt="" width="22"
+                            height="22"><span>Türkçe</span></button>
+                </div>
+            </div>
+            <a href="/#feedback" class="btn-nav" data-tr>Feedback</a>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme">
+                <i class="ph ph-moon" id="themeIcon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main class="container art-page">
+        <section id="view-list">
+            <header class="art-hero">
+                <span class="kicker" data-tr>Open desk</span>
+                <h1 data-tr>Articles & Analysis</h1>
+                <p data-tr>Signed reporting and analysis from independent contributors on diplomacy, security and the
+                    global economy. Read in your language, written in theirs.</p>
+                <div class="cta-actions center">
+                    <a href="#write" class="btn-primary" id="goWrite"><i class="ph ph-pen-nib"></i> <span data-tr>Write
+                            for VERO</span></a>
+                </div>
+            </header>
+            <div class="filters" id="catFilters">
+                <button type="button" class="filter-btn active" data-cat="all" data-tr>All</button>
+                <button type="button" class="filter-btn" data-cat="diplomacy" data-tr>Diplomacy</button>
+                <button type="button" class="filter-btn" data-cat="military" data-tr>Military</button>
+                <button type="button" class="filter-btn" data-cat="economy" data-tr>Economy</button>
+                <button type="button" class="filter-btn" data-cat="regional" data-tr>Regional</button>
+                <button type="button" class="filter-btn" data-cat="analysis" data-tr>Analysis</button>
+                <button type="button" class="filter-btn" data-cat="opinion" data-tr>Opinion</button>
+            </div>
+            <div class="flex-grid" id="articlesGrid" aria-live="polite"></div>
+            <nav class="pagination" id="artPagination" data-tr-aria aria-label="Pagination" hidden></nav>
+        </section>
+
+        <section id="view-read" hidden>
+            <a href="/articles" class="back-link" id="backLink"><i class="ph ph-arrow-left"></i> <span data-tr>All
+                    articles</span></a>
+            <article class="reader">
+                <header>
+                    <span class="card-tag static" id="rdTag"></span>
+                    <h1 id="rdTitle" dir="auto"></h1>
+                    <p class="reader-summary" id="rdSummary" dir="auto"></p>
+                    <div class="byline">
+                        <span class="avatar" id="rdAvatar"></span>
+                        <div>
+                            <strong id="rdAuthor"></strong>
+                            <span id="rdMeta"></span>
+                        </div>
+                        <button type="button" class="btn-ghost small" id="shareBtn"><i class="ph ph-share-network"></i>
+                            <span data-tr>Share</span></button>
+                    </div>
+                    <div class="notice" id="rdNotice" hidden>
+                        <i class="ph ph-translate"></i>
+                        <span id="rdNoticeText"></span>
+                        <button type="button" id="rdToggle"></button>
+                    </div>
+                </header>
+                <div class="reader-body" id="rdBody">
+                    <!--SSR-->
+                </div>
+                <footer class="reader-foot">
+                    <p data-tr>Articles are contributed by independent authors and reviewed before publication. They
+                        express the views of their authors, not of VERO.</p>
+                </footer>
+            </article>
+        </section>
+
+        <section id="view-write" hidden>
+            <a href="/articles" class="back-link" id="backLink2"><i class="ph ph-arrow-left"></i> <span data-tr>All
+                    articles</span></a>
+            <div class="write-shell">
+                <header class="write-head">
+                    <span class="kicker" data-tr>Contributor desk</span>
+                    <h1 data-tr>Write for VERO</h1>
+                    <p data-tr>We publish signed work only. Tell us who you are first, then submit your article. Every
+                        submission is read by an editor before it goes live.</p>
+                </header>
+                <ol class="stepper" id="stepper">
+                    <li class="active" data-step="1"><b>1</b> <span data-tr>About you</span></li>
+                    <li data-step="2"><b>2</b> <span data-tr>Your article</span></li>
+                    <li data-step="3"><b>3</b> <span data-tr>Review & send</span></li>
+                </ol>
+                <form id="writeForm" novalidate>
+                    <div class="pane" data-pane="1">
+                        <div class="form-row">
+                            <div class="input-group">
+                                <input type="text" id="wFirst" maxlength="60" placeholder=" " autocomplete="given-name">
+                                <label for="wFirst" data-tr>First name</label>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" id="wLast" maxlength="60" placeholder=" " autocomplete="family-name">
+                                <label for="wLast" data-tr>Last name</label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <input type="number" id="wAge" min="1" max="110" inputmode="numeric" placeholder=" ">
+                                <label for="wAge" data-tr>Age</label>
+                            </div>
+                            <div class="input-group">
+                                <input type="email" id="wEmail" maxlength="120" placeholder=" " autocomplete="email">
+                                <label for="wEmail" data-tr>Email (never published)</label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <input type="text" id="wNationality" maxlength="80" placeholder=" ">
+                                <label for="wNationality" data-tr>Nationality</label>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" id="wResidence" maxlength="80" placeholder=" "
+                                    autocomplete="country-name">
+                                <label for="wResidence" data-tr>Country of residence</label>
+                            </div>
+                        </div>
+                        <fieldset class="id-docs">
+                            <legend data-tr>Identity verification (optional)</legend>
+                            <p class="field-help" data-tr>If an editor needs to confirm that you are who you say you
+                                are, which official documents could you show? Tick all that apply. Do not upload or send
+                                documents here; we only record the type and would ask you privately by email.</p>
+                            <div class="topic-chips">
+                                <label class="chip"><input type="checkbox" name="idDocs" value="passport"><span><i
+                                            class="ph ph-airplane-tilt"></i> <b data-tr>Passport</b></span></label>
+                                <label class="chip"><input type="checkbox" name="idDocs"
+                                        value="drivers_license"><span><i class="ph ph-car-profile"></i> <b
+                                            data-tr>Driver's licence</b></span></label>
+                                <label class="chip"><input type="checkbox" name="idDocs" value="national_id"><span><i
+                                            class="ph ph-identification-card"></i> <b data-tr>National ID
+                                            card</b></span></label>
+                            </div>
+                        </fieldset>
+                        <div class="pane-actions">
+                            <span></span>
+                            <button type="button" class="btn-primary" data-next><span data-tr>Continue</span> <i
+                                    class="ph ph-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="pane" data-pane="2" hidden>
+                        <div class="input-group">
+                            <input type="text" id="wTitle" maxlength="140" placeholder=" ">
+                            <label for="wTitle" data-tr>Headline</label>
+                        </div>
+                        <div class="input-group">
+                            <textarea id="wSummary" rows="3" maxlength="320" placeholder=" "></textarea>
+                            <label for="wSummary" data-tr>Summary (shown on the article card)</label>
+                            <span class="counter" id="sumCount">0 / 320</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="input-group">
+                                <select id="wCategory">
+                                    <option value="analysis" data-tr>Analysis</option>
+                                    <option value="diplomacy" data-tr>Diplomacy</option>
+                                    <option value="military" data-tr>Military</option>
+                                    <option value="economy" data-tr>Economy</option>
+                                    <option value="regional" data-tr>Regional</option>
+                                    <option value="opinion" data-tr>Opinion</option>
+                                </select>
+                                <label for="wCategory" data-tr>Category</label>
+                            </div>
+                            <div class="input-group">
+                                <select id="wLang">
+                                    <option value="en">English</option>
+                                    <option value="ar">العربية</option>
+                                    <option value="fr">Français</option>
+                                    <option value="es">Español</option>
+                                    <option value="ru">Русский</option>
+                                    <option value="zh">中文</option>
+                                    <option value="tr">Türkçe</option>
+                                </select>
+                                <label for="wLang" data-tr>Language you wrote in</label>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <textarea id="wBody" rows="16" maxlength="20000" placeholder=" " dir="auto"></textarea>
+                            <label for="wBody" data-tr>Article text</label>
+                            <span class="counter" id="bodyCount">0 / 20000</span>
+                        </div>
+                        <ul class="tips">
+                            <li data-tr>Minimum 600 characters. Separate paragraphs with a blank line.</li>
+                            <li data-tr>Name your sources and distinguish facts from opinion.</li>
+                            <li data-tr>Your draft text is saved on this device while you write.</li>
+                        </ul>
+                        <div class="pane-actions">
+                            <button type="button" class="btn-ghost" data-prev><i class="ph ph-arrow-left"></i> <span
+                                    data-tr>Back</span></button>
+                            <button type="button" class="btn-primary" data-next><span data-tr>Continue</span> <i
+                                    class="ph ph-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="pane" data-pane="3" hidden>
+                        <div class="review-box">
+                            <h3 data-tr>What readers will see</h3>
+                            <p><i class="ph ph-user-circle"></i> <strong id="rvName"></strong></p>
+                            <p class="field-help" data-tr>Only your first name, the initial of your last name and your
+                                nationality are public. Your age, email, residence and verification options are never
+                                shown.</p>
+                        </div>
+                        <label class="check-row"><input type="checkbox" id="cAge"><span data-tr>I confirm that I am 18
+                                years old or older.</span></label>
+                        <label class="check-row"><input type="checkbox" id="cOriginal"><span data-tr>This is my own
+                                original work, and I believe it to be accurate.</span></label>
+                        <label class="check-row"><input type="checkbox" id="cTerms"><span><span data-tr>I agree to the
+                                    contributor terms and the privacy policy.</span> <a href="/#modal-terms"
+                                    target="_blank" rel="noopener" data-tr>Terms</a> · <a href="/#modal-privacy"
+                                    target="_blank" rel="noopener" data-tr>Privacy</a></span></label>
+                        <input type="text" id="wWebsite" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                        <p class="form-error" id="wError" role="alert" hidden></p>
+                        <div class="pane-actions">
+                            <button type="button" class="btn-ghost" data-prev><i class="ph ph-arrow-left"></i> <span
+                                    data-tr>Back</span></button>
+                            <button type="submit" class="btn-submit" id="wSubmit"><span data-tr>Submit for
+                                    review</span> <i class="ph ph-paper-plane-right"></i></button>
+                        </div>
+                    </div>
+                </form>
+                <div class="success-panel" id="wDone" hidden>
+                    <i class="ph ph-check-circle"></i>
+                    <h2 data-tr>Submission received</h2>
+                    <p data-tr>Thank you. An editor will review your article. If it is approved it will appear in the
+                        articles section, and we may contact you by email first.</p>
+                    <a href="/articles" class="btn-primary"><span data-tr>Back to articles</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="brand-line">
+                    <img src="/assets/logo-96.webp" width="34" height="34" alt="VERO" class="brand-logo"
+                        onerror="if(!this.dataset.f){this.dataset.f=1;this.src='/assets/VERO.png'}else{this.style.display='none'}">
+                    <span>VERO</span>
+                </div>
+                <p data-tr>Independent global intelligence and diplomatic monitoring observatory.</p>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Explore</h4>
+                <a href="/#theaters"><i class="ph ph-globe-hemisphere-west"></i> <span data-tr>Strategic
+                        Theaters</span></a>
+                <a href="/#intelligence"><i class="ph ph-broadcast"></i> <span data-tr>Feed</span></a>
+                <a href="/articles"><i class="ph ph-newspaper"></i> <span data-tr>Articles</span></a>
+                <a href="/articles#write"><i class="ph ph-pen-nib"></i> <span data-tr>Write for VERO</span></a>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Transparency</h4>
+                <a href="#modal-methodology" data-modal="methodology"><i class="ph ph-book-open-text"></i> <span
+                        data-tr>Sources & Methodology</span></a>
+                <a href="/#modal-privacy"><i class="ph ph-shield-check"></i> <span data-tr>Privacy Policy</span></a>
+                <a href="/#modal-terms"><i class="ph ph-file-text"></i> <span data-tr>Terms of Service</span></a>
+                <a href="/#feedback"><i class="ph ph-chat-circle-dots"></i> <span data-tr>Feedback</span></a>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Contact</h4>
+                <a href="mailto:veropol@proton.me"><i class="ph ph-envelope-simple"></i> <span><small data-tr>Secure
+                            Email</small>veropol@proton.me</span></a>
+                <a href="mailto:legateau@proton.me"><i class="ph ph-envelope-simple-open"></i> <span><small
+                            data-tr>Developers Email</small>legateau@proton.me</span></a>
+                <a href="https://github.com/verointels" target="_blank" rel="noopener noreferrer"><i
+                        class="ph ph-github-logo"></i> <span><small data-tr>Organization
+                            Repository</small>github.com/verointels</span></a>
+                <a href="https://github.com/leclavier" target="_blank" rel="noopener noreferrer"><i
+                        class="ph ph-code-simple"></i> <span><small data-tr>Lead
+                            Developer</small>github.com/leclavier</span></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 VERO</span>
+            <span data-tr>Machine translation by Google Cloud Translation. Original reports open in their source
+                language.</span>
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="modal-methodology">
+        <div class="modal-card wide">
+            <div class="modal-header">
+                <h3><i class="ph ph-book-open-text"></i> <span data-tr>Sources & Methodology</span></h3>
+                <button class="modal-close" type="button" data-close data-tr-aria aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4 data-tr>How information reaches VERO</h4>
+                <p data-tr>VERO does not write news. We query a licensed news aggregation interface for headlines,
+                    short descriptions and cover images published by outlets, then filter the results so that only
+                    outlets on our vetted list can appear.</p>
+                <h4 data-tr>How outlets are chosen</h4>
+                <p data-tr>We select established outlets with a public editorial process, a large audience and a
+                    track record of issuing corrections. We deliberately mix perspectives: Arab regional media, European
+                    public and independent media, United Nations reporting, and US-based wire services and non-profit
+                    broadcasters.</p>
+                <p data-tr>No outlet is perfectly neutral, and we do not claim otherwise. Some outlets on the list are
+                    funded or owned by states or state-linked groups. We include them for regional perspective and show
+                    the region of each outlet so you can weigh its viewpoint.</p>
+                <h4 data-tr>Contributed articles</h4>
+                <p data-tr>Articles on this section are written by named contributors, are reviewed by an editor
+                    before publication, and express the views of their authors.</p>
+                <h4 data-tr>Current source list</h4>
+                <ul class="sources-list" id="sourcesList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script defer src="/javascript/common.js?v=9"></script>
+    <script defer src="/javascript/articles.js?v=9"></script>
+</body>
+
+</html>
