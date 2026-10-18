@@ -5,13 +5,18 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
+let compression = null;
+try { compression = require('compression'); } catch (e) { }
+
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const SITE = 'https://veropol.onrender.com';
 const ROOT = path.join(__dirname, '../');
+const ADMIN_EMAILS = new Set((process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
 
-app.use(express.json({ limit: '200kb' }));
+if (compression) app.use(compression());
+app.use(express.json({ limit: '400kb' }));
 
 app.use((req, res, next) => {
     res.set('X-Content-Type-Options', 'nosniff');
@@ -22,13 +27,23 @@ app.use((req, res, next) => {
 app.use('/api', (req, res, next) => {
     res.set('X-Robots-Tag', 'noindex');
     res.set('Cache-Control', 'no-store');
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        const origin = req.get('origin');
+        if (origin) {
+            try {
+                if (new URL(origin).host !== req.get('host')) return res.status(403).json({ error: 'origin' });
+            } catch (e) {
+                return res.status(403).json({ error: 'origin' });
+            }
+        }
+    }
     next();
 });
 
-app.get('/javascript/server.js', (req, res) => res.status(404).type('text/plain').send('Not Found'));
+app.use('/javascript', (req, res, next) => (/^\/server/.test(req.path) ? res.status(404).type('text/plain').send('Not Found') : next()));
 app.use('/assets', express.static(path.join(ROOT, 'assets'), { maxAge: '7d' }));
-app.use('/css', express.static(path.join(ROOT, 'css'), { maxAge: '1d' }));
-app.use('/javascript', express.static(path.join(ROOT, 'javascript'), { maxAge: '1d' }));
+app.use('/css', express.static(path.join(ROOT, 'css'), { maxAge: '7d' }));
+app.use('/javascript', express.static(path.join(ROOT, 'javascript'), { maxAge: '7d' }));
 
 ['robots.txt', 'favicon.ico'].forEach(file => {
     app.get('/' + file, (req, res) => {
@@ -37,18 +52,14 @@ app.use('/javascript', express.static(path.join(ROOT, 'javascript'), { maxAge: '
     });
 });
 
-
-app.get('/.well-known/discord', (req, res) => {
-    res.set('Cache-Control', 'no-cache');
-    res.type('text/plain').send('dh=b646c3f52446820d5104e44cae97c6f624323997');
-});
-
 if (process.env.MONGODB_URI) {
     mongoose.connect(process.env.MONGODB_URI).catch(() => { });
 }
 const dbReady = () => mongoose.connection.readyState === 1;
+const Schema = mongoose.Schema;
+const ObjectId = Schema.Types.ObjectId;
 
-const FeedbackSchema = new mongoose.Schema({
+const Feedback = mongoose.models.Feedback || mongoose.model('Feedback', new Schema({
     topic: String,
     otherTopic: String,
     name: String,
@@ -56,10 +67,45 @@ const FeedbackSchema = new mongoose.Schema({
     message: String,
     page: String,
     date: { type: Date, default: Date.now }
-});
-const Feedback = mongoose.models.Feedback || mongoose.model('Feedback', FeedbackSchema);
+}));
 
-const ArticleSchema = new mongoose.Schema({
+const TransCache = mongoose.models.TransCache || mongoose.model('TransCache', new Schema({
+    k: { type: String, unique: true, index: true },
+    v: String,
+    d: String,
+    createdAt: { type: Date, default: Date.now, expires: 60 * 86400 }
+}));
+
+const User = mongoose.models.User || mongoose.model('User', new Schema({
+    email: { type: String, unique: true, index: true },
+    passHash: String,
+    firstName: String,
+    lastName: String,
+    age: Number,
+    nationality: String,
+    residence: String,
+    idDocs: [String],
+    avatarId: String,
+    verified: { type: Boolean, default: false },
+    banned: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+}));
+
+const Session = mongoose.models.Session || mongoose.model('Session', new Schema({
+    th: { type: String, unique: true, index: true },
+    userId: ObjectId,
+    expiresAt: { type: Date, expires: 0 }
+}));
+
+const Media = mongoose.models.Media || mongoose.model('Media', new Schema({
+    owner: { type: ObjectId, index: true },
+    kind: String,
+    contentType: String,
+    data: Buffer,
+    createdAt: { type: Date, default: Date.now }
+}));
+
+const Article = mongoose.models.Article || mongoose.model('Article', new Schema({
     slug: { type: String, unique: true, index: true },
     title: String,
     summary: String,
@@ -67,41 +113,15 @@ const ArticleSchema = new mongoose.Schema({
     category: String,
     language: String,
     readMinutes: Number,
-    author: {
-        firstName: String,
-        lastName: String,
-        age: Number,
-        nationality: String,
-        residence: String,
-        email: String,
-        idDocs: [String]
-    },
+    coverId: String,
+    userId: { type: ObjectId, ref: 'User', index: true },
     status: { type: String, default: 'pending', index: true },
     createdAt: { type: Date, default: Date.now },
     publishedAt: Date
-});
-const Article = mongoose.models.Article || mongoose.model('Article', ArticleSchema);
+}));
 
-function limiter(max, windowMs) {
-    const hits = new Map();
-    setInterval(() => {
-        const now = Date.now();
-        for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
-    }, windowMs).unref();
-    return (req, res, next) => {
-        const now = Date.now();
-        let h = hits.get(req.ip);
-        if (!h || h.reset < now) {
-            h = { count: 0, reset: now + windowMs };
-            hits.set(req.ip, h);
-        }
-        h.count++;
-        if (h.count > max) return res.status(429).json({ error: 'Too many requests' });
-        next();
-    };
-}
-
-const SUPPORTED_LANGS = { en: 'en', fr: 'fr', es: 'es', ru: 'ru', ar: 'ar', zh: 'zh-CN', tr: 'tr' };
+const translator = require('./server-translate')({ TransCache, dbReady });
+const { SUPPORTED_LANGS } = translator;
 
 const TRUSTED_SOURCES = [
     { name: 'Al Jazeera', domains: ['aljazeera.com', 'aljazeera.net'], region: 'Qatar' },
@@ -133,291 +153,340 @@ function matchSource(url) {
     return null;
 }
 
-const MAX_TRANSLATION_CACHE = 6000;
-const translationCache = new Map();
-function cacheTranslation(key, value) {
-    if (translationCache.size >= MAX_TRANSLATION_CACHE) translationCache.delete(translationCache.keys().next().value);
-    translationCache.set(key, value);
-}
+const search = require('./server-search')({ translator, matchSource });
 
-const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const prepare = t => escapeHtml(t).replace(/\bVERO\b/g, '<span class="notranslate">VERO</span>');
-const clean = s => String(s)
-    .replace(/<[^>]+>/g, '')
-    .replace(/&#(\d+);/g, (m, n) => String.fromCodePoint(+n))
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-
-function normalizeLang(code) {
-    if (!code) return null;
-    const c = String(code).toLowerCase();
-    if (c.startsWith('zh')) return 'zh';
-    return SUPPORTED_LANGS[c] ? c : null;
-}
-
-function scriptLang(q) {
-    if (/[\u0600-\u06FF]/.test(q)) return 'ar';
-    if (/[\u0400-\u04FF]/.test(q)) return 'ru';
-    if (/[\u4E00-\u9FFF]/.test(q)) return 'zh';
-    return null;
-}
-
-async function officialBatch(texts, target, source, key) {
-    const out = new Array(texts.length).fill(null);
-    let start = 0;
-    while (start < texts.length) {
-        let end = start;
-        let chars = 0;
-        while (end < texts.length && end - start < 100 && chars + texts[end].length <= 18000) {
-            chars += texts[end].length;
-            end++;
+function limiter(max, windowMs) {
+    const hits = new Map();
+    setInterval(() => {
+        const now = Date.now();
+        for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
+    }, windowMs).unref();
+    return (req, res, next) => {
+        const now = Date.now();
+        let h = hits.get(req.ip);
+        if (!h || h.reset < now) {
+            h = { count: 0, reset: now + windowMs };
+            hits.set(req.ip, h);
         }
-        if (end === start) end++;
-        const slice = texts.slice(start, end);
+        h.count++;
+        if (h.count > max) return res.status(429).json({ error: 'Too many requests' });
+        next();
+    };
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const cut = (v, n) => String(v || '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, n);
+const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const isHexId = v => /^[a-f0-9]{24}$/i.test(String(v || ''));
+const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const scrypt = (pw, salt) => new Promise((resolve, reject) => crypto.scrypt(pw, salt, 64, (e, k) => (e ? reject(e) : resolve(k))));
+
+async function hashPw(pw) {
+    const salt = crypto.randomBytes(16);
+    const k = await scrypt(pw, salt);
+    return salt.toString('hex') + ':' + k.toString('hex');
+}
+
+async function checkPw(pw, stored) {
+    const parts = String(stored || '').split(':');
+    if (parts.length !== 2) return false;
+    const k = await scrypt(pw, Buffer.from(parts[0], 'hex'));
+    const h = Buffer.from(parts[1], 'hex');
+    return h.length === k.length && crypto.timingSafeEqual(h, k);
+}
+
+function readCookie(req, name) {
+    const raw = req.headers.cookie || '';
+    for (const part of raw.split(';')) {
+        const i = part.indexOf('=');
+        if (i > 0 && part.slice(0, i).trim() === name) return decodeURIComponent(part.slice(i + 1).trim());
+    }
+    return '';
+}
+
+const SESSION_DAYS = 30;
+const sha = s => crypto.createHash('sha256').update(s).digest('hex');
+
+function setSessionCookie(req, res, token, maxAgeSec) {
+    const flags = ['vero_sid=' + token, 'Path=/', 'HttpOnly', 'SameSite=Lax', 'Max-Age=' + maxAgeSec];
+    if (req.secure) flags.push('Secure');
+    res.append('Set-Cookie', flags.join('; '));
+}
+
+async function startSession(req, res, userId) {
+    const token = crypto.randomBytes(32).toString('hex');
+    await Session.create({ th: sha(token), userId, expiresAt: new Date(Date.now() + SESSION_DAYS * 86400000) });
+    setSessionCookie(req, res, token, SESSION_DAYS * 86400);
+}
+
+const isAdmin = u => !!u && ADMIN_EMAILS.has(String(u.email).toLowerCase());
+
+async function auth(req, res, next) {
+    req.user = null;
+    const token = readCookie(req, 'vero_sid');
+    if (token && dbReady()) {
         try {
-            const body = { q: slice.map(prepare), target, format: 'html' };
-            if (source) body.source = source;
-            const response = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                signal: AbortSignal.timeout(12000)
-            });
-            if (response.ok) {
-                const data = await response.json();
-                const list = data && data.data && data.data.translations;
-                if (Array.isArray(list) && list.length === slice.length) {
-                    list.forEach((item, k) => {
-                        out[start + k] = { text: clean(item.translatedText), detected: item.detectedSourceLanguage || null };
-                    });
-                }
+            const s = await Session.findOne({ th: sha(token) }).lean();
+            if (s && s.expiresAt > new Date()) {
+                const u = await User.findById(s.userId).lean();
+                if (u && !u.banned) req.user = u;
             }
         } catch (e) { }
-        start = end;
     }
-    return out;
+    next();
 }
 
-async function freeOne(text, target, source) {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(source || 'auto')}&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(text)}`;
+app.use('/api', auth);
+
+const requireUser = (req, res, next) => (req.user ? next() : res.status(401).json({ error: 'login' }));
+const requireAdmin = (req, res, next) => (isAdmin(req.user) ? next() : res.status(403).json({ error: 'forbidden' }));
+
+function publicUser(u) {
+    return {
+        id: String(u._id),
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        age: u.age,
+        nationality: u.nationality,
+        residence: u.residence,
+        idDocs: u.idDocs || [],
+        avatarUrl: u.avatarId ? '/media/' + u.avatarId : null,
+        verified: !!u.verified,
+        isAdmin: isAdmin(u)
+    };
+}
+
+const ID_DOCS = ['passport', 'drivers_license', 'national_id'];
+
+app.post('/api/auth/register', limiter(6, 60 * 60 * 1000), async (req, res) => {
+    const b = req.body || {};
+    if (b.website) return res.status(200).json({ success: true });
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
+    const age = parseInt(b.age, 10);
+    const email = cut(b.email, 120).toLowerCase();
+    const password = String(b.password || '');
+    const user = {
+        firstName: cut(b.firstName, 60),
+        lastName: cut(b.lastName, 60),
+        nationality: cut(b.nationality, 80),
+        residence: cut(b.residence, 80),
+        idDocs: Array.isArray(b.idDocs) ? b.idDocs.filter(d => ID_DOCS.includes(d)) : [],
+        age,
+        email
+    };
+    if (!Number.isInteger(age) || age < 18 || age > 110) return res.status(400).json({ error: 'age' });
+    if (!user.firstName || !user.lastName || !user.nationality || !user.residence) return res.status(400).json({ error: 'identity' });
+    if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'email' });
+    if (password.length < 8 || password.length > 128) return res.status(400).json({ error: 'password' });
+    if (b.consent !== true) return res.status(400).json({ error: 'consent' });
     try {
-        const response = await fetch(url, { signal: AbortSignal.timeout(7000) });
-        if (!response.ok) return null;
-        const data = await response.json();
-        if (!Array.isArray(data) || !Array.isArray(data[0])) return null;
-        return {
-            text: data[0].map(part => (part && part[0]) ? part[0] : '').join(''),
-            detected: typeof data[2] === 'string' ? data[2] : null
-        };
+        if (await User.findOne({ email }).lean()) return res.status(409).json({ error: 'exists' });
+        const created = await User.create({ ...user, passHash: await hashPw(password) });
+        await startSession(req, res, created._id);
+        res.json({ user: publicUser(created.toObject()) });
     } catch (e) {
-        return null;
+        res.status(500).json({ error: 'save' });
     }
+});
+
+app.post('/api/auth/login', limiter(12, 10 * 60 * 1000), async (req, res) => {
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
+    const email = cut(req.body && req.body.email, 120).toLowerCase();
+    const password = String((req.body && req.body.password) || '');
+    try {
+        const u = await User.findOne({ email }).lean();
+        const ok = u ? await checkPw(password, u.passHash) : false;
+        if (!ok) return res.status(401).json({ error: 'credentials' });
+        if (u.banned) return res.status(403).json({ error: 'banned' });
+        await startSession(req, res, u._id);
+        res.json({ user: publicUser(u) });
+    } catch (e) {
+        res.status(500).json({ error: 'login' });
+    }
+});
+
+app.post('/api/auth/logout', async (req, res) => {
+    const token = readCookie(req, 'vero_sid');
+    if (token && dbReady()) await Session.deleteOne({ th: sha(token) }).catch(() => { });
+    setSessionCookie(req, res, '', 0);
+    res.json({ success: true });
+});
+
+app.get('/api/me', (req, res) => res.json({ user: req.user ? publicUser(req.user) : null }));
+
+function decodeImage(dataUrl) {
+    const m = /^data:image\/(webp|jpeg|png);base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+    if (!m) return null;
+    const buf = Buffer.from(m[2], 'base64');
+    if (buf.length < 200 || buf.length > 230000) return null;
+    const ok = m[1] === 'webp'
+        ? buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP'
+        : m[1] === 'jpeg' ? buf[0] === 0xFF && buf[1] === 0xD8 : buf.slice(1, 4).toString() === 'PNG';
+    return ok ? { buf, type: 'image/' + m[1] } : null;
 }
 
-async function pool(items, limit, fn) {
-    const out = new Array(items.length);
-    let i = 0;
-    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
-        while (i < items.length) {
-            const k = i++;
-            out[k] = await fn(items[k]);
+app.post('/api/media', requireUser, limiter(30, 60 * 60 * 1000), async (req, res) => {
+    const kind = req.body && req.body.kind === 'cover' ? 'cover' : 'avatar';
+    const img = decodeImage(req.body && req.body.dataUrl);
+    if (!img) return res.status(400).json({ error: 'image' });
+    try {
+        const count = await Media.countDocuments({ owner: req.user._id });
+        if (count >= 40) return res.status(429).json({ error: 'quota' });
+        const doc = await Media.create({ owner: req.user._id, kind, contentType: img.type, data: img.buf });
+        res.json({ id: String(doc._id), url: '/media/' + doc._id });
+    } catch (e) {
+        res.status(500).json({ error: 'save' });
+    }
+});
+
+app.get('/media/:id', async (req, res) => {
+    if (!isHexId(req.params.id) || !dbReady()) return res.status(404).end();
+    try {
+        const m = await Media.findById(req.params.id).lean();
+        if (!m) return res.status(404).end();
+        res.set('Content-Type', m.contentType);
+        res.set('Cache-Control', 'public, max-age=31536000, immutable');
+        res.set('X-Content-Type-Options', 'nosniff');
+        res.send(Buffer.from(m.data.buffer ? m.data.buffer : m.data));
+    } catch (e) {
+        res.status(404).end();
+    }
+});
+
+app.patch('/api/me', requireUser, async (req, res) => {
+    const b = req.body || {};
+    const set = {};
+    try {
+        if (b.removeAvatar) {
+            if (req.user.avatarId) await Media.deleteOne({ _id: req.user.avatarId, owner: req.user._id }).catch(() => { });
+            set.avatarId = '';
+        } else if (b.avatarId) {
+            if (!isHexId(b.avatarId)) return res.status(400).json({ error: 'media' });
+            const m = await Media.findOne({ _id: b.avatarId, owner: req.user._id, kind: 'avatar' }).lean();
+            if (!m) return res.status(400).json({ error: 'media' });
+            if (req.user.avatarId && req.user.avatarId !== b.avatarId) await Media.deleteOne({ _id: req.user.avatarId, owner: req.user._id }).catch(() => { });
+            set.avatarId = b.avatarId;
         }
-    }));
+        if (b.nationality) set.nationality = cut(b.nationality, 80);
+        if (b.residence) set.residence = cut(b.residence, 80);
+        const u = await User.findByIdAndUpdate(req.user._id, set, { new: true }).lean();
+        res.json({ user: publicUser(u) });
+    } catch (e) {
+        res.status(500).json({ error: 'save' });
+    }
+});
+
+async function purgeArticle(a) {
+    if (a.coverId && isHexId(a.coverId)) await Media.deleteOne({ _id: a.coverId }).catch(() => { });
+    await Article.deleteOne({ _id: a._id });
+}
+
+app.delete('/api/me', requireUser, limiter(5, 60 * 60 * 1000), async (req, res) => {
+    const ok = await checkPw(String((req.body && req.body.password) || ''), req.user.passHash);
+    if (!ok) return res.status(401).json({ error: 'credentials' });
+    try {
+        const arts = await Article.find({ userId: req.user._id }).lean();
+        for (const a of arts) await purgeArticle(a);
+        await Media.deleteMany({ owner: req.user._id });
+        await Session.deleteMany({ userId: req.user._id });
+        await User.deleteOne({ _id: req.user._id });
+        setSessionCookie(req, res, '', 0);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'delete' });
+    }
+});
+
+function authorOf(a) {
+    const u = a.userId && a.userId.firstName ? a.userId : null;
+    return {
+        authorName: u ? u.firstName + ' ' + String(u.lastName || '').charAt(0).toUpperCase() + '.' : 'VERO',
+        nationality: u ? u.nationality : '',
+        avatarUrl: u && u.avatarId ? '/media/' + u.avatarId : null,
+        verified: !!(u && u.verified)
+    };
+}
+
+function publicArticle(a, full) {
+    const out = {
+        id: String(a._id),
+        slug: a.slug,
+        title: a.title,
+        summary: a.summary,
+        category: a.category,
+        language: a.language,
+        readMinutes: a.readMinutes,
+        coverUrl: a.coverId ? '/media/' + a.coverId : null,
+        publishedAt: a.publishedAt,
+        ...authorOf(a)
+    };
+    if (full) out.body = a.body;
     return out;
 }
 
-async function translateTexts(texts, lang, source = 'en') {
-    const target = SUPPORTED_LANGS[lang];
-    if (!target) return texts;
-    const src = source || 'auto';
-    const out = new Array(texts.length);
-    const pending = [];
-    texts.forEach((text, i) => {
-        if (!text || !String(text).trim()) {
-            out[i] = text;
-            return;
-        }
-        const hit = translationCache.get(`${src}|${target}|${text}`);
-        if (hit !== undefined) out[i] = hit;
-        else pending.push(i);
-    });
-    if (pending.length) {
-        const list = pending.map(i => String(texts[i]));
-        let results = new Array(list.length).fill(null);
-        const key = process.env.GOOGLE_TRANSLATE_API_KEY;
-        if (key) results = await officialBatch(list, target, source, key);
-        const missing = results.map((r, k) => (r ? -1 : k)).filter(k => k >= 0);
-        if (missing.length) {
-            const free = await pool(missing, 6, k => freeOne(list[k], target, source));
-            missing.forEach((k, n) => { results[k] = free[n]; });
-        }
-        pending.forEach((index, k) => {
-            const value = results[k] && results[k].text;
-            if (value) {
-                cacheTranslation(`${src}|${target}|${texts[index]}`, value);
-                out[index] = value;
-            } else {
-                out[index] = texts[index];
-            }
+const AUTHOR_FIELDS = 'firstName lastName nationality avatarId verified';
+
+function chunkParagraph(p, max = 1200) {
+    if (p.length <= max) return [p];
+    const parts = [];
+    let rest = p;
+    while (rest.length > max) {
+        let at = rest.lastIndexOf('. ', max);
+        if (at < max * 0.4) at = rest.lastIndexOf(' ', max);
+        if (at < 1) at = max;
+        parts.push(rest.slice(0, at + 1).trim());
+        rest = rest.slice(at + 1).trim();
+    }
+    if (rest) parts.push(rest);
+    return parts;
+}
+
+async function localizeArticle(item, lang) {
+    if (!SUPPORTED_LANGS[lang] || lang === item.language) return item;
+    const source = SUPPORTED_LANGS[item.language] || null;
+    const flat = [item.title, item.summary];
+    const map = [];
+    if (item.body !== undefined) {
+        item.body.split(/\n{2,}/).forEach(p => {
+            const pieces = chunkParagraph(p.trim());
+            map.push({ start: flat.length, count: pieces.length });
+            pieces.forEach(x => flat.push(x));
         });
     }
+    const tr = await translator.translateTexts(flat, lang, source);
+    if (!tr[0]) return item;
+    const out = { ...item, title: tr[0], summary: tr[1] || item.summary, translatedFrom: item.language };
+    if (item.body !== undefined) {
+        out.body = map.map(m => tr.slice(m.start, m.start + m.count).map((x, k) => x || flat[m.start + k]).join(' ')).join('\n\n');
+    }
     return out;
 }
 
-const queryCache = new Map();
-async function queryToEnglish(q) {
-    const k = q.toLowerCase();
-    if (queryCache.has(k)) return queryCache.get(k);
-    let r = null;
-    const key = process.env.GOOGLE_TRANSLATE_API_KEY;
-    if (key) {
-        const o = await officialBatch([q], 'en', null, key);
-        r = o[0];
-    }
-    if (!r) r = await freeOne(q, 'en', null);
-    const res = { text: r && r.text ? r.text : q, detected: r ? normalizeLang(r.detected) : null };
-    if (queryCache.size > 1500) queryCache.delete(queryCache.keys().next().value);
-    queryCache.set(k, res);
-    return res;
-}
-
-function decideLang(q, english, detected, ui) {
-    const script = scriptLang(q);
-    const lang = detected || script;
-    if (!lang) return ui;
-    if (lang === 'en') {
-        const words = q.trim().split(/\s+/).length;
-        return words >= 2 && !script ? 'en' : ui;
-    }
-    if (!script && english.trim().toLowerCase() === q.trim().toLowerCase()) return ui;
-    return lang;
-}
-
-const STOP_WORDS = new Set(['the', 'and', 'for', 'with', 'from', 'about', 'into', 'over', 'that', 'this', 'news', 'latest']);
-
-const CATEGORY_TERMS = {
-    military: ['military', 'defense', 'troops', 'missile', 'navy', 'army', 'weapons', 'drone', 'airstrike', 'nato'],
-    economy: ['economy', 'sanctions', 'trade', 'tariffs', 'inflation', 'oil', 'markets', 'currency', 'gdp'],
-    diplomacy: ['diplomacy', 'summit', 'talks', 'treaty', 'envoy', 'ministers', 'ceasefire', 'negotiations', 'embassy']
-};
-
-const GEO_PATTERN = /geopolit|diplomat|sanction|military|defen[cs]e|troops|missile|navy|army|\bwar\b|conflict|ceasefire|treaty|summit|nato|security council|foreign (policy|minister)|embassy|alliance|nuclear|tariff|border|insurg|coup|junta|ukrain|russia|china|taiwan|iran|israel|gaza|syria|korea|sahel|brics|opec|airstrike|drone/i;
-
-const DEFAULT_TOPICS = ['geopolitics', 'global defense', 'international diplomacy', 'sanctions policy', 'global security', 'strategic alliance'];
-
-function tokenize(text) {
-    return [...new Set(
-        text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(t => t.length >= 3 && !STOP_WORDS.has(t))
-    )].slice(0, 8);
-}
-
-function scoreArticle(art, terms) {
-    const title = (art.title || '').toLowerCase();
-    const desc = (art.description || '').toLowerCase();
-    let score = 0;
-    for (const term of terms) {
-        const re = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-        if (re.test(title)) score += 4;
-        if (re.test(desc)) score += 2;
-    }
-    if (GEO_PATTERN.test(title)) score += 2;
-    if (GEO_PATTERN.test(desc)) score += 1;
-    if (art.image) score += 0.5;
-    return score;
-}
-
-const MAX_SOURCE_PAGES = 6;
-const CACHE_TTL = 10 * 60 * 1000;
-const MAX_CACHE_ENTRIES = 80;
-const RANGE_HOURS = { '24h': 24, '7d': 168, '30d': 720 };
-const newsCache = new Map();
-
-async function fetchGNewsPage(searchQuery, page, from, apiKey) {
-    let url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=10&in=title,description&apikey=${apiKey}`;
-    if (page > 1) url += `&page=${page}`;
-    if (from) url += `&from=${encodeURIComponent(from)}`;
+app.get('/api/news', limiter(40, 60 * 1000), async (req, res) => {
+    const q = req.query.q ? String(req.query.q).trim().slice(0, 120) : '';
+    let vars = [];
+    try { vars = JSON.parse(req.query.vars || '[]'); } catch (e) { vars = []; }
     try {
-        const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
-        if (!response.ok) return null;
-        const data = await response.json();
-        return data && Array.isArray(data.articles) ? data : null;
+        const result = await search.search({
+            q,
+            category: String(req.query.category || 'all').toLowerCase(),
+            range: String(req.query.range || 'all'),
+            page: parseInt(req.query.page, 10) || 1,
+            size: Math.min(Math.max(parseInt(req.query.size, 10) || 9, 1), 30),
+            uiLang: SUPPORTED_LANGS[req.query.lang] ? req.query.lang : 'en',
+            detect: req.query.detect === '1',
+            client: req.query.eng ? { english: String(req.query.eng), detected: String(req.query.det || ''), vars: Array.isArray(vars) ? vars : [] } : null
+        });
+        res.json(result);
     } catch (e) {
-        return null;
+        res.status(500).json({ error: 'Failed to fetch live intelligence data' });
     }
-}
+});
 
-function rankArticles(rawArticles, queryTerms) {
-    const seenTitles = new Set();
-    const seenImages = new Set();
-    const candidates = [];
-    for (const art of rawArticles) {
-        const source = matchSource(art.source && art.source.url ? art.source.url : art.url);
-        if (!source) continue;
-        const rawTitle = art.title || 'Untitled Report';
-        const normalizedTitle = rawTitle.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 35);
-        if (seenTitles.has(normalizedTitle)) continue;
-        seenTitles.add(normalizedTitle);
-        let image = art.image && /^https?:\/\//.test(art.image) ? art.image : null;
-        if (image && seenImages.has(image)) image = null;
-        if (image) seenImages.add(image);
-        const article = {
-            title: rawTitle,
-            description: art.description || '',
-            url: art.url || '#',
-            image,
-            publishedAt: art.publishedAt || new Date().toISOString(),
-            source: source.name
-        };
-        const score = scoreArticle(article, queryTerms);
-        if (score > 0) candidates.push({ article, score });
-    }
-    candidates.sort((x, y) => y.score - x.score || new Date(y.article.publishedAt) - new Date(x.article.publishedAt));
-    return candidates.map(c => c.article);
-}
-
-async function getRankedArticles(searchQuery, queryTerms, range, apiKey) {
-    const cacheKey = `${searchQuery}|${range}`;
-    const cached = newsCache.get(cacheKey);
-    if (cached && cached.expires > Date.now()) return cached.articles;
-    const hours = RANGE_HOURS[range];
-    const from = hours ? new Date(Math.floor((Date.now() - hours * 3600000) / 3600000) * 3600000).toISOString() : null;
-    const first = await fetchGNewsPage(searchQuery, 1, from, apiKey);
-    if (!first) return null;
-    const collected = [...first.articles];
-    const total = first.totalArticles || collected.length;
-    for (let p = 2; p <= MAX_SOURCE_PAGES && collected.length < total; p++) {
-        const next = await fetchGNewsPage(searchQuery, p, from, apiKey);
-        if (!next || next.articles.length === 0) break;
-        collected.push(...next.articles);
-    }
-    const articles = rankArticles(collected, queryTerms);
-    if (newsCache.size >= MAX_CACHE_ENTRIES) newsCache.delete(newsCache.keys().next().value);
-    newsCache.set(cacheKey, { articles, expires: Date.now() + CACHE_TTL });
-    return articles;
-}
-
-async function localizeArticles(articles, lang) {
-    if (lang === 'en' || !articles.length) return articles;
-    const texts = [];
-    articles.forEach(art => {
-        texts.push(art.title === 'Untitled Report' ? '' : art.title);
-        texts.push(art.description);
-    });
-    const translated = await translateTexts(texts, lang, 'en');
-    return articles.map((art, i) => ({
-        ...art,
-        title: translated[i * 2] || art.title,
-        description: translated[i * 2 + 1] || art.description
-    }));
-}
-
-app.get('/ping', (req, res) => res.status(200).send('OK'));
-
-app.post('/api/translate', limiter(60, 60 * 1000), async (req, res) => {
-    const { texts, lang } = req.body || {};
+app.post('/api/translate', limiter(90, 60 * 1000), async (req, res) => {
+    const { texts, lang, auto } = req.body || {};
     if (!SUPPORTED_LANGS[lang] || !Array.isArray(texts) || texts.length === 0 || texts.length > 150) {
         return res.status(400).json({ error: 'Invalid request' });
     }
@@ -428,7 +497,7 @@ app.post('/api/translate', limiter(60, 60 * 1000), async (req, res) => {
     }
     if (total > 40000) return res.status(413).json({ error: 'Payload too large' });
     try {
-        const translations = await translateTexts(texts, lang, 'en');
+        const translations = await translator.translateTexts(texts, lang, auto ? null : 'en');
         res.json({ translations });
     } catch (e) {
         res.status(500).json({ error: 'Translation failed' });
@@ -439,51 +508,10 @@ app.get('/api/sources', (req, res) => {
     res.json({ sources: TRUSTED_SOURCES.map(s => ({ name: s.name, region: s.region, domain: s.domains[0] })) });
 });
 
-app.get('/api/news', limiter(40, 60 * 1000), async (req, res) => {
-    const rawQuery = req.query.q ? String(req.query.q).trim().slice(0, 120) : '';
-    const category = String(req.query.category || 'all').toLowerCase();
-    const range = RANGE_HOURS[req.query.range] ? req.query.range : 'all';
-    const size = Math.min(Math.max(parseInt(req.query.size, 10) || 9, 1), 30);
-    const requestedPage = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const uiLang = SUPPORTED_LANGS[req.query.lang] ? req.query.lang : 'en';
-    const detect = req.query.detect === '1';
-    const apiKey = process.env.GNEWS_API_KEY;
-
-    if (!apiKey) return res.status(500).json({ error: 'API key is missing' });
-
-    try {
-        let english = rawQuery || DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)];
-        let lang = uiLang;
-        if (rawQuery) {
-            const d = await queryToEnglish(rawQuery);
-            english = d.text || rawQuery;
-            if (detect) lang = decideLang(rawQuery, english, d.detected, uiLang);
-        }
-
-        const terms = tokenize(english);
-        const queryTerms = terms.length ? terms : [english.replace(/["()]/g, '')];
-        let searchQuery = queryTerms.join(' OR ');
-        if (CATEGORY_TERMS[category]) {
-            searchQuery = `(${searchQuery}) AND (${CATEGORY_TERMS[category].join(' OR ')})`;
-        } else if (queryTerms.length === 1 && queryTerms[0].length >= 3) {
-            searchQuery = `(${searchQuery}) AND (military OR geopolitics OR election OR economy OR conflict OR sanction OR crisis OR government OR policy)`;
-        }
-
-        const ranked = await getRankedArticles(searchQuery, queryTerms, range, apiKey);
-        if (!ranked) return res.json({ articles: [], page: 1, totalPages: 1, total: 0, lang, queryEnglish: english });
-
-        const totalPages = Math.max(1, Math.ceil(ranked.length / size));
-        const page = Math.min(requestedPage, totalPages);
-        const articles = await localizeArticles(ranked.slice((page - 1) * size, page * size), lang);
-        res.json({ articles, page, totalPages, total: ranked.length, lang, queryEnglish: english });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch live intelligence data' });
-    }
-});
+app.get('/api/health/translate', async (req, res) => res.json(await translator.health()));
+app.get('/api/health/feeds', (req, res) => res.json(search.feedHealth()));
 
 const FEEDBACK_TOPICS = ['feature', 'bug', 'data', 'source', 'translation', 'press', 'other'];
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const cut = (v, n) => String(v || '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, n);
 
 app.post('/api/feedback', limiter(5, 10 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
@@ -511,64 +539,10 @@ app.post('/api/feedback', limiter(5, 10 * 60 * 1000), async (req, res) => {
 });
 
 const ARTICLE_CATEGORIES = ['diplomacy', 'military', 'economy', 'regional', 'analysis', 'opinion'];
-const ID_DOCS = ['passport', 'drivers_license', 'national_id'];
 
 function slugify(title) {
     const base = title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60);
     return (base || 'article') + '-' + crypto.randomBytes(3).toString('hex');
-}
-
-function publicArticle(a, full) {
-    const first = a.author.firstName;
-    const last = a.author.lastName;
-    const out = {
-        slug: a.slug,
-        title: a.title,
-        summary: a.summary,
-        category: a.category,
-        language: a.language,
-        readMinutes: a.readMinutes,
-        authorName: `${first} ${last.charAt(0).toUpperCase()}.`,
-        nationality: a.author.nationality,
-        publishedAt: a.publishedAt
-    };
-    if (full) out.body = a.body;
-    return out;
-}
-
-function chunkParagraph(p, max = 1200) {
-    if (p.length <= max) return [p];
-    const parts = [];
-    let rest = p;
-    while (rest.length > max) {
-        let cutAt = rest.lastIndexOf('. ', max);
-        if (cutAt < max * 0.4) cutAt = rest.lastIndexOf(' ', max);
-        if (cutAt < 1) cutAt = max;
-        parts.push(rest.slice(0, cutAt + 1).trim());
-        rest = rest.slice(cutAt + 1).trim();
-    }
-    if (rest) parts.push(rest);
-    return parts;
-}
-
-async function localizeArticle(item, lang) {
-    if (!SUPPORTED_LANGS[lang] || lang === item.language) return item;
-    const source = SUPPORTED_LANGS[item.language] || null;
-    const flat = [item.title, item.summary];
-    const map = [];
-    if (item.body !== undefined) {
-        item.body.split(/\n{2,}/).forEach(p => {
-            const pieces = chunkParagraph(p.trim());
-            map.push({ start: flat.length, count: pieces.length });
-            pieces.forEach(x => flat.push(x));
-        });
-    }
-    const tr = await translateTexts(flat, lang, source);
-    const out = { ...item, title: tr[0], summary: tr[1], translatedFrom: item.language };
-    if (item.body !== undefined) {
-        out.body = map.map(m => tr.slice(m.start, m.start + m.count).join(' ')).join('\n\n');
-    }
-    return out;
 }
 
 app.get('/api/articles', limiter(60, 60 * 1000), async (req, res) => {
@@ -580,7 +554,7 @@ app.get('/api/articles', limiter(60, 60 * 1000), async (req, res) => {
     const lang = SUPPORTED_LANGS[req.query.lang] ? req.query.lang : null;
     try {
         const total = await Article.countDocuments(filter);
-        const docs = await Article.find(filter).sort({ publishedAt: -1 }).skip((page - 1) * size).limit(size).lean();
+        const docs = await Article.find(filter).sort({ publishedAt: -1 }).skip((page - 1) * size).limit(size).populate('userId', AUTHOR_FIELDS).lean();
         let articles = docs.map(d => publicArticle(d, false));
         if (lang) articles = await Promise.all(articles.map(a => localizeArticle(a, lang)));
         res.json({ articles, page, totalPages: Math.max(1, Math.ceil(total / size)), total });
@@ -592,7 +566,7 @@ app.get('/api/articles', limiter(60, 60 * 1000), async (req, res) => {
 app.get('/api/articles/:slug', limiter(60, 60 * 1000), async (req, res) => {
     if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
     try {
-        const doc = await Article.findOne({ slug: req.params.slug, status: 'approved' }).lean();
+        const doc = await Article.findOne({ slug: req.params.slug, status: 'approved' }).populate('userId', AUTHOR_FIELDS).lean();
         if (!doc) return res.status(404).json({ error: 'not_found' });
         const lang = SUPPORTED_LANGS[req.query.lang] ? req.query.lang : null;
         let item = publicArticle(doc, true);
@@ -603,24 +577,15 @@ app.get('/api/articles/:slug', limiter(60, 60 * 1000), async (req, res) => {
     }
 });
 
-app.post('/api/articles', limiter(3, 60 * 60 * 1000), async (req, res) => {
+app.get('/api/me/articles', requireUser, async (req, res) => {
+    const docs = await Article.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ articles: docs.map(d => ({ id: String(d._id), slug: d.slug, title: d.title, status: d.status, createdAt: d.createdAt })) });
+});
+
+app.post('/api/articles', requireUser, limiter(8, 60 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
     if (b.website) return res.status(200).json({ success: true });
-    const a = b.author || {};
     const x = b.article || {};
-    const age = parseInt(a.age, 10);
-    if (!Number.isInteger(age) || age < 18 || age > 110) return res.status(400).json({ error: 'age' });
-    const author = {
-        firstName: cut(a.firstName, 60),
-        lastName: cut(a.lastName, 60),
-        age,
-        nationality: cut(a.nationality, 80),
-        residence: cut(a.residence, 80),
-        email: cut(a.email, 120),
-        idDocs: Array.isArray(a.idDocs) ? a.idDocs.filter(d => ID_DOCS.includes(d)) : []
-    };
-    if (!author.firstName || !author.lastName || !author.nationality || !author.residence) return res.status(400).json({ error: 'identity' });
-    if (!EMAIL_RE.test(author.email)) return res.status(400).json({ error: 'email' });
     if (b.consent !== true) return res.status(400).json({ error: 'consent' });
     const title = cut(x.title, 140);
     const summary = cut(x.summary, 320);
@@ -630,53 +595,110 @@ app.post('/api/articles', limiter(3, 60 * 60 * 1000), async (req, res) => {
     if (title.length < 10 || summary.length < 40 || body.length < 600 || body.length > 20000) return res.status(400).json({ error: 'content' });
     if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
     try {
+        let coverId = '';
+        if (x.coverId) {
+            if (!isHexId(x.coverId)) return res.status(400).json({ error: 'media' });
+            const m = await Media.findOne({ _id: x.coverId, owner: req.user._id, kind: 'cover' }).lean();
+            if (!m) return res.status(400).json({ error: 'media' });
+            coverId = x.coverId;
+        }
+        const admin = isAdmin(req.user);
+        if (!admin && (await Article.countDocuments({ userId: req.user._id, status: 'pending' })) >= 5) return res.status(429).json({ error: 'pending' });
         const words = body.split(/\s+/).length;
         const cjk = (body.match(/[\u4E00-\u9FFF]/g) || []).length;
-        await new Article({
+        await Article.create({
             slug: slugify(title),
             title,
             summary,
             body,
             category,
             language,
+            coverId,
+            userId: req.user._id,
             readMinutes: Math.max(1, Math.round((words + cjk / 2) / 200)),
-            author
-        }).save();
-        res.status(200).json({ success: true });
+            status: admin ? 'approved' : 'pending',
+            publishedAt: admin ? new Date() : undefined
+        });
+        res.json({ success: true, status: admin ? 'approved' : 'pending' });
     } catch (e) {
         res.status(500).json({ error: 'save' });
     }
 });
 
-function requireAdmin(req, res, next) {
-    const expected = process.env.ADMIN_TOKEN || '';
-    const given = String(req.get('x-admin-token') || '');
-    const a = Buffer.from(expected);
-    const g = Buffer.from(given);
-    if (!expected || a.length !== g.length || !crypto.timingSafeEqual(a, g)) return res.status(401).json({ error: 'unauthorized' });
-    next();
-}
+app.delete('/api/articles/:id', requireUser, async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    try {
+        const a = await Article.findById(req.params.id).lean();
+        if (!a) return res.status(404).json({ error: 'not_found' });
+        if (String(a.userId) !== String(req.user._id) && !isAdmin(req.user)) return res.status(403).json({ error: 'forbidden' });
+        await purgeArticle(a);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'delete' });
+    }
+});
 
 app.get('/api/admin/articles', requireAdmin, async (req, res) => {
-    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
     const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
-    const docs = await Article.find({ status }).sort({ createdAt: -1 }).limit(100).lean();
-    res.json({ articles: docs });
+    const docs = await Article.find({ status }).sort({ createdAt: -1 }).limit(100).populate('userId').lean();
+    res.json({
+        articles: docs.map(d => ({
+            id: String(d._id),
+            slug: d.slug,
+            title: d.title,
+            summary: d.summary,
+            body: d.body,
+            category: d.category,
+            language: d.language,
+            coverUrl: d.coverId ? '/media/' + d.coverId : null,
+            status: d.status,
+            createdAt: d.createdAt,
+            author: d.userId ? {
+                id: String(d.userId._id),
+                name: d.userId.firstName + ' ' + d.userId.lastName,
+                email: d.userId.email,
+                age: d.userId.age,
+                nationality: d.userId.nationality,
+                residence: d.userId.residence,
+                idDocs: d.userId.idDocs || [],
+                verified: !!d.userId.verified,
+                banned: !!d.userId.banned,
+                avatarUrl: d.userId.avatarId ? '/media/' + d.userId.avatarId : null
+            } : null
+        }))
+    });
 });
 
 app.post('/api/admin/articles/:id/status', requireAdmin, async (req, res) => {
-    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
     const status = req.body && req.body.status;
-    if (!['approved', 'rejected', 'pending'].includes(status)) return res.status(400).json({ error: 'status' });
-    try {
-        const update = { status };
-        if (status === 'approved') update.publishedAt = new Date();
-        const doc = await Article.findByIdAndUpdate(req.params.id, update, { new: true }).lean();
-        if (!doc) return res.status(404).json({ error: 'not_found' });
-        res.json({ success: true, slug: doc.slug, status: doc.status });
-    } catch (e) {
-        res.status(400).json({ error: 'id' });
+    if (!isHexId(req.params.id) || !['approved', 'rejected', 'pending'].includes(status)) return res.status(400).json({ error: 'status' });
+    const update = { status };
+    if (status === 'approved') update.publishedAt = new Date();
+    const doc = await Article.findByIdAndUpdate(req.params.id, update, { new: true }).lean();
+    if (!doc) return res.status(404).json({ error: 'not_found' });
+    res.json({ success: true });
+});
+
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+    const q = cut(req.query.q, 80);
+    const re = q ? new RegExp(escapeRe(q), 'i') : null;
+    const filter = re ? { $or: [{ email: re }, { lastName: re }, { firstName: re }] } : {};
+    const docs = await User.find(filter).sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ users: docs.map(u => ({ ...publicUser(u), banned: !!u.banned, createdAt: u.createdAt })) });
+});
+
+app.post('/api/admin/users/:id', requireAdmin, async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    const set = {};
+    if (typeof req.body.banned === 'boolean') set.banned = req.body.banned;
+    if (typeof req.body.verified === 'boolean') set.verified = req.body.verified;
+    const u = await User.findByIdAndUpdate(req.params.id, set, { new: true }).lean();
+    if (!u) return res.status(404).json({ error: 'not_found' });
+    if (set.banned) {
+        await Article.updateMany({ userId: u._id, status: { $ne: 'rejected' } }, { status: 'rejected' });
+        await Session.deleteMany({ userId: u._id });
     }
+    res.json({ success: true });
 });
 
 const articlesTemplate = fs.readFileSync(path.join(ROOT, 'articles.html'), 'utf8');
@@ -686,36 +708,38 @@ function jsonForScript(value) {
 }
 
 function renderArticlesPage(article) {
-    const url = article ? `${SITE}/articles/${encodeURIComponent(article.slug)}` : `${SITE}/articles`;
-    const title = article ? `${article.title} | VERO` : 'Articles & Analysis | VERO';
+    const url = article ? SITE + '/articles/' + encodeURIComponent(article.slug) : SITE + '/articles';
+    const title = article ? article.title + ' | VERO' : 'Articles & Analysis | VERO';
     const desc = article ? article.summary : 'Signed analysis and reporting from independent contributors on diplomacy, security and the global economy, published on VERO.';
+    const image = article && article.coverUrl ? SITE + article.coverUrl : SITE + '/assets/BANNER.png';
     const parts = [
-        `<title>${escapeHtml(title)}</title>`,
-        `<meta name="description" content="${escapeHtml(desc)}">`,
-        `<link rel="canonical" href="${url}">`,
-        `<meta property="og:type" content="${article ? 'article' : 'website'}">`,
-        `<meta property="og:site_name" content="VERO">`,
-        `<meta property="og:title" content="${escapeHtml(title)}">`,
-        `<meta property="og:description" content="${escapeHtml(desc)}">`,
-        `<meta property="og:url" content="${url}">`,
-        `<meta property="og:image" content="${SITE}/assets/BANNER.png">`,
-        `<meta name="twitter:card" content="summary_large_image">`
+        '<title>' + escapeHtml(title) + '</title>',
+        '<meta name="description" content="' + escapeHtml(desc) + '">',
+        '<link rel="canonical" href="' + url + '">',
+        '<meta property="og:type" content="' + (article ? 'article' : 'website') + '">',
+        '<meta property="og:site_name" content="VERO">',
+        '<meta property="og:title" content="' + escapeHtml(title) + '">',
+        '<meta property="og:description" content="' + escapeHtml(desc) + '">',
+        '<meta property="og:url" content="' + url + '">',
+        '<meta property="og:image" content="' + image + '">',
+        '<meta name="twitter:card" content="summary_large_image">'
     ];
     let ssr = '';
     if (article) {
-        parts.push(`<script type="application/ld+json">${jsonForScript({
+        parts.push('<script type="application/ld+json">' + jsonForScript({
             '@context': 'https://schema.org',
             '@type': 'NewsArticle',
             headline: article.title,
             description: article.summary,
             inLanguage: article.language,
             datePublished: article.publishedAt,
+            image: [image],
             author: { '@type': 'Person', name: article.authorName },
             publisher: { '@type': 'Organization', name: 'VERO', url: SITE + '/' },
             mainEntityOfPage: url
-        })}</script>`);
-        parts.push(`<script>window.__ARTICLE__=${jsonForScript(article)};</script>`);
-        ssr = `<article class="ssr-article"><h1>${escapeHtml(article.title)}</h1><p>${escapeHtml(article.summary)}</p>${article.body.split(/\n{2,}/).map(p => `<p>${escapeHtml(p)}</p>`).join('')}</article>`;
+        }) + '</script>');
+        parts.push('<script>window.__ARTICLE__=' + jsonForScript(article) + ';</script>');
+        ssr = '<article class="ssr-article"><h1>' + escapeHtml(article.title) + '</h1><p>' + escapeHtml(article.summary) + '</p>' + article.body.split(/\n{2,}/).map(p => '<p>' + escapeHtml(p) + '</p>').join('') + '</article>';
     }
     return articlesTemplate.replace('<!--SEO-->', parts.join('\n')).replace('<!--SSR-->', ssr);
 }
@@ -731,12 +755,18 @@ app.get('/articles/:slug', async (req, res) => {
     res.set('Cache-Control', 'no-cache');
     if (!dbReady()) return res.type('html').send(renderArticlesPage(null));
     try {
-        const doc = await Article.findOne({ slug: req.params.slug, status: 'approved' }).lean();
+        const doc = await Article.findOne({ slug: req.params.slug, status: 'approved' }).populate('userId', AUTHOR_FIELDS).lean();
         if (!doc) return res.status(404).type('html').send(renderArticlesPage(null));
         res.type('html').send(renderArticlesPage(publicArticle(doc, true)));
     } catch (e) {
         res.type('html').send(renderArticlesPage(null));
     }
+});
+
+app.get('/admin', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(path.join(ROOT, 'admin.html'));
 });
 
 app.get('/sitemap.xml', async (req, res) => {
@@ -749,7 +779,7 @@ app.get('/sitemap.xml', async (req, res) => {
         try {
             const docs = await Article.find({ status: 'approved' }).sort({ publishedAt: -1 }).limit(2000).select('slug publishedAt').lean();
             docs.forEach(d => urls.push({
-                loc: `${SITE}/articles/${encodeURIComponent(d.slug)}`,
+                loc: SITE + '/articles/' + encodeURIComponent(d.slug),
                 lastmod: (d.publishedAt || new Date()).toISOString().slice(0, 10),
                 freq: 'monthly',
                 priority: '0.6'
@@ -757,7 +787,7 @@ app.get('/sitemap.xml', async (req, res) => {
         } catch (e) { }
     }
     const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-        urls.map(u => `  <url>\n    <loc>${escapeHtml(u.loc)}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n    <changefreq>${u.freq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`).join('\n') +
+        urls.map(u => '  <url>\n    <loc>' + escapeHtml(u.loc) + '</loc>\n    <lastmod>' + u.lastmod + '</lastmod>\n    <changefreq>' + u.freq + '</changefreq>\n    <priority>' + u.priority + '</priority>\n  </url>').join('\n') +
         '\n</urlset>';
     res.set('Cache-Control', 'public, max-age=3600');
     res.type('application/xml').send(xml);
@@ -768,8 +798,17 @@ app.get(['/', '/index.html'], (req, res) => {
     res.sendFile(path.join(ROOT, 'index.html'));
 });
 
+app.get('/ping', (req, res) => res.status(200).send('OK'));
+
+app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    res.status(err.status === 413 ? 413 : 400).json({ error: 'bad_request' });
+});
+
 app.use((req, res) => {
     res.status(404).type('text/plain').send('Not Found');
 });
 
-app.listen(PORT);
+app.listen(PORT, () => {
+    search.warm();
+});
