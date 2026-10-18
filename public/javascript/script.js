@@ -43,21 +43,19 @@
         { label: 'UN Security Council', q: 'UN Security Council' }
     ];
 
-    const DEFAULT_TOPICS = ['geopolitics', 'global defense', 'international diplomacy', 'sanctions policy', 'global security', 'strategic alliance'];
     const picked = [...SUGGESTIONS].sort(() => 0.5 - Math.random()).slice(0, 3);
-    const defaultTopic = DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)];
 
     const WM = 'https://upload.wikimedia.org/wikipedia/commons/thumb/';
     const coverFallbacks = {
-        military: WM + 'b/b2/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG/960px-USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG',
-        economy: WM + 'd/df/Pudong_Shanghai_November_2017_panorama.jpg/960px-Pudong_Shanghai_November_2017_panorama.jpg',
-        diplomacy: WM + '4/4e/P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg/960px-P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg',
-        intel: WM + '0/08/NASA_Visible_Earth_satellite_map_of_Earth.jpg/960px-NASA_Visible_Earth_satellite_map_of_Earth.jpg'
+        military: WM + 'b/b2/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG/640px-USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG',
+        economy: WM + 'd/df/Pudong_Shanghai_November_2017_panorama.jpg/640px-Pudong_Shanghai_November_2017_panorama.jpg',
+        diplomacy: WM + '4/4e/P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg/640px-P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg',
+        intel: WM + '0/08/NASA_Visible_Earth_satellite_map_of_Earth.jpg/640px-NASA_Visible_Earth_satellite_map_of_Earth.jpg'
     };
 
     const PAGE_SIZE = 9;
     const RECENT_KEY = 'vero_recent';
-    const state = { activeQuery: defaultTopic, category: 'all', range: 'all', page: 1, switching: false, booted: false };
+    const state = { activeQuery: '', client: null, category: 'all', range: 'all', page: 1, switching: false, booted: false };
     let requestId = 0;
     let gridMode = 'loading';
     let currentData = [];
@@ -155,7 +153,7 @@
     }
 
     function proxiedImage(url) {
-        return 'https://wsrv.nl/?url=' + encodeURIComponent(url) + '&w=720&h=400&fit=cover&a=attention&output=webp&q=78';
+        return 'https://wsrv.nl/?url=' + encodeURIComponent(url) + '&w=600&h=340&fit=cover&a=attention&output=webp&q=78';
     }
 
     function attachCover(banner, sources, index) {
@@ -212,6 +210,34 @@
         return node;
     }
 
+    function shortDesc(item) {
+        return item.description.length > 150 ? item.description.slice(0, 150) : item.description;
+    }
+
+    async function translateCards() {
+        const cards = [...newsGrid.querySelectorAll('.card')];
+        const jobs = [];
+        cards.forEach((c, i) => {
+            const it = currentData[i];
+            if (it && it.lang && it.lang !== VT.lang) jobs.push({ c, it });
+        });
+        if (!jobs.length) return;
+        const mine = requestId;
+        const texts = [];
+        jobs.forEach(j => {
+            texts.push(j.it.title);
+            if (j.it.description) texts.push(shortDesc(j.it));
+        });
+        await VT.load(texts, VT.lang, true);
+        if (mine !== requestId) return;
+        jobs.forEach(j => {
+            const title = j.c.querySelector('.card-title');
+            const desc = j.c.querySelector('.card-desc');
+            if (title) title.textContent = VT.tx(j.it.title);
+            if (desc && j.it.description) desc.textContent = VT.tx(shortDesc(j.it)) + (j.it.description.length > 150 ? '...' : '');
+        });
+    }
+
     function renderCards(data) {
         newsGrid.innerHTML = '';
         if (!data || !data.length) {
@@ -238,7 +264,7 @@
             const img = item.image;
             const invalid = !img || !img.startsWith('http') || ['generic', 'business', 'placeholder', 'logo', 'avatar', 'default', 'icon', 'stock'].some(k => img.toLowerCase().includes(k));
             const sources = invalid ? [coverFallbacks[tag.key]] : [proxiedImage(img), img, coverFallbacks[tag.key]];
-            const desc = item.description ? (item.description.length > 150 ? item.description.slice(0, 150) + '...' : item.description) : T('fallbackDesc');
+            const desc = item.description ? shortDesc(item) + (item.description.length > 150 ? '...' : '') : T('fallbackDesc');
 
             const banner = el('div', 'card-banner loading');
             const tagEl = el('div', 'card-tag');
@@ -318,31 +344,52 @@
         resultsMeta.textContent = await VT.t('Showing ' + start + '-' + end + ' of ' + lastMeta.total + ' reports');
     }
 
+    async function requestNews(page, detect) {
+        const params = new URLSearchParams({
+            q: state.activeQuery,
+            category: state.category,
+            range: state.range,
+            lang: VT.lang,
+            page,
+            size: PAGE_SIZE
+        });
+        if (detect) params.set('detect', '1');
+        if (state.client) {
+            params.set('eng', state.client.english);
+            params.set('det', state.client.detected || '');
+            params.set('vars', JSON.stringify(state.client.vars || []));
+        }
+        const response = await fetch('/api/news?' + params);
+        if (!response.ok) throw new Error('status');
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        return data;
+    }
+
     async function fetchNews(opts) {
         const o = opts || {};
         const page = o.page || 1;
         const detect = !!o.detect;
         const id = ++requestId;
-        if (o.q !== undefined) state.activeQuery = o.q;
+        if (o.q !== undefined) {
+            state.activeQuery = o.q;
+            state.client = null;
+        }
         showMessage('loading');
         if (pagination) pagination.hidden = true;
         if (o.scroll) document.getElementById('intelligence')?.scrollIntoView({ behavior: 'smooth' });
         try {
-            const params = new URLSearchParams({
-                q: state.activeQuery,
-                category: state.category,
-                range: state.range,
-                lang: VT.lang,
-                page,
-                size: PAGE_SIZE
-            });
-            if (detect) params.set('detect', '1');
-            const response = await fetch('/api/news?' + params);
-            if (!response.ok) throw new Error('status');
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
+            let data = await requestNews(page, detect);
             if (id !== requestId) return;
-
+            if (data.needsExpansion && state.activeQuery) {
+                const ex = await VT.expandBrowser(state.activeQuery);
+                if (id !== requestId) return;
+                if (ex) {
+                    state.client = ex;
+                    data = await requestNews(page, detect);
+                    if (id !== requestId) return;
+                }
+            }
             if (detect && data.lang && data.lang !== VT.lang) {
                 state.switching = true;
                 const name = VT.LANGS[data.lang].name;
@@ -352,13 +399,13 @@
                 VT.t('Language switched to ' + name + ' to match your search').then(msg => VT.toast(msg));
             }
             await preload();
-
             state.page = data.page || 1;
             currentData = data.articles || [];
             renderCards(currentData);
             renderPagination(state.page, data.totalPages || 1);
             lastMeta = data.total ? { page: state.page, total: data.total } : null;
             renderMeta();
+            translateCards();
         } catch (e) {
             state.switching = false;
             if (id !== requestId) return;
@@ -380,14 +427,42 @@
         fetchNews({ q, scroll: true, detect: false });
     }
 
+    let popupTimer;
+
+    function hidePopup() {
+        const p = document.getElementById('searchPopup');
+        if (p) p.classList.remove('show');
+    }
+
+    function showPopup() {
+        const p = document.getElementById('searchPopup');
+        const bar = document.querySelector('.search-bar');
+        if (!p) return;
+        p.classList.add('show');
+        if (bar) {
+            bar.classList.remove('shake');
+            void bar.offsetWidth;
+            bar.classList.add('shake');
+        }
+        if (searchInput) searchInput.focus();
+        clearTimeout(popupTimer);
+        popupTimer = setTimeout(hidePopup, 3400);
+    }
+
     function runSearch() {
         const q = searchInput ? searchInput.value.trim() : '';
+        if (!q) {
+            showPopup();
+            return;
+        }
+        hidePopup();
         saveRecent(q);
         state.category = currentCategory();
-        fetchNews({ q: q || defaultTopic, scroll: true, detect: !!q });
+        fetchNews({ q, scroll: true, detect: true });
     }
 
     if (searchInput) {
+        searchInput.addEventListener('input', hidePopup);
         searchInput.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -531,6 +606,6 @@
         renderRecent();
         setInterval(setGreeting, 60000);
         state.booted = true;
-        fetchNews({ q: defaultTopic });
+        fetchNews({ q: '' });
     });
 })();
