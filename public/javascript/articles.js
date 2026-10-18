@@ -9,21 +9,36 @@
         showOriginal: 'Show original',
         showTranslation: 'Show translation',
         copied: 'Link copied to clipboard.',
-        share: 'Share',
-        needName: 'Please enter your first and last name.',
-        needAge: 'Please enter your age.',
-        minor: 'You must be 18 or older to contribute.',
-        badEmail: 'Please enter a valid email address.',
-        needCountry: 'Please enter your nationality and country of residence.',
         needTitle: 'The headline needs at least 10 characters.',
         needSummary: 'The summary needs at least 40 characters.',
         needBody: 'The article needs at least 600 characters.',
-        needConsent: 'Please tick all three confirmations.',
-        tooMany: 'Too many submissions. Please try again later.',
-        unavailable: 'Submissions are temporarily unavailable. Please try again later.',
+        needConsent: 'Please tick both confirmations.',
+        tooMany: 'Too many attempts. Please try again later.',
+        unavailable: 'The service is temporarily unavailable. Please try again later.',
         failed: 'Something went wrong. Please check your details and try again.',
         sending: 'Sending...',
         submitLabel: 'Submit for review',
+        badLogin: 'Incorrect email or password.',
+        banned: 'This account has been suspended.',
+        exists: 'An account with this email already exists.',
+        needName: 'Please enter your first and last name.',
+        needAge: 'Please enter your age.',
+        minor: 'You must be 18 or older to create an account.',
+        badEmail: 'Please enter a valid email address.',
+        shortPass: 'The password must have at least 8 characters.',
+        needCountry: 'Please enter your nationality and country of residence.',
+        needRegConsent: 'Please confirm that you are 18 or older and accept the terms.',
+        badImage: 'This image is not supported or is too large. Try a different one.',
+        pendingLimit: 'You already have 5 articles waiting for review.',
+        confirmDelete: 'Delete this article permanently?',
+        statusPending: 'Pending review',
+        statusApproved: 'Published',
+        statusRejected: 'Rejected',
+        noArticles: 'You have not written any articles yet.',
+        view: 'View',
+        remove: 'Delete',
+        wrongPassword: 'The password is incorrect.',
+        needPassword: 'Enter your password to confirm.',
         Diplomacy: 'Diplomacy',
         Military: 'Military',
         Economy: 'Economy',
@@ -35,21 +50,24 @@
     const CAT_ICONS = { diplomacy: 'ph-handshake', military: 'ph-crosshair', economy: 'ph-chart-line-up', regional: 'ph-map-trifold', analysis: 'ph-magnifying-glass', opinion: 'ph-chat-teardrop-text' };
     const CAT_LABEL = { diplomacy: 'Diplomacy', military: 'Military', economy: 'Economy', regional: 'Regional', analysis: 'Analysis', opinion: 'Opinion' };
     const DRAFT_KEY = 'vero_draft';
-
-    const views = { list: document.getElementById('view-list'), read: document.getElementById('view-read'), write: document.getElementById('view-write') };
+    const NAMES = ['list', 'read', 'auth', 'account', 'write'];
+    const views = {};
+    NAMES.forEach(n => { views[n] = document.getElementById('view-' + n); });
     const grid = document.getElementById('articlesGrid');
     const pager = document.getElementById('artPagination');
-    const state = { view: 'list', cat: 'all', page: 1, step: 1, booted: false };
+    const state = { view: 'list', cat: 'all', page: 1, step: 1, booted: false, after: 'write' };
     const read = { slug: null, original: null, translated: null, showing: 'original' };
+    const media = { regAvatar: null, cover: null };
     let listId = 0;
 
     const T = key => VT.s(TXT[key]);
     const preload = () => VT.load(Object.values(TXT));
     const $ = id => document.getElementById(id);
+    const user = () => VT.me.user;
 
     function show(name) {
         state.view = name;
-        Object.keys(views).forEach(k => { views[k].hidden = k !== name; });
+        NAMES.forEach(k => { views[k].hidden = k !== name; });
         window.scrollTo({ top: 0 });
     }
 
@@ -58,6 +76,15 @@
         if (cls) n.className = cls;
         if (text !== undefined) n.textContent = text;
         return n;
+    }
+
+    function avatarImg(url, cls) {
+        const img = node('img', cls || 'avatar-img');
+        img.alt = '';
+        img.width = 36;
+        img.height = 36;
+        img.src = url || VT.DEFAULT_AVATAR;
+        return img;
     }
 
     function fmtDate(iso) {
@@ -72,6 +99,91 @@
     function go(path) {
         history.pushState(null, '', path);
         route();
+    }
+
+    async function api(path, method, body) {
+        try {
+            const r = await fetch(path, {
+                method: method || 'GET',
+                credentials: 'same-origin',
+                headers: body ? { 'Content-Type': 'application/json' } : undefined,
+                body: body ? JSON.stringify(body) : undefined
+            });
+            let data = {};
+            try { data = await r.json(); } catch (e) { }
+            return { ok: r.ok, status: r.status, data };
+        } catch (e) {
+            return { ok: false, status: 0, data: {} };
+        }
+    }
+
+    function showError(el, text) {
+        el.textContent = text;
+        el.hidden = false;
+        return false;
+    }
+
+    function resizeImage(file, w, h, crop) {
+        return new Promise((resolve, reject) => {
+            if (!file || !/^image\//.test(file.type) || file.size > 15 * 1024 * 1024) {
+                reject(new Error('image'));
+                return;
+            }
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                let sx = 0;
+                let sy = 0;
+                let sw = img.width;
+                let sh = img.height;
+                let dw;
+                let dh;
+                if (crop) {
+                    dw = w;
+                    dh = h;
+                    const target = w / h;
+                    if (sw / sh > target) {
+                        sw = sh * target;
+                        sx = (img.width - sw) / 2;
+                    } else {
+                        sh = sw / target;
+                        sy = (img.height - sh) / 2;
+                    }
+                } else {
+                    const sc = Math.min(1, w / img.width, h / img.height);
+                    dw = Math.round(img.width * sc);
+                    dh = Math.round(img.height * sc);
+                }
+                const c = document.createElement('canvas');
+                c.width = dw;
+                c.height = dh;
+                c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
+                let q = 0.86;
+                let type = 'image/webp';
+                let out = c.toDataURL(type, q);
+                if (out.indexOf('data:image/webp') !== 0) {
+                    type = 'image/jpeg';
+                    out = c.toDataURL(type, q);
+                }
+                while (out.length * 0.75 > 200000 && q > 0.35) {
+                    q -= 0.1;
+                    out = c.toDataURL(type, q);
+                }
+                if (out.length * 0.75 > 225000) reject(new Error('big'));
+                else resolve(out);
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error('image'));
+            };
+            img.src = url;
+        });
+    }
+
+    async function uploadMedia(dataUrl, kind) {
+        const r = await api('/api/media', 'POST', { dataUrl, kind });
+        return r.ok ? r.data : null;
     }
 
     function message(cls, icon, text) {
@@ -114,6 +226,15 @@
                     go(card.getAttribute('href'));
                 });
                 const top = node('div', 'art-top');
+                if (a.coverUrl) {
+                    top.classList.add('has-cover');
+                    const cover = node('img', 'art-cover');
+                    cover.alt = '';
+                    cover.loading = 'lazy';
+                    cover.decoding = 'async';
+                    cover.src = a.coverUrl;
+                    top.appendChild(cover);
+                }
                 const tag = node('div', 'card-tag');
                 tag.appendChild(node('i', 'ph ' + (CAT_ICONS[a.category] || 'ph-globe')));
                 tag.appendChild(document.createTextNode(' ' + VT.s(CAT_LABEL[a.category] || 'Analysis')));
@@ -129,8 +250,9 @@
                 content.appendChild(s);
                 const foot = node('div', 'card-footer');
                 const by = node('div', 'art-by');
-                by.appendChild(node('span', 'avatar', (a.authorName || '?').charAt(0).toUpperCase()));
+                by.appendChild(avatarImg(a.avatarUrl));
                 by.appendChild(node('span', '', a.authorName + ' · ' + a.nationality));
+                if (a.verified) by.appendChild(node('i', 'ph-fill ph-seal-check verified-icon'));
                 const more = node('div', 'read-more', VT.s((a.readMinutes || 1) + ' min read'));
                 foot.appendChild(by);
                 foot.appendChild(more);
@@ -186,7 +308,15 @@
         tag.appendChild(document.createTextNode(' ' + VT.s(CAT_LABEL[a.category] || 'Analysis')));
         $('rdTitle').textContent = a.title;
         $('rdSummary').textContent = a.summary;
-        $('rdAvatar').textContent = (a.authorName || '?').charAt(0).toUpperCase();
+        const cover = $('rdCover');
+        if (a.coverUrl) {
+            cover.src = a.coverUrl;
+            cover.hidden = false;
+        } else {
+            cover.hidden = true;
+        }
+        $('rdAvatar').src = a.avatarUrl || VT.DEFAULT_AVATAR;
+        $('rdVerified').hidden = !a.verified;
         $('rdAuthor').textContent = a.authorName + ' · ' + a.nationality;
         $('rdMeta').textContent = fmtDate(a.publishedAt) + ' · ' + VT.s((a.readMinutes || 1) + ' min read');
         const body = $('rdBody');
@@ -240,6 +370,7 @@
             $('rdTitle').textContent = T('notFound');
             $('rdSummary').textContent = '';
             $('rdBody').innerHTML = '';
+            $('rdCover').hidden = true;
             $('rdNotice').hidden = true;
         }
     }
@@ -261,8 +392,212 @@
         } catch (e) { }
     });
 
+    function showAuth(after) {
+        state.after = after;
+        show('auth');
+        $('lError').hidden = true;
+        $('rError').hidden = true;
+    }
+
+    document.querySelectorAll('#authTabs button').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('#authTabs button').forEach(x => x.classList.toggle('active', x === b));
+            $('loginForm').hidden = b.dataset.tab !== 'login';
+            $('registerForm').hidden = b.dataset.tab !== 'register';
+        });
+    });
+
+    function afterAuth() {
+        go('/articles#' + state.after);
+    }
+
+    $('loginForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        await preload();
+        const err = $('lError');
+        err.hidden = true;
+        const email = $('lEmail').value.trim();
+        const password = $('lPass').value;
+        if (!email || !password) return showError(err, T('badLogin'));
+        const btn = $('lSubmit');
+        btn.disabled = true;
+        const r = await api('/api/auth/login', 'POST', { email, password });
+        btn.disabled = false;
+        if (r.ok) {
+            await VT.refreshMe();
+            $('lPass').value = '';
+            afterAuth();
+        } else if (r.status === 429) showError(err, T('tooMany'));
+        else if (r.status === 503) showError(err, T('unavailable'));
+        else if (r.data.error === 'banned') showError(err, T('banned'));
+        else showError(err, T('badLogin'));
+    });
+
+    function bindPhotoPicker(input, onData) {
+        input.addEventListener('change', async () => {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            try {
+                await onData(await resizeImage(file, 192, 192, true));
+            } catch (e) {
+                await preload();
+                VT.toast(T('badImage'), 'ph-warning');
+            }
+        });
+    }
+
+    function setRegAvatar(data) {
+        media.regAvatar = data;
+        $('regAvatarPreview').src = data || VT.DEFAULT_AVATAR;
+        $('regAvatarClear').hidden = !data;
+    }
+
+    bindPhotoPicker($('regAvatar'), async data => setRegAvatar(data));
+    $('regAvatarClear').addEventListener('click', () => setRegAvatar(null));
+    $('regAvatarPreview').src = VT.DEFAULT_AVATAR;
+
+    $('registerForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        await preload();
+        const err = $('rError');
+        err.hidden = true;
+        const age = parseInt($('rAge').value, 10);
+        if (!$('rFirst').value.trim() || !$('rLast').value.trim()) return showError(err, T('needName'));
+        if (!age) return showError(err, T('needAge'));
+        if (age < 18) return showError(err, T('minor'));
+        if (!EMAIL_RE.test($('rEmail').value.trim())) return showError(err, T('badEmail'));
+        if ($('rPass').value.length < 8) return showError(err, T('shortPass'));
+        if (!$('rNationality').value.trim() || !$('rResidence').value.trim()) return showError(err, T('needCountry'));
+        if (!$('rConsent').checked) return showError(err, T('needRegConsent'));
+        const btn = $('rSubmit');
+        btn.disabled = true;
+        const r = await api('/api/auth/register', 'POST', {
+            firstName: $('rFirst').value,
+            lastName: $('rLast').value,
+            age,
+            email: $('rEmail').value,
+            password: $('rPass').value,
+            nationality: $('rNationality').value,
+            residence: $('rResidence').value,
+            idDocs: [...document.querySelectorAll('#registerForm input[name="idDocs"]:checked')].map(x => x.value),
+            consent: true,
+            website: $('rWebsite').value
+        });
+        if (!r.ok) {
+            btn.disabled = false;
+            if (r.status === 429) return showError(err, T('tooMany'));
+            if (r.status === 503) return showError(err, T('unavailable'));
+            if (r.data.error === 'exists') return showError(err, T('exists'));
+            if (r.data.error === 'age') return showError(err, T('minor'));
+            if (r.data.error === 'password') return showError(err, T('shortPass'));
+            return showError(err, T('failed'));
+        }
+        if (media.regAvatar) {
+            const up = await uploadMedia(media.regAvatar, 'avatar');
+            if (up) await api('/api/me', 'PATCH', { avatarId: up.id });
+        }
+        btn.disabled = false;
+        $('registerForm').reset();
+        setRegAvatar(null);
+        await VT.refreshMe();
+        afterAuth();
+    });
+
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    async function showAccount() {
+        show('account');
+        await preload();
+        const u = user();
+        $('acAvatar').src = u.avatarUrl || VT.DEFAULT_AVATAR;
+        $('acName').textContent = u.firstName + ' ' + u.lastName;
+        $('acMeta').textContent = u.email + ' · ' + u.nationality;
+        $('acVerified').hidden = !u.verified;
+        $('acAdmin').hidden = !u.isAdmin;
+        $('acError').hidden = true;
+        const list = $('acArticles');
+        list.innerHTML = '';
+        const r = await api('/api/me/articles');
+        const items = r.ok ? r.data.articles || [] : [];
+        if (!items.length) {
+            list.appendChild(node('li', 'my-empty', T('noArticles')));
+            return;
+        }
+        items.forEach(a => {
+            const li = node('li', 'my-article');
+            const info = node('div', 'my-info');
+            const t = node('strong', '', a.title);
+            t.setAttribute('dir', 'auto');
+            info.appendChild(t);
+            const key = a.status === 'approved' ? 'statusApproved' : a.status === 'rejected' ? 'statusRejected' : 'statusPending';
+            info.appendChild(node('span', 'status-chip ' + a.status, T(key)));
+            li.appendChild(info);
+            const actions = node('div', 'my-actions');
+            if (a.status === 'approved') {
+                const v = node('a', 'link-btn', T('view'));
+                v.href = '/articles/' + encodeURIComponent(a.slug);
+                v.addEventListener('click', ev => {
+                    ev.preventDefault();
+                    go(v.getAttribute('href'));
+                });
+                actions.appendChild(v);
+            }
+            const d = node('button', 'link-btn danger', T('remove'));
+            d.type = 'button';
+            d.addEventListener('click', async () => {
+                if (!window.confirm(T('confirmDelete'))) return;
+                const res = await api('/api/articles/' + a.id, 'DELETE');
+                if (res.ok) showAccount();
+            });
+            actions.appendChild(d);
+            li.appendChild(actions);
+            list.appendChild(li);
+        });
+    }
+
+    bindPhotoPicker($('acPhoto'), async data => {
+        const up = await uploadMedia(data, 'avatar');
+        if (!up) throw new Error('upload');
+        await api('/api/me', 'PATCH', { avatarId: up.id });
+        await VT.refreshMe();
+        showAccount();
+    });
+
+    $('acRemovePhoto').addEventListener('click', async () => {
+        await api('/api/me', 'PATCH', { removeAvatar: true });
+        await VT.refreshMe();
+        showAccount();
+    });
+
+    $('acLogout').addEventListener('click', async () => {
+        await api('/api/auth/logout', 'POST', {});
+        await VT.refreshMe();
+        go('/articles');
+    });
+
+    $('acDelete').addEventListener('click', async () => {
+        await preload();
+        const err = $('acError');
+        err.hidden = true;
+        const pw = $('acDelPw').value;
+        if (!pw) return showError(err, T('needPassword'));
+        const r = await api('/api/me', 'DELETE', { password: pw });
+        if (r.ok) {
+            $('acDelPw').value = '';
+            await VT.refreshMe();
+            go('/articles');
+        } else showError(err, r.status === 401 ? T('wrongPassword') : T('failed'));
+    });
+
     function showWrite() {
         show('write');
+        const u = user();
+        $('rvAvatar').src = u.avatarUrl || VT.DEFAULT_AVATAR;
+        $('rvName').textContent = u.firstName + ' ' + String(u.lastName).charAt(0).toUpperCase() + '. · ' + u.nationality;
+        $('writeForm').hidden = false;
+        $('stepper').hidden = false;
+        $('wDone').hidden = true;
         setStep(1);
     }
 
@@ -274,42 +609,21 @@
             li.classList.toggle('active', s === n);
             li.classList.toggle('done', s < n);
         });
-        if (n === 3) {
-            const first = $('wFirst').value.trim();
-            const last = $('wLast').value.trim();
-            $('rvName').textContent = first + ' ' + last.charAt(0).toUpperCase() + '. · ' + $('wNationality').value.trim();
-        }
         $('wError').hidden = true;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function fail(text) {
-        const el = $('wError');
-        el.textContent = text;
-        el.hidden = false;
-        return false;
-    }
-
-    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
     function validate(step) {
+        const err = $('wError');
+        err.hidden = true;
         if (step === 1) {
-            if (!$('wFirst').value.trim() || !$('wLast').value.trim()) return fail(T('needName'));
-            const age = parseInt($('wAge').value, 10);
-            if (!age) return fail(T('needAge'));
-            if (age < 18) return fail(T('minor'));
-            if (!EMAIL_RE.test($('wEmail').value.trim())) return fail(T('badEmail'));
-            if (!$('wNationality').value.trim() || !$('wResidence').value.trim()) return fail(T('needCountry'));
-        }
-        if (step === 2) {
-            if ($('wTitle').value.trim().length < 10) return fail(T('needTitle'));
-            if ($('wSummary').value.trim().length < 40) return fail(T('needSummary'));
-            if ($('wBody').value.trim().length < 600) return fail(T('needBody'));
+            if ($('wTitle').value.trim().length < 10) return showError(err, T('needTitle'));
+            if ($('wSummary').value.trim().length < 40) return showError(err, T('needSummary'));
+            if ($('wBody').value.trim().length < 600) return showError(err, T('needBody'));
         }
         if (step === 3) {
-            if (!$('cAge').checked || !$('cOriginal').checked || !$('cTerms').checked) return fail(T('needConsent'));
+            if (!$('cOriginal').checked || !$('cTerms').checked) return showError(err, T('needConsent'));
         }
-        $('wError').hidden = true;
         return true;
     }
 
@@ -318,6 +632,28 @@
         if (validate(state.step)) setStep(state.step + 1);
     }));
     document.querySelectorAll('[data-prev]').forEach(b => b.addEventListener('click', () => setStep(state.step - 1)));
+
+    function setCover(data) {
+        media.cover = data;
+        const prev = $('coverPreview');
+        prev.hidden = !data;
+        if (data) prev.src = data;
+        $('coverDrop').hidden = !!data;
+        $('coverClear').hidden = !data;
+    }
+
+    $('wCover').addEventListener('change', async () => {
+        const file = $('wCover').files && $('wCover').files[0];
+        $('wCover').value = '';
+        if (!file) return;
+        try {
+            setCover(await resizeImage(file, 1280, 720, false));
+        } catch (e) {
+            await preload();
+            showError($('wError'), T('badImage'));
+        }
+    });
+    $('coverClear').addEventListener('click', () => setCover(null));
 
     function saveDraft() {
         try {
@@ -359,65 +695,69 @@
         e.preventDefault();
         await preload();
         if (!validate(1)) return setStep(1);
-        if (!validate(2)) return setStep(2);
         if (!validate(3)) return;
         const btn = $('wSubmit');
         const label = btn.querySelector('span');
         btn.disabled = true;
         label.removeAttribute('data-tr');
         label.textContent = T('sending');
-        try {
-            const r = await fetch('/api/articles', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    author: {
-                        firstName: $('wFirst').value,
-                        lastName: $('wLast').value,
-                        age: parseInt($('wAge').value, 10),
-                        nationality: $('wNationality').value,
-                        residence: $('wResidence').value,
-                        email: $('wEmail').value,
-                        idDocs: [...document.querySelectorAll('input[name="idDocs"]:checked')].map(x => x.value)
-                    },
-                    article: {
-                        title: $('wTitle').value,
-                        summary: $('wSummary').value,
-                        category: $('wCategory').value,
-                        language: $('wLang').value,
-                        body: $('wBody').value
-                    },
-                    consent: true,
-                    website: $('wWebsite').value
-                })
+        let coverId = '';
+        let ok = true;
+        if (media.cover) {
+            const up = await uploadMedia(media.cover, 'cover');
+            if (up) coverId = up.id;
+            else {
+                ok = false;
+                showError($('wError'), T('badImage'));
+            }
+        }
+        if (ok) {
+            const r = await api('/api/articles', 'POST', {
+                article: {
+                    title: $('wTitle').value,
+                    summary: $('wSummary').value,
+                    category: $('wCategory').value,
+                    language: $('wLang').value,
+                    body: $('wBody').value,
+                    coverId
+                },
+                consent: true,
+                website: $('wWebsite').value
             });
             if (r.ok) {
                 try { localStorage.removeItem(DRAFT_KEY); } catch (x) { }
                 $('writeForm').reset();
                 updateCounters();
+                setCover(null);
                 $('writeForm').hidden = true;
                 $('stepper').hidden = true;
                 $('wDone').hidden = false;
+            } else if (r.status === 401) {
+                await VT.refreshMe();
+                showAuth('write');
             } else if (r.status === 429) {
-                fail(T('tooMany'));
+                showError($('wError'), r.data.error === 'pending' ? T('pendingLimit') : T('tooMany'));
             } else if (r.status === 503) {
-                fail(T('unavailable'));
+                showError($('wError'), T('unavailable'));
             } else {
-                const d = await r.json().catch(() => ({}));
-                fail(d.error === 'age' ? T('minor') : T('failed'));
+                showError($('wError'), T('failed'));
             }
-        } catch (x) {
-            fail(T('failed'));
         }
         btn.disabled = false;
         label.setAttribute('data-tr', '');
         label.textContent = VT.s(label._en || TXT.submitLabel);
     });
 
-    function route() {
+    async function route() {
         const m = location.pathname.match(/^\/articles\/([^/]+)/);
         if (m) return openArticle(decodeURIComponent(m[1]));
-        if (location.hash === '#write') return showWrite();
+        const hash = location.hash;
+        if (hash === '#write' || hash === '#account') {
+            await VT.meReady;
+            const target = hash.slice(1);
+            if (!user()) return showAuth(target);
+            return target === 'write' ? showWrite() : showAccount();
+        }
         document.title = 'Articles & Analysis | VERO';
         return loadList();
     }
@@ -428,11 +768,21 @@
         e.preventDefault();
         go('/articles#write');
     });
-    ['backLink', 'backLink2'].forEach(id => {
-        $(id).addEventListener('click', e => {
+    $('acWrite').addEventListener('click', e => {
+        e.preventDefault();
+        go('/articles#write');
+    });
+    document.querySelectorAll('[data-back], #backLink').forEach(a => {
+        a.addEventListener('click', e => {
             e.preventDefault();
             go('/articles');
         });
+    });
+    document.addEventListener('click', e => {
+        const a = e.target.closest('#accountBtn');
+        if (!a) return;
+        e.preventDefault();
+        go('/articles#account');
     });
 
     window.addEventListener('vero:lang', async () => {
@@ -440,6 +790,7 @@
         await preload();
         if (state.view === 'list') loadList();
         else if (state.view === 'read' && read.slug) openArticle(read.slug);
+        else if (state.view === 'account') showAccount();
     });
 
     VT.ready.then(() => {
