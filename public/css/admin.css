@@ -1,0 +1,167 @@
+.admin-page {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 130px 20px 60px;
+}
+
+.admin-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.admin-head h1 {
+    font-size: 1.8rem;
+}
+
+.admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.admin-tabs button {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-weight: 800;
+    font-size: 0.86rem;
+    color: var(--muted);
+}
+
+.admin-tabs button.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+}
+
+.admin-list {
+    display: grid;
+    gap: 16px;
+}
+
+.admin-card {
+    display: grid;
+    gap: 14px;
+    padding: 22px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.admin-card h3 {
+    font-size: 1.05rem;
+}
+
+.admin-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-meta span {
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.admin-meta .ok {
+    color: var(--success);
+}
+
+.admin-meta .bad {
+    color: var(--danger);
+}
+
+.admin-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--r-sm);
+    background: var(--bg);
+    font-size: 0.86rem;
+}
+
+.admin-author b {
+    display: block;
+}
+
+.admin-body {
+    max-height: 340px;
+    overflow: auto;
+    padding: 14px;
+    border-radius: var(--r-sm);
+    background: var(--bg);
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+}
+
+.admin-body[hidden] {
+    display: none;
+}
+
+.admin-cover {
+    max-height: 200px;
+    border-radius: var(--r-sm);
+    object-fit: cover;
+}
+
+.admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-actions button {
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.admin-actions button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.admin-actions .good {
+    background: var(--success);
+    border-color: var(--success);
+    color: #04210f;
+}
+
+.admin-actions .danger {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.admin-search {
+    width: 100%;
+    max-width: 360px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+}
+
+.admin-msg {
+    padding: 50px 0;
+    text-align: center;
+    font-weight: 700;
+    color: var(--muted);
+}
