@@ -435,18 +435,13 @@
     }
 
     function showPopup() {
-        const p = document.getElementById('searchPopup');
         const bar = document.querySelector('.search-bar');
-        if (!p) return;
-        p.classList.add('show');
         if (bar) {
             bar.classList.remove('shake');
             void bar.offsetWidth;
             bar.classList.add('shake');
         }
         if (searchInput) searchInput.focus();
-        clearTimeout(popupTimer);
-        popupTimer = setTimeout(hidePopup, 3400);
     }
 
     function runSearch() {
