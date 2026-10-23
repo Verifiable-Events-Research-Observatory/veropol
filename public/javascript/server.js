@@ -16,7 +16,7 @@ const ROOT = path.join(__dirname, '../');
 const ADMIN_EMAILS = new Set((process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
 
 if (compression) app.use(compression());
-app.use(express.json({ limit: '400kb' }));
+app.use(express.json({ limit: '700kb' }));
 
 app.use((req, res, next) => {
     res.set('X-Content-Type-Options', 'nosniff');
@@ -40,6 +40,14 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
+app.use(['/admin', '/javascript/admin.js', '/css/admin.css'], (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    auth(req, res, () => {
+        if (isAdmin(req.user)) return next();
+        res.status(404).type('text/plain').send('Not Found');
+    });
+});
 app.use('/javascript', (req, res, next) => (/^\/server/.test(req.path) ? res.status(404).type('text/plain').send('Not Found') : next()));
 app.use('/assets', express.static(path.join(ROOT, 'assets'), { maxAge: '7d' }));
 app.use('/css', express.static(path.join(ROOT, 'css'), { maxAge: '7d' }));
@@ -52,10 +60,46 @@ app.use('/javascript', express.static(path.join(ROOT, 'javascript'), { maxAge: '
     });
 });
 
-if (process.env.MONGODB_URI) {
-    mongoose.connect(process.env.MONGODB_URI).catch(() => { });
+let dbError = '';
+mongoose.connection.on('error', e => {
+    dbError = String((e && e.message) || e);
+    console.error('MongoDB error:', dbError);
+});
+mongoose.connection.on('disconnected', () => console.error('MongoDB disconnected'));
+
+async function connectDb() {
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+        console.error('MONGODB_URI is not set. Accounts, articles and feedback storage are disabled.');
+        return;
+    }
+    for (; ;) {
+        try {
+            await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000, maxPoolSize: 10 });
+            dbError = '';
+            console.log('MongoDB connected');
+            return;
+        } catch (e) {
+            dbError = String((e && e.message) || e);
+            console.error('MongoDB connection failed:', dbError);
+            await new Promise(resolve => setTimeout(resolve, 15000));
+        }
+    }
 }
+connectDb();
+
 const dbReady = () => mongoose.connection.readyState === 1;
+
+function dbReason() {
+    if (!process.env.MONGODB_URI) return 'MONGODB_URI is not set in the Render environment variables';
+    if (dbReady()) return 'ok';
+    const e = dbError;
+    if (/bad auth|authentication failed/i.test(e)) return 'wrong database username or password';
+    if (/Invalid scheme|Invalid connection string|URI|escaped/i.test(e)) return 'MONGODB_URI is malformed, special characters in the password must be URL-encoded';
+    if (/Server selection timed out|ReplicaSetNoPrimary|whitelist|not authorized/i.test(e)) return 'Atlas is refusing Render, add 0.0.0.0/0 under Atlas Network Access';
+    if (/ENOTFOUND|querySrv|ECONNREFUSED/i.test(e)) return 'the cluster address inside MONGODB_URI is wrong';
+    return e ? 'connection failed, read the Render logs' : 'still connecting';
+}
 const Schema = mongoose.Schema;
 const ObjectId = Schema.Types.ObjectId;
 
@@ -84,7 +128,6 @@ const User = mongoose.models.User || mongoose.model('User', new Schema({
     age: Number,
     nationality: String,
     residence: String,
-    idDocs: [String],
     avatarId: String,
     verified: { type: Boolean, default: false },
     banned: { type: Boolean, default: false },
@@ -251,14 +294,11 @@ function publicUser(u) {
         age: u.age,
         nationality: u.nationality,
         residence: u.residence,
-        idDocs: u.idDocs || [],
         avatarUrl: u.avatarId ? '/media/' + u.avatarId : null,
         verified: !!u.verified,
         isAdmin: isAdmin(u)
     };
 }
-
-const ID_DOCS = ['passport', 'drivers_license', 'national_id'];
 
 app.post('/api/auth/register', limiter(6, 60 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
@@ -272,7 +312,6 @@ app.post('/api/auth/register', limiter(6, 60 * 60 * 1000), async (req, res) => {
         lastName: cut(b.lastName, 60),
         nationality: cut(b.nationality, 80),
         residence: cut(b.residence, 80),
-        idDocs: Array.isArray(b.idDocs) ? b.idDocs.filter(d => ID_DOCS.includes(d)) : [],
         age,
         email
     };
@@ -281,12 +320,18 @@ app.post('/api/auth/register', limiter(6, 60 * 60 * 1000), async (req, res) => {
     if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'email' });
     if (password.length < 8 || password.length > 128) return res.status(400).json({ error: 'password' });
     if (b.consent !== true) return res.status(400).json({ error: 'consent' });
+    const img = decodeImage(b.avatar);
+    if (!img) return res.status(400).json({ error: 'avatar' });
     try {
         if (await User.findOne({ email }).lean()) return res.status(409).json({ error: 'exists' });
         const created = await User.create({ ...user, passHash: await hashPw(password) });
+        const media = await Media.create({ owner: created._id, kind: 'avatar', contentType: img.type, data: img.buf });
+        const avatarId = String(media._id);
+        await User.updateOne({ _id: created._id }, { avatarId });
         await startSession(req, res, created._id);
-        res.json({ user: publicUser(created.toObject()) });
+        res.json({ user: publicUser({ ...created.toObject(), avatarId }) });
     } catch (e) {
+        console.error('register failed:', e && e.message);
         res.status(500).json({ error: 'save' });
     }
 });
@@ -359,10 +404,7 @@ app.patch('/api/me', requireUser, async (req, res) => {
     const b = req.body || {};
     const set = {};
     try {
-        if (b.removeAvatar) {
-            if (req.user.avatarId) await Media.deleteOne({ _id: req.user.avatarId, owner: req.user._id }).catch(() => { });
-            set.avatarId = '';
-        } else if (b.avatarId) {
+        if (b.avatarId) {
             if (!isHexId(b.avatarId)) return res.status(400).json({ error: 'media' });
             const m = await Media.findOne({ _id: b.avatarId, owner: req.user._id, kind: 'avatar' }).lean();
             if (!m) return res.status(400).json({ error: 'media' });
@@ -509,33 +551,86 @@ app.get('/api/sources', (req, res) => {
 });
 
 app.get('/api/health/translate', async (req, res) => res.json(await translator.health()));
+app.get('/api/health/db', (req, res) => res.json({
+    configured: !!process.env.MONGODB_URI,
+    connected: dbReady(),
+    reason: dbReason(),
+    mail: process.env.RESEND_API_KEY ? 'resend' : process.env.BREVO_API_KEY ? 'brevo' : 'not configured',
+    admins: ADMIN_EMAILS.size
+}));
+
+app.get('/api/theaters', limiter(60, 60 * 1000), async (req, res) => {
+    try {
+        res.json(await search.theaters());
+    } catch (e) {
+        res.status(500).json({ error: 'theaters' });
+    }
+});
 app.get('/api/health/feeds', (req, res) => res.json(search.feedHealth()));
 
 const FEEDBACK_TOPICS = ['feature', 'bug', 'data', 'source', 'translation', 'press', 'other'];
 
+async function sendMail({ subject, text, replyTo }) {
+    const to = process.env.MAIL_TO || 'veropol@proton.me';
+    try {
+        if (process.env.RESEND_API_KEY) {
+            const body = { from: process.env.MAIL_FROM || 'VERO <onboarding@resend.dev>', to: [to], subject, text };
+            if (replyTo) body.reply_to = replyTo;
+            const r = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                signal: AbortSignal.timeout(12000)
+            });
+            if (!r.ok) console.error('Resend failed:', r.status, await r.text().catch(() => ''));
+            return r.ok;
+        }
+        if (process.env.BREVO_API_KEY) {
+            const body = { sender: { name: 'VERO', email: process.env.MAIL_FROM || to }, to: [{ email: to }], subject, textContent: text };
+            if (replyTo) body.replyTo = { email: replyTo };
+            const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(body),
+                signal: AbortSignal.timeout(12000)
+            });
+            if (!r.ok) console.error('Brevo failed:', r.status, await r.text().catch(() => ''));
+            return r.ok;
+        }
+    } catch (e) {
+        console.error('Mail failed:', e && e.message);
+    }
+    return false;
+}
+
 app.post('/api/feedback', limiter(5, 10 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
     if (b.website) return res.status(200).json({ success: true });
-    const topic = cut(b.topic, 20);
+    const rawTopic = cut(b.topic, 20);
+    const topic = FEEDBACK_TOPICS.includes(rawTopic) ? rawTopic : 'other';
     const message = cut(b.message, 2000);
     const email = cut(b.email, 120);
-    if (!FEEDBACK_TOPICS.includes(topic)) return res.status(400).json({ error: 'topic' });
+    const name = cut(b.name, 80);
+    const otherTopic = topic === 'other' ? cut(b.otherTopic, 80) : '';
+    const page = cut(b.page, 200);
     if (message.length < 10) return res.status(400).json({ error: 'message' });
-    if (email && !EMAIL_RE.test(email)) return res.status(400).json({ error: 'email' });
-    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
-    try {
-        await new Feedback({
-            topic,
-            otherTopic: topic === 'other' ? cut(b.otherTopic, 80) : '',
-            name: cut(b.name, 80),
-            email,
-            message,
-            page: cut(b.page, 200)
-        }).save();
-        res.status(200).json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: 'save' });
+    const validEmail = email && EMAIL_RE.test(email) ? email : '';
+    let saved = false;
+    if (dbReady()) {
+        try {
+            await new Feedback({ topic, otherTopic, name, email: validEmail, message, page }).save();
+            saved = true;
+        } catch (e) {
+            console.error('Feedback save failed:', e && e.message);
+        }
     }
+    const lines = ['Topic: ' + topic + (otherTopic ? ' (' + otherTopic + ')' : ''), 'Name: ' + (name || '-'), 'Email: ' + (validEmail || '-'), 'Page: ' + (page || '-'), 'Time: ' + new Date().toISOString(), '', message];
+    const mailed = await sendMail({ subject: '[VERO feedback] ' + topic + (otherTopic ? ': ' + otherTopic : ''), text: lines.join('\n'), replyTo: validEmail });
+    if (!saved && !mailed) {
+        console.error('FEEDBACK NOT DELIVERED:', JSON.stringify({ topic, otherTopic, name, email: validEmail, page, message }));
+        return res.status(503).json({ error: 'unavailable' });
+    }
+    res.status(200).json({ success: true });
 });
 
 const ARTICLE_CATEGORIES = ['diplomacy', 'military', 'economy', 'regional', 'analysis', 'opinion'];
@@ -660,7 +755,6 @@ app.get('/api/admin/articles', requireAdmin, async (req, res) => {
                 age: d.userId.age,
                 nationality: d.userId.nationality,
                 residence: d.userId.residence,
-                idDocs: d.userId.idDocs || [],
                 verified: !!d.userId.verified,
                 banned: !!d.userId.banned,
                 avatarUrl: d.userId.avatarId ? '/media/' + d.userId.avatarId : null
