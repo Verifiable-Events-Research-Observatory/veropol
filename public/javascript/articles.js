@@ -29,6 +29,7 @@
         needCountry: 'Please enter your nationality and country of residence.',
         needRegConsent: 'Please confirm that you are 18 or older and accept the terms.',
         badImage: 'This image is not supported or is too large. Try a different one.',
+        needAvatar: 'Please upload a profile photo or choose an avatar.',
         pendingLimit: 'You already have 5 articles waiting for review.',
         confirmDelete: 'Delete this article permanently?',
         statusPending: 'Pending review',
@@ -58,6 +59,8 @@
     const state = { view: 'list', cat: 'all', page: 1, step: 1, booted: false, after: 'write' };
     const read = { slug: null, original: null, translated: null, showing: 'original' };
     const media = { regAvatar: null, cover: null };
+    const PRESET_BG = [['#D9431A', '#F08A24'], ['#0B7F7A', '#2FC48D'], ['#2F3A8F', '#4C8DFF'], ['#5B2A86', '#B07CFF'], ['#1F2937', '#475569'], ['#8A5A00', '#FFB04D'], ['#7A1F3D', '#E0527A'], ['#14532D', '#4ADE80'], ['#0F4C5C', '#5EE6DB'], ['#3B2F2F', '#A47148'], ['#312E81', '#818CF8'], ['#7C2D12', '#FB923C']];
+    const PRESET_ICONS = ["<circle cx='64' cy='64' r='34'/><path d='M82 46L71 71L46 82L57 57Z' fill='#fff'/>", "<circle cx='64' cy='64' r='34'/><ellipse cx='64' cy='64' rx='14' ry='34'/><path d='M32 52H96M32 76H96'/>", "<path d='M64 28L94 40V66C94 84 80 96 64 102C48 96 34 84 34 66V40Z'/><path d='M50 64L60 74L80 52'/>", "<path d='M28 62L102 30L82 100L62 76Z'/><path d='M102 30L62 76'/>", "<circle cx='44' cy='64' r='16'/><path d='M60 64H104M92 64V78M80 64V74'/>", "<path d='M22 64C36 44 52 36 64 36S92 44 106 64C92 84 76 92 64 92S36 84 22 64Z'/><circle cx='64' cy='64' r='12' fill='#fff'/>", "<circle cx='64' cy='36' r='8'/><path d='M64 44V100M44 60H84M30 80C32 94 48 102 64 102S96 94 98 80'/>", "<path d='M64 26L96 44V82L64 100L32 82V44Z'/><path d='M64 62V100M32 44L64 62L96 44'/>", "<path d='M74 24L40 72H62L54 104L88 56H66Z'/>", "<path d='M30 84L36 42L54 62L64 36L74 62L92 42L98 84Z'/><path d='M30 98H98'/>", "<path d='M34 38L50 50H78L94 38V80C94 94 80 104 64 104S34 94 34 80Z'/><circle cx='52' cy='68' r='8'/><circle cx='76' cy='68' r='8'/><path d='M60 84L64 92L68 84'/>", "<path d='M26 84C40 80 50 70 56 58C62 46 72 38 86 40L104 34L94 48C94 66 84 84 66 92C54 97 40 96 30 90Z'/><path d='M56 60C60 74 70 82 82 84'/>"];
     let listId = 0;
 
     const T = key => VT.s(TXT[key]);
@@ -439,7 +442,7 @@
             input.value = '';
             if (!file) return;
             try {
-                await onData(await resizeImage(file, 192, 192, true));
+                await onData(await resizeImage(file, 256, 256, true));
             } catch (e) {
                 await preload();
                 VT.toast(T('badImage'), 'ph-warning');
@@ -447,14 +450,68 @@
         });
     }
 
+    function presetSvg(i) {
+        const c = PRESET_BG[i];
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="256" height="256"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/></linearGradient></defs><rect width="128" height="128" fill="url(#g)"/><g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">' + PRESET_ICONS[i] + '</g></svg>';
+    }
+
+    function presetUrl(i) {
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(presetSvg(i));
+    }
+
+    function rasterPreset(i) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const c = document.createElement('canvas');
+                c.width = 256;
+                c.height = 256;
+                c.getContext('2d').drawImage(img, 0, 0, 256, 256);
+                let out = c.toDataURL('image/webp', 0.92);
+                if (out.indexOf('data:image/webp') !== 0) out = c.toDataURL('image/jpeg', 0.92);
+                resolve(out);
+            };
+            img.onerror = () => reject(new Error('preset'));
+            img.src = presetUrl(i);
+        });
+    }
+
+    function buildPresets(box, onPick) {
+        box.innerHTML = '';
+        PRESET_BG.forEach((x, i) => {
+            const b = node('button', 'preset');
+            b.type = 'button';
+            const im = node('img');
+            im.alt = '';
+            im.width = 56;
+            im.height = 56;
+            im.src = presetUrl(i);
+            b.appendChild(im);
+            b.addEventListener('click', async () => {
+                box.querySelectorAll('.preset').forEach(p => p.classList.toggle('on', p === b));
+                try {
+                    await onPick(await rasterPreset(i));
+                } catch (e) {
+                    await preload();
+                    VT.toast(T('badImage'), 'ph-warning');
+                }
+            });
+            box.appendChild(b);
+        });
+    }
+
     function setRegAvatar(data) {
         media.regAvatar = data;
         $('regAvatarPreview').src = data || VT.DEFAULT_AVATAR;
-        $('regAvatarClear').hidden = !data;
+        $('regAvatarPreview').classList.toggle('required', !data);
+        if (!data) $('regPresets').querySelectorAll('.preset').forEach(p => p.classList.remove('on'));
     }
 
-    bindPhotoPicker($('regAvatar'), async data => setRegAvatar(data));
-    $('regAvatarClear').addEventListener('click', () => setRegAvatar(null));
+    bindPhotoPicker($('regAvatar'), async data => {
+        $('regPresets').querySelectorAll('.preset').forEach(p => p.classList.remove('on'));
+        setRegAvatar(data);
+    });
+    buildPresets($('regPresets'), async data => setRegAvatar(data));
     $('regAvatarPreview').src = VT.DEFAULT_AVATAR;
 
     $('registerForm').addEventListener('submit', async e => {
@@ -469,6 +526,7 @@
         if (!EMAIL_RE.test($('rEmail').value.trim())) return showError(err, T('badEmail'));
         if ($('rPass').value.length < 8) return showError(err, T('shortPass'));
         if (!$('rNationality').value.trim() || !$('rResidence').value.trim()) return showError(err, T('needCountry'));
+        if (!media.regAvatar) return showError(err, T('needAvatar'));
         if (!$('rConsent').checked) return showError(err, T('needRegConsent'));
         const btn = $('rSubmit');
         btn.disabled = true;
@@ -480,7 +538,7 @@
             password: $('rPass').value,
             nationality: $('rNationality').value,
             residence: $('rResidence').value,
-            idDocs: [...document.querySelectorAll('#registerForm input[name="idDocs"]:checked')].map(x => x.value),
+            avatar: media.regAvatar,
             consent: true,
             website: $('rWebsite').value
         });
@@ -491,11 +549,8 @@
             if (r.data.error === 'exists') return showError(err, T('exists'));
             if (r.data.error === 'age') return showError(err, T('minor'));
             if (r.data.error === 'password') return showError(err, T('shortPass'));
+            if (r.data.error === 'avatar') return showError(err, T('badImage'));
             return showError(err, T('failed'));
-        }
-        if (media.regAvatar) {
-            const up = await uploadMedia(media.regAvatar, 'avatar');
-            if (up) await api('/api/me', 'PATCH', { avatarId: up.id });
         }
         btn.disabled = false;
         $('registerForm').reset();
@@ -564,8 +619,10 @@
         showAccount();
     });
 
-    $('acRemovePhoto').addEventListener('click', async () => {
-        await api('/api/me', 'PATCH', { removeAvatar: true });
+    buildPresets($('acPresets'), async data => {
+        const up = await uploadMedia(data, 'avatar');
+        if (!up) throw new Error('upload');
+        await api('/api/me', 'PATCH', { avatarId: up.id });
         await VT.refreshMe();
         showAccount();
     });
