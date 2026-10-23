@@ -209,6 +209,11 @@ function annotate(it) {
 const RANGE_HOURS = { '24h': 24, '7d': 168, '30d': 720 };
 const FEED_TTL = 5 * 60 * 1000;
 
+function upgradeImage(u) {
+    if (!u) return u;
+    return u.replace(/(\/ace\/standard\/|\/news\/)\d{2,4}\//, '$1800/');
+}
+
 function decodeEntities(s) {
     return s
         .replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16)))
@@ -307,7 +312,7 @@ function parseFeed(xml, feed) {
             title,
             description: desc,
             url,
-            image: /^https?:\/\//.test(image) ? image : null,
+            image: /^https?:\/\//.test(image) ? upgradeImage(image) : null,
             publishedAt: when.toISOString(),
             ts: when.getTime(),
             source: feed.s,
@@ -357,6 +362,13 @@ module.exports = function createSearch({ translator, matchSource }) {
     let refreshing = null;
     let lastRefresh = 0;
     const gnewsCache = new Map();
+    const imageSet = new Set();
+
+    function allowImage(u) {
+        if (!u) return;
+        if (imageSet.size > 6000) imageSet.clear();
+        imageSet.add(u);
+    }
 
     async function pull(feed) {
         try {
@@ -384,6 +396,7 @@ module.exports = function createSearch({ translator, matchSource }) {
         const all = [];
         store.forEach(v => all.push(...v.items));
         corpus = dedupe(all);
+        corpus.forEach(it => allowImage(it.image));
         const v = new Map();
         for (const it of corpus) {
             for (const t of it._tl) if (t.length >= 4 && !isCJK(t)) v.set(t, (v.get(t) || 0) + 2);
@@ -574,14 +587,13 @@ module.exports = function createSearch({ translator, matchSource }) {
 
     function decideLang(q, english, detected, ui) {
         const script = /[\u0600-\u06FF]/.test(q) ? 'ar' : /[\u0400-\u04FF]/.test(q) ? 'ru' : /[\u3400-\u9FFF]/.test(q) ? 'zh' : null;
-        const lang = detected || script;
-        if (!lang) return ui;
-        if (lang === 'en') {
-            const words = q.trim().split(/\s+/).length;
-            return words >= 2 && !script ? 'en' : ui;
-        }
-        if (!script && english.trim().toLowerCase() === q.trim().toLowerCase()) return ui;
-        return lang;
+        if (script) return script;
+        const words = q.trim().split(/\s+/).length;
+        const changed = english.trim().toLowerCase() !== q.trim().toLowerCase();
+        const latinUi = !['ar', 'ru', 'zh'].includes(ui);
+        if (detected && detected !== 'en' && (words >= 2 || changed)) return detected;
+        if (detected === 'en' && words >= 2) return 'en';
+        return latinUi ? ui : 'en';
     }
 
     async function search(opts) {
@@ -651,7 +663,7 @@ module.exports = function createSearch({ translator, matchSource }) {
         const total = results.length;
         const totalPages = Math.max(1, Math.ceil(total / size));
         const page = Math.min(Math.max(opts.page, 1), totalPages);
-        const articles = results.slice((page - 1) * size, page * size).map(r => ({
+        const articles = results.slice((page - 1) * size, page * size).map(r => (allowImage(r.it.image), {
             title: r.it.title,
             description: r.it.description,
             url: r.it.url,
@@ -665,6 +677,7 @@ module.exports = function createSearch({ translator, matchSource }) {
     }
 
     function pub(it) {
+        allowImage(it.image);
         return { title: it.title, description: it.description, url: it.url, image: it.image, publishedAt: it.publishedAt, source: it.source, lang: it.lang };
     }
 
@@ -722,5 +735,5 @@ module.exports = function createSearch({ translator, matchSource }) {
         return theaters();
     }
 
-    return { search, feedHealth, warm, theaters: theatersLive };
+    return { search, feedHealth, warm, theaters: theatersLive, imageAllowed: u => imageSet.has(u) };
 };
