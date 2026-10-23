@@ -58,6 +58,14 @@
 
     const picked = [...SUGGESTIONS].sort(() => 0.5 - Math.random()).slice(0, 3);
 
+    const WM = 'https://upload.wikimedia.org/wikipedia/commons/thumb/';
+    const coverFallbacks = {
+        military: WM + 'b/b2/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG/640px-USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG',
+        economy: WM + 'd/df/Pudong_Shanghai_November_2017_panorama.jpg/640px-Pudong_Shanghai_November_2017_panorama.jpg',
+        diplomacy: WM + '4/4e/P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg/640px-P5%2B1_negotiation_hall_in_Geneva%2C_2013.jpg',
+        intel: WM + '0/08/NASA_Visible_Earth_satellite_map_of_Earth.jpg/640px-NASA_Visible_Earth_satellite_map_of_Earth.jpg'
+    };
+
     const PAGE_SIZE = 9;
     const RECENT_KEY = 'vero_recent';
     const state = { activeQuery: '', client: null, category: 'all', range: 'all', page: 1, switching: false, booted: false };
@@ -68,8 +76,6 @@
     let lastMeta = null;
 
     const searchInput = document.getElementById('searchInput');
-    const dock = document.getElementById('searchDock');
-    const dockInput = document.getElementById('dockInput');
     const newsGrid = document.getElementById('newsGrid');
     const pagination = document.getElementById('pagination');
     const resultsMeta = document.getElementById('resultsMeta');
@@ -171,7 +177,7 @@
     }
 
     function proxiedImage(url) {
-        return '/img?u=' + encodeURIComponent(url);
+        return 'https://wsrv.nl/?url=' + encodeURIComponent(url) + '&w=600&h=340&fit=cover&a=attention&output=webp&q=78';
     }
 
     function attachCover(banner, sources, index) {
@@ -179,11 +185,6 @@
         img.alt = T('coverAlt');
         img.decoding = 'async';
         img.referrerPolicy = 'no-referrer';
-        if (!sources.length) {
-            banner.classList.remove('loading');
-            banner.classList.add('noimg');
-            return;
-        }
         img.loading = index < 6 ? 'eager' : 'lazy';
         let step = 0;
         let timer;
@@ -194,12 +195,11 @@
             else {
                 img.remove();
                 banner.classList.remove('loading');
-                banner.classList.add('noimg');
             }
         };
         const load = () => {
             img.src = sources[step];
-            if (step < sources.length - 1) timer = setTimeout(advance, 9000);
+            if (step < sources.length - 1) timer = setTimeout(advance, 4500);
         };
         img.onload = () => {
             clearTimeout(timer);
@@ -287,7 +287,8 @@
             }
             const img = item.image;
             const invalid = !img || !img.startsWith('http') || ['generic', 'business', 'placeholder', 'logo', 'avatar', 'default', 'icon', 'stock'].some(k => img.toLowerCase().includes(k));
-            const sources = invalid ? [] : [proxiedImage(img), img];
+            const fallback = coverFallbacks[tag.key] || coverFallbacks.intel;
+            const sources = invalid ? [fallback] : [proxiedImage(img), img, fallback];
             const desc = item.description ? shortDesc(item) + (item.description.length > 150 ? '...' : '') : T('fallbackDesc');
 
             const banner = el('div', 'card-banner loading');
@@ -446,7 +447,6 @@
 
     function quickFetch(q) {
         if (searchInput) searchInput.value = q;
-        if (dockInput) dockInput.value = q;
         saveRecent(q);
         state.category = currentCategory();
         fetchNews({ q, scroll: true, detect: false });
@@ -490,36 +490,6 @@
             } else if (e.key === 'Escape') {
                 searchInput.blur();
             }
-        });
-    }
-
-    if (dock && dockInput && searchInput) {
-        const heroBar = document.querySelector('.search-hero-container .search-bar');
-        if (heroBar && 'IntersectionObserver' in window) {
-            new IntersectionObserver(entries => {
-                const e = entries[0];
-                dock.classList.toggle('show', !e.isIntersecting && e.boundingClientRect.top < 0);
-            }).observe(heroBar);
-        }
-        searchInput.addEventListener('input', () => { dockInput.value = searchInput.value; });
-        dockInput.addEventListener('input', () => {
-            searchInput.value = dockInput.value;
-            hidePopup();
-        });
-        dockInput.addEventListener('keydown', e => {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
-            if (!dockInput.value.trim()) {
-                dock.classList.remove('shake');
-                void dock.offsetWidth;
-                dock.classList.add('shake');
-                return;
-            }
-            runSearch();
-        });
-        document.getElementById('dockTrigger').addEventListener('click', () => {
-            if (!dockInput.value.trim()) dockInput.focus();
-            else runSearch();
         });
     }
 
@@ -587,21 +557,6 @@
             const d = theaterData.theaters[card.dataset.theater];
             const box = card.querySelector('.theater-live');
             if (!box) return;
-            const cover = card.querySelector('.theater-cover');
-            if (cover) {
-                cover.querySelectorAll('.cover-live').forEach(n => n.remove());
-                if (d && d.lead && d.lead.image && /^https?:/.test(d.lead.image)) {
-                    const pic = new Image();
-                    pic.className = 'cover-live';
-                    pic.alt = '';
-                    pic.decoding = 'async';
-                    pic.referrerPolicy = 'no-referrer';
-                    pic.onload = () => pic.classList.add('ready');
-                    pic.onerror = () => pic.remove();
-                    pic.src = proxiedImage(d.lead.image);
-                    cover.appendChild(pic);
-                }
-            }
             if (!d || !d.lead) {
                 box.hidden = true;
                 return;
@@ -718,11 +673,7 @@
                         page: location.pathname
                     })
                 });
-                if (r.status === 503) {
-                    let info = {};
-                    try { info = await r.json(); } catch (z) { }
-                    fail(T('unavailable') + (info.code ? ' (' + info.code + ')' : ''));
-                }
+                if (r.status === 503) fail(T('unavailable'));
                 else if (!r.ok) fail(T('failed'));
                 else {
                     VT.toast(T('sent'), 'ph-check-circle');
