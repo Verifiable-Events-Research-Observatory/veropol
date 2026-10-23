@@ -10,13 +10,13 @@
     };
     const TARGETS = { zh: 'zh-CN' };
     const FONT_URLS = {
-        ar: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap',
+        ar: 'https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700&family=Readex+Pro:wght@300;400;500;600&display=swap',
         zh: 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap'
     };
     const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23262630'/><circle cx='32' cy='25' r='11' fill='%238D8984'/><path d='M10 64c2-14 12-22 22-22s20 8 22 22z' fill='%238D8984'/></svg>";
     const NOI18N = document.documentElement.hasAttribute('data-noi18n');
     const LANG_KEY = 'vero_lang';
-    const CACHE_KEY = 'vero_tc4';
+    const CACHE_KEY = 'vero_tc5';
     const ATTRS = { 'data-tr-ph': 'placeholder', 'data-tr-aria': 'aria-label', 'data-tr-alt': 'alt', 'data-tr-title': 'title' };
     const mem = new Map();
     const tried = new Set();
@@ -24,6 +24,89 @@
     let lang = 'en';
     let saveTimer;
     let auroraRGB = '255,138,76';
+    let logoAlpha = null;
+    let logoSize = 0;
+    let logoStarted = false;
+
+    function paintLogos() {
+        if (!logoAlpha) return;
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const rgb = dark ? [245, 241, 232] : [18, 18, 20];
+        const c = document.createElement('canvas');
+        c.width = logoSize;
+        c.height = logoSize;
+        const x = c.getContext('2d');
+        const out = x.createImageData(logoSize, logoSize);
+        for (let i = 0, n = logoSize * logoSize; i < n; i++) {
+            out.data[i * 4] = rgb[0];
+            out.data[i * 4 + 1] = rgb[1];
+            out.data[i * 4 + 2] = rgb[2];
+            out.data[i * 4 + 3] = logoAlpha[i];
+        }
+        x.putImageData(out, 0, 0);
+        const url = c.toDataURL('image/png');
+        document.querySelectorAll('img.brand-logo').forEach(img => {
+            img.src = url;
+            img.dataset.vl = '1';
+        });
+    }
+
+    function initLogos() {
+        if (logoStarted) return;
+        const first = document.querySelector('img.brand-logo');
+        if (!first) return;
+        logoStarted = true;
+        setTimeout(() => {
+            document.querySelectorAll('img.brand-logo:not([data-vl])').forEach(img => { img.dataset.vl = '0'; });
+        }, 3000);
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const size = 192;
+                const c = document.createElement('canvas');
+                c.width = size;
+                c.height = size;
+                const x = c.getContext('2d', { willReadFrequently: true });
+                x.drawImage(img, 0, 0, size, size);
+                const px = x.getImageData(0, 0, size, size).data;
+                const lum = i => (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
+                const corners = [0, (size - 1) * 4, size * (size - 1) * 4, (size * size - 1) * 4];
+                const solid = corners.filter(i => px[i + 3] > 200);
+                const bg = solid.length ? solid.reduce((a, i) => a + lum(i), 0) / solid.length : null;
+                const denom = bg === null ? 1 : Math.max(bg > 0.5 ? bg : 1 - bg, 0.2);
+                const alpha = new Uint8ClampedArray(size * size);
+                for (let p = 0; p < size * size; p++) {
+                    const i = p * 4;
+                    const a0 = px[i + 3] / 255;
+                    let a = a0;
+                    if (bg !== null) a = a0 * Math.min(1, Math.abs(lum(i) - bg) / denom);
+                    alpha[p] = Math.round(Math.min(1, a * 1.12) * 255);
+                }
+                logoAlpha = alpha;
+                logoSize = size;
+                paintLogos();
+            } catch (e) {
+                document.querySelectorAll('img.brand-logo').forEach(el => { el.dataset.vl = '0'; });
+            }
+        };
+        img.onerror = () => {
+            document.querySelectorAll('img.brand-logo').forEach(el => { el.dataset.vl = '0'; });
+        };
+        img.src = first.getAttribute('src');
+    }
+
+    function ago(iso) {
+        try {
+            const rtf = new Intl.RelativeTimeFormat(LANGS[lang].locale, { numeric: 'auto' });
+            const m = Math.round((Date.parse(iso) - Date.now()) / 60000);
+            if (Math.abs(m) < 60) return rtf.format(Math.min(m, -1), 'minute');
+            const h = Math.round(m / 60);
+            if (Math.abs(h) < 48) return rtf.format(h, 'hour');
+            return rtf.format(Math.round(h / 24), 'day');
+        } catch (e) {
+            return '';
+        }
+    }
 
     try {
         const stored = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
@@ -243,6 +326,7 @@
             auroraRGB = theme === 'dark' ? '255,138,76' : '196,64,24';
             try { localStorage.setItem('vero_theme', theme); } catch (e) { }
             if (icon) icon.className = theme === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
+            paintLogos();
         };
         paint(document.documentElement.getAttribute('data-theme') || 'dark');
         if (btn) btn.addEventListener('click', () => paint(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
@@ -500,6 +584,7 @@
 
     function boot() {
         initTheme();
+        initLogos();
         initLangMenu();
         initNav();
         initModals();
@@ -529,6 +614,7 @@
         apply,
         setLang,
         toast,
+        ago,
         expandBrowser,
         refreshMe,
         ready: null,
