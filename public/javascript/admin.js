@@ -1,7 +1,6 @@
 (function () {
     const root = document.getElementById('adminRoot');
     const state = { tab: 'pending', q: '' };
-    const DOC_NAMES = { passport: 'Passport', drivers_license: "Driver's licence", national_id: 'National ID card' };
 
     function node(tag, cls, text) {
         const n = document.createElement(tag);
@@ -95,7 +94,7 @@
             box.appendChild(av);
             const info = node('div');
             info.appendChild(node('b', '', au.name + (au.verified ? ' (verified)' : '') + (au.banned ? ' (banned)' : '')));
-            info.appendChild(document.createTextNode(au.email + ' · ' + au.age + ' · ' + au.nationality + ' · lives in ' + au.residence + ' · documents offered: ' + (au.idDocs.length ? au.idDocs.map(d => DOC_NAMES[d] || d).join(', ') : 'none')));
+            info.appendChild(document.createTextNode(au.email + ' · ' + au.age + ' · ' + au.nationality + ' · lives in ' + au.residence));
             box.appendChild(info);
             card.appendChild(box);
         }
@@ -131,7 +130,7 @@
         row.appendChild(av);
         const info = node('div');
         info.appendChild(node('b', '', u.firstName + ' ' + u.lastName + (u.verified ? ' (verified)' : '') + (u.banned ? ' (banned)' : '') + (u.isAdmin ? ' (admin)' : '')));
-        info.appendChild(document.createTextNode(u.email + ' · ' + u.age + ' · ' + u.nationality + ' · lives in ' + u.residence + ' · documents offered: ' + (u.idDocs.length ? u.idDocs.map(d => DOC_NAMES[d] || d).join(', ') : 'none')));
+        info.appendChild(document.createTextNode(u.email + ' · ' + u.age + ' · ' + u.nationality + ' · lives in ' + u.residence));
         row.appendChild(info);
         card.appendChild(row);
         if (!u.isAdmin) {
