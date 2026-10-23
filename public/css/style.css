@@ -48,8 +48,8 @@
 }
 
 :root[lang="ar"] {
-    --font-head: 'Alexandria', 'Readex Pro', 'Manrope', sans-serif;
-    --font-body: 'Readex Pro', 'Alexandria', 'Manrope', sans-serif;
+    --font-head: 'Rubik Arabic', 'Rubik', sans-serif;
+    --font-body: 'Rubik Arabic', 'Rubik', sans-serif;
 }
 
 :root[lang="zh"] {
