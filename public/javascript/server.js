@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const dns = require('dns').promises;
+const net = require('net');
 const mongoose = require('mongoose');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
@@ -89,6 +91,17 @@ async function connectDb() {
 connectDb();
 
 const dbReady = () => mongoose.connection.readyState === 1;
+
+function dbCode() {
+    if (!process.env.MONGODB_URI) return 'no_uri';
+    if (dbReady()) return 'db_write';
+    const e = dbError;
+    if (/bad auth|authentication failed/i.test(e)) return 'db_auth';
+    if (/Invalid scheme|Invalid connection string|URI|escaped/i.test(e)) return 'db_uri';
+    if (/Server selection timed out|ReplicaSetNoPrimary|whitelist|not authorized/i.test(e)) return 'db_network';
+    if (/ENOTFOUND|querySrv|ECONNREFUSED/i.test(e)) return 'db_dns';
+    return 'db_connecting';
+}
 
 function dbReason() {
     if (!process.env.MONGODB_URI) return 'MONGODB_URI is not set in the Render environment variables';
@@ -303,7 +316,7 @@ function publicUser(u) {
 app.post('/api/auth/register', limiter(6, 60 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
     if (b.website) return res.status(200).json({ success: true });
-    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
     const age = parseInt(b.age, 10);
     const email = cut(b.email, 120).toLowerCase();
     const password = String(b.password || '');
@@ -337,7 +350,7 @@ app.post('/api/auth/register', limiter(6, 60 * 60 * 1000), async (req, res) => {
 });
 
 app.post('/api/auth/login', limiter(12, 10 * 60 * 1000), async (req, res) => {
-    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
     const email = cut(req.body && req.body.email, 120).toLowerCase();
     const password = String((req.body && req.body.password) || '');
     try {
@@ -551,13 +564,106 @@ app.get('/api/sources', (req, res) => {
 });
 
 app.get('/api/health/translate', async (req, res) => res.json(await translator.health()));
-app.get('/api/health/db', (req, res) => res.json({
-    configured: !!process.env.MONGODB_URI,
-    connected: dbReady(),
-    reason: dbReason(),
-    mail: process.env.RESEND_API_KEY ? 'resend' : process.env.BREVO_API_KEY ? 'brevo' : 'not configured',
-    admins: ADMIN_EMAILS.size
-}));
+const Health = mongoose.models.Health || mongoose.model('Health', new Schema({ k: String, at: Date }));
+
+app.get('/api/health/db', async (req, res) => {
+    const out = {
+        configured: !!process.env.MONGODB_URI,
+        connected: dbReady(),
+        reason: dbReason(),
+        mail: process.env.RESEND_API_KEY ? 'resend' : process.env.BREVO_API_KEY ? 'brevo' : 'not configured',
+        admins: ADMIN_EMAILS.size
+    };
+    if (dbReady()) {
+        try {
+            await Health.updateOne({ k: 'ping' }, { k: 'ping', at: new Date() }, { upsert: true });
+            out.write = 'ok';
+        } catch (e) {
+            out.write = 'failed: ' + String((e && e.message) || e).slice(0, 140);
+        }
+    }
+    res.json(out);
+});
+
+const imgCache = new Map();
+let imgBytes = 0;
+const IMG_LIMIT = 70 * 1024 * 1024;
+const IMG_UA = 'Mozilla/5.0 (compatible; VEROBot/1.0; +https://veropol.onrender.com; veropol@proton.me)';
+
+function privateAddress(ip) {
+    if (net.isIPv4(ip)) {
+        const p = ip.split('.').map(Number);
+        return p[0] === 10 || p[0] === 127 || p[0] === 0 || (p[0] === 169 && p[1] === 254) || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) || (p[0] === 192 && p[1] === 168) || (p[0] === 100 && p[1] >= 64 && p[1] <= 127);
+    }
+    const v = ip.toLowerCase();
+    return v === '::1' || v === '::' || v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe80') || v.startsWith('::ffff:');
+}
+
+async function safeHost(hostname) {
+    const list = await dns.lookup(hostname, { all: true });
+    return list.length > 0 && list.every(a => !privateAddress(a.address));
+}
+
+async function pullImage(u, hops) {
+    const url = new URL(u);
+    if (!/^https?:$/.test(url.protocol) || !(await safeHost(url.hostname))) throw new Error('blocked');
+    const response = await fetch(u, {
+        headers: { 'User-Agent': IMG_UA, 'Accept': 'image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8', 'Referer': url.origin + '/' },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(10000)
+    });
+    if (response.status >= 300 && response.status < 400 && response.headers.get('location') && hops < 3) {
+        return pullImage(new URL(response.headers.get('location'), u).toString(), hops + 1);
+    }
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const type = String(response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(type)) throw new Error('type');
+    const len = parseInt(response.headers.get('content-length') || '0', 10);
+    if (len > 6 * 1024 * 1024) throw new Error('big');
+    const buf = Buffer.from(await response.arrayBuffer());
+    if (buf.length < 200 || buf.length > 6 * 1024 * 1024) throw new Error('size');
+    return { buf, type };
+}
+
+function remember(key, value, size) {
+    imgCache.set(key, value);
+    imgBytes += size;
+    while (imgBytes > IMG_LIMIT && imgCache.size) {
+        const k = imgCache.keys().next().value;
+        const v = imgCache.get(k);
+        imgBytes -= v.buf ? v.buf.length : 0;
+        imgCache.delete(k);
+    }
+}
+
+app.get('/img', limiter(400, 60 * 1000), async (req, res) => {
+    const u = String(req.query.u || '').slice(0, 1500);
+    let url;
+    try { url = new URL(u); } catch (e) { return res.status(400).end(); }
+    const wiki = url.hostname === 'upload.wikimedia.org' || url.hostname === 'commons.wikimedia.org';
+    if (!wiki && !search.imageAllowed(u)) return res.status(403).end();
+    let hit = imgCache.get(u);
+    if (hit && hit.fail && hit.exp < Date.now()) {
+        imgCache.delete(u);
+        hit = null;
+    }
+    if (!hit) {
+        try {
+            const got = await pullImage(u, 0);
+            hit = { buf: got.buf, type: got.type };
+            remember(u, hit, got.buf.length);
+        } catch (e) {
+            remember(u, { fail: true, exp: Date.now() + 10 * 60 * 1000 }, 0);
+            return res.status(502).end();
+        }
+    }
+    if (hit.fail) return res.status(502).end();
+    res.set('Content-Type', hit.type);
+    res.set('Cache-Control', 'public, max-age=604800');
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Security-Policy', "default-src 'none'; sandbox");
+    res.send(hit.buf);
+});
 
 app.get('/api/theaters', limiter(60, 60 * 1000), async (req, res) => {
     try {
@@ -628,7 +734,7 @@ app.post('/api/feedback', limiter(5, 10 * 60 * 1000), async (req, res) => {
     const mailed = await sendMail({ subject: '[VERO feedback] ' + topic + (otherTopic ? ': ' + otherTopic : ''), text: lines.join('\n'), replyTo: validEmail });
     if (!saved && !mailed) {
         console.error('FEEDBACK NOT DELIVERED:', JSON.stringify({ topic, otherTopic, name, email: validEmail, page, message }));
-        return res.status(503).json({ error: 'unavailable' });
+        return res.status(503).json({ error: 'unavailable', code: dbCode() });
     }
     res.status(200).json({ success: true });
 });
@@ -659,7 +765,7 @@ app.get('/api/articles', limiter(60, 60 * 1000), async (req, res) => {
 });
 
 app.get('/api/articles/:slug', limiter(60, 60 * 1000), async (req, res) => {
-    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
     try {
         const doc = await Article.findOne({ slug: req.params.slug, status: 'approved' }).populate('userId', AUTHOR_FIELDS).lean();
         if (!doc) return res.status(404).json({ error: 'not_found' });
@@ -688,7 +794,7 @@ app.post('/api/articles', requireUser, limiter(8, 60 * 60 * 1000), async (req, r
     const language = SUPPORTED_LANGS[x.language] ? x.language : 'en';
     const category = ARTICLE_CATEGORIES.includes(x.category) ? x.category : 'analysis';
     if (title.length < 10 || summary.length < 40 || body.length < 600 || body.length > 20000) return res.status(400).json({ error: 'content' });
-    if (!dbReady()) return res.status(503).json({ error: 'unavailable' });
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
     try {
         let coverId = '';
         if (x.coverId) {
