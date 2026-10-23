@@ -74,15 +74,137 @@ const ALIASES = [
     ['eu', 'european union', 'brussels']
 ];
 
-const STOP = new Set(['the', 'and', 'for', 'with', 'from', 'about', 'into', 'over', 'that', 'this', 'news', 'latest', 'of', 'in', 'on', 'to', 'an', 'is', 'are', 'was', 'what', 'who', 'how']);
+const STOP = new Set(['al', 'el', 'de', 'la', 'le', 'les', 'des', 'du', 'der', 'di', 'the', 'and', 'for', 'with', 'from', 'about', 'into', 'over', 'that', 'this', 'news', 'latest', 'of', 'in', 'on', 'to', 'an', 'is', 'are', 'was', 'what', 'who', 'how']);
 
 const GEO = /geopolit|diplomat|sanction|military|defen[cs]e|troops|missile|navy|army|\bwar\b|conflict|ceasefire|treaty|summit|nato|security council|foreign (policy|minister)|embassy|alliance|nuclear|tariff|border|insurg|coup|junta|ukrain|russia|china|taiwan|iran|israel|gaza|syria|korea|sahel|brics|opec|airstrike|drone|президент|война|حرب|رئيس|وزير|guerre|guerra|savaş|战争/i;
 
-const CATS = {
-    military: /war|military|defen[cs]e|troops|missile|navy|army|weapon|drone|airstrike|nato|armed|soldier|attack|strike|bomb|حرب|عسكري|جيش|صاروخ|قصف|هجوم|دفاع|guerre|militaire|armée|frappe|defensa|guerra|militar|ejército|ataque|война|военн|армия|ракет|удар|оборон|savaş|askeri|ordu|füze|saldırı|战争|军事|军队|导弹|袭击|国防/i,
-    economy: /econom|trade|tariff|inflation|oil|market|currency|gdp|bank|sanction|price|invest|اقتصاد|تجارة|نفط|عقوبات|تضخم|سوق|économie|commerce|pétrole|marché|economía|comercio|petróleo|sanciones|mercado|эконом|торгов|нефть|санкци|рынок|ekonomi|ticaret|petrol|yaptırım|piyasa|经济|贸易|石油|制裁|市场|关税/i,
-    diplomacy: /diplomat|summit|talks|treaty|envoy|minister|ceasefire|negotiat|embassy|ambassador|accord|دبلوماس|قمة|محادثات|معاهدة|مبعوث|وزير|وقف إطلاق|سفير|sommet|négociation|ambassad|cessez|cumbre|negociaci|embajad|alto el fuego|саммит|перегов|посол|перемири|zirve|müzakere|büyükelçi|ateşkes|外交|峰会|谈判|条约|大使|停火/i
+const mk = (latin, other) => new RegExp('\\b(?:' + latin.join('|') + ')' + (other.length ? '|' + other.join('|') : ''), 'giu');
+
+const CAT_DEFS = {
+    military: mk(
+        ['wars?\\b', 'warfare', 'wartime', 'militar', 'army\\b', 'armies', 'armée', 'ejército', 'ordu', 'troops?\\b', 'soldiers?\\b', 'soldat', 'soldado', 'asker', 'navy\\b', 'naval\\b', 'warships?', 'airstrikes?', 'air strikes?', 'missiles?', 'drones?\\b', 'artillery', 'bombing', 'shelling', 'offensive', 'front ?line', 'battles?\\b', 'combat', 'weapons?\\b', 'arms\\b', 'nato\\b', 'pentagon', 'idf\\b', 'rebels?\\b', 'insurgen', 'militia', 'fighters?\\b', 'defen[cs]e (?:minister|ministry|forces|budget)', 'guerre', 'frappes?\\b', 'misil', 'guerra', 'saldırı', 'savaş', 'füze', 'ceasefire violat'],
+        ['حرب', 'عسكري', 'جيش', 'صاروخ', 'قصف', 'هجوم', 'غارة', 'مسيرة', 'معركة', 'سلاح', 'войн', 'военн', 'армия', 'армии', 'ракет', 'обстрел', 'беспилотник', 'оборон', 'наступлен', '战争', '军事', '军队', '导弹', '袭击', '国防', '空袭', '无人机', '战斗']
+    ),
+    diplomacy: mk(
+        ['diplomat', 'summit', 'talks\\b', 'treaty', 'envoy', 'ambassador', 'embassy', 'negotiat', 'ceasefire', 'truce', 'accord\\b', 'foreign (?:minister|ministry|policy|affairs)', 'security council', 'general assembly', 'mediat', 'peace (?:deal|plan|talks|process)', 'sommet', 'négociat', 'ambassad', 'cessez', 'cumbre', 'negociaci', 'embajad', 'alto el fuego', 'zirve', 'müzakere', 'büyükelçi', 'ateşkes', 'diplomasi'],
+        ['دبلوماس', 'قمة', 'محادثات', 'مفاوضات', 'معاهدة', 'مبعوث', 'سفير', 'سفارة', 'وقف إطلاق', 'هدنة', 'وساطة', 'дипломат', 'саммит', 'перегов', 'посол', 'посольств', 'перемири', '外交', '峰会', '谈判', '条约', '大使', '停火', '会谈', '和平']
+    ),
+    economy: mk(
+        ['econom', 'trade\\b', 'tariffs?', 'inflation', 'markets?\\b', 'stocks?\\b', 'currenc', 'gdp\\b', 'bank', 'invest', 'financ', 'budget', 'debt\\b', 'recession', 'exports?\\b', 'imports?\\b', 'sanctions?', 'dollar', 'imf\\b', 'world bank', 'prices?\\b', 'économie', 'commerce', 'marché', 'economía', 'comercio', 'mercado', 'ekonomi', 'ticaret', 'piyasa', 'enflasyon', 'yaptırım'],
+        ['اقتصاد', 'تجارة', 'تضخم', 'سوق', 'عقوبات', 'بنك', 'ميزانية', 'ديون', 'استثمار', 'عملة', 'دولار', 'эконом', 'торгов', 'инфляц', 'рынок', 'санкци', 'банк', 'бюджет', 'инвест', 'валют', 'пошлин', '经济', '贸易', '通胀', '市场', '制裁', '银行', '关税', '投资', '货币']
+    ),
+    energy: mk(
+        ['oil\\b', 'gas\\b', 'lng\\b', 'pipelines?', 'opec', 'crude', 'petrol', 'energy', 'fuel', 'refiner', 'nuclear power', 'electricity', 'power grid', 'solar\\b', 'coal\\b', 'énergie', 'pétrole', 'gaz\\b', 'energía', 'gas natural', 'enerji', 'doğalgaz', 'akaryakıt'],
+        ['نفط', 'غاز', 'طاقة', 'أوبك', 'بترول', 'أنابيب', 'كهرباء', 'нефт', 'газопровод', 'природный газ', 'энерг', 'опек', 'топлив', '石油', '天然气', '能源', '欧佩克', '管道', '电力']
+    ),
+    humanitarian: mk(
+        ['humanitarian', 'refugees?\\b', 'famine', 'hunger', 'relief\\b', 'displace', 'asylum', 'migrants?\\b', 'migration', 'civilians?\\b', 'casualt', 'unicef', 'unhcr', 'red cross', 'red crescent', 'wfp\\b', 'cholera', 'epidemic', 'earthquake', 'floods?\\b', 'genocide', 'war crimes?', 'human rights', 'humanitaire', 'réfugi', 'humanitari', 'refugiad', 'insani', 'mülteci', 'açlık', 'deprem'],
+        ['إنساني', 'لاجئ', 'مجاعة', 'إغاثة', 'نازح', 'مساعدات', 'ضحايا', 'مدني', 'حقوق الإنسان', 'كارثة', 'زلزال', 'فيضان', 'гуманитар', 'беженц', 'голод', 'эвакуац', 'мирные жител', 'жертв', 'права человека', 'катастроф', 'землетряс', 'наводнен', '人道', '难民', '饥荒', '援助', '平民', '伤亡', '人权', '灾难', '地震', '洪水']
+    ),
+    security: mk(
+        ['terror', 'extremis', 'jihad', 'isis\\b', 'islamic state', 'daesh', 'al-?qaeda', 'taliban', 'hostages?\\b', 'kidnap', 'assassinat', 'espionage', 'spy\\b', 'spies\\b', 'intelligence (?:agency|service|chief)', 'mossad', 'shin bet', 'cia\\b', 'fbi\\b', 'mi6\\b', 'coup\\b', 'militants?\\b', 'crackdown', 'riots?\\b', 'unrest', 'attentat', 'secuestr', 'terrorismo', 'terör', 'casus', 'suikast', 'rehine'],
+        ['إرهاب', 'إرهابي', 'داعش', 'القاعدة', 'رهائن', 'اختطاف', 'اغتيال', 'تجسس', 'استخبارات', 'انقلاب', 'اضطرابات', 'متشدد', 'террор', 'теракт', 'игил', 'заложник', 'похищен', 'убийств', 'шпион', 'разведк', 'переворот', 'беспорядк', 'экстремис', '恐怖', '极端', '人质', '绑架', '暗杀', '间谍', '情报', '政变', '骚乱']
+    ),
+    cyber: mk(
+        ['cyber', 'hack', 'ransomware', 'malware', 'spyware', 'data breach', 'surveillance', 'artificial intelligence', 'ai\\b', 'chips?\\b', 'semiconductor', 'satellite', 'space\\b', 'quantum', '5g\\b', 'technolog', 'tech\\b', 'internet shutdown', 'disinformation', 'cybersécurité', 'piratage', 'ciberseguridad', 'hackeo', 'siber', 'yapay zeka', 'uydu', 'yarı iletken'],
+        ['سيبراني', 'اختراق', 'قرصنة', 'برمجيات خبيثة', 'ذكاء اصطناعي', 'قمر صناعي', 'أقمار', 'فضاء', 'رقائق', 'تقنية', 'تكنولوجيا', 'кибер', 'хакер', 'взлом', 'искусственн', 'спутник', 'космос', 'чип', 'полупроводник', 'технолог', '网络', '黑客', '勒索', '人工智能', '卫星', '太空', '芯片', '半导体', '科技', '量子']
+    ),
+    middleeast: mk(
+        ['israel', 'gaza', 'palestin', 'west bank', 'hamas', 'hezbollah', 'lebanon', 'beirut', 'syria', 'damascus', 'iraq', 'baghdad', 'iran\\b', 'iranian', 'tehran', 'yemen', 'houthi', 'saudi', 'riyadh', 'emirates', 'uae\\b', 'dubai', 'qatar', 'doha', 'kuwait', 'bahrain', 'oman\\b', 'jordan\\b', 'amman', 'egypt', 'cairo', 'red sea', 'persian gulf', 'jerusalem', 'tel aviv', 'golan', 'middle east', 'moyen-orient', 'oriente medio', 'orta doğu', 'israël', 'liban\\b', 'líbano', 'irak\\b', 'siria', 'suriye', 'filistin', 'lübnan', 'israil', 'égypte', 'egipto', 'mısır', 'katar'],
+        ['إسرائيل', 'غزة', 'فلسطين', 'الضفة', 'حماس', 'حزب الله', 'لبنان', 'بيروت', 'سوريا', 'دمشق', 'العراق', 'بغداد', 'إيران', 'طهران', 'اليمن', 'الحوثي', 'السعودية', 'الرياض', 'الإمارات', 'قطر', 'الكويت', 'البحرين', 'الأردن', 'مصر', 'القاهرة', 'البحر الأحمر', 'الخليج', 'القدس', 'الشرق الأوسط', 'израил', 'сектор.? газа', 'палестин', 'хамас', 'хезболл', 'ливан', 'иран', 'тегеран', 'сири', 'дамаск', 'ирак', 'йемен', 'хуси', 'саудов', 'катар', 'египет', 'ближн\\S* восток', '以色列', '加沙', '巴勒斯坦', '哈马斯', '真主党', '黎巴嫩', '伊朗', '叙利亚', '伊拉克', '也门', '胡塞', '沙特', '卡塔尔', '埃及', '中东']
+    ),
+    europe: mk(
+        ['europe', 'european', 'eu\\b', 'brussels', 'germany', 'berlin', 'france\\b', 'paris', 'macron', 'britain', 'london', 'italy', 'rome\\b', 'spain\\b', 'madrid', 'poland', 'warsaw', 'ukrain', 'kyiv', 'kiev', 'russia', 'moscow', 'kremlin', 'putin', 'baltic', 'finland', 'sweden', 'norway', 'denmark', 'netherlands', 'belgium', 'austria', 'switzerland', 'greece', 'hungary', 'orban', 'romania', 'serbia', 'balkans', 'allemagne', 'royaume-uni', 'alemania', 'reino unido', 'avrupa', 'almanya', 'fransa', 'rusya', 'ukrayna'],
+        ['أوروبا', 'الاتحاد الأوروبي', 'بروكسل', 'ألمانيا', 'فرنسا', 'بريطانيا', 'إيطاليا', 'إسبانيا', 'بولندا', 'أوكرانيا', 'روسيا', 'موسكو', 'بوتين', 'كييف', 'европ', 'евросоюз', 'брюссел', 'герман', 'франци', 'британи', 'италия', 'испани', 'польш', 'украин', 'росси', 'москв', 'путин', 'киев', '欧洲', '欧盟', '德国', '法国', '英国', '意大利', '西班牙', '波兰', '乌克兰', '俄罗斯', '莫斯科', '普京', '基辅']
+    ),
+    asia: mk(
+        ['china\\b', 'chinese', 'beijing', 'xi jinping', 'taiwan', 'taipei', 'japan', 'tokyo', 'korea', 'pyongyang', 'seoul', 'india\\b', 'delhi', 'modi\\b', 'pakistan', 'islamabad', 'afghanistan', 'kabul', 'bangladesh', 'myanmar', 'indonesia', 'jakarta', 'philippines', 'manila', 'vietnam', 'thailand', 'malaysia', 'singapore', 'asean', 'south china sea', 'indo-pacific', 'kazakhstan', 'central asia', 'chine\\b', 'japon', 'inde\\b', 'corée', 'japón', 'çin\\b', 'japonya', 'hindistan', 'kore\\b', 'tayvan'],
+        ['الصين', 'بكين', 'تايوان', 'اليابان', 'طوكيو', 'كوريا', 'الهند', 'باكستان', 'أفغانستان', 'كابول', 'بنغلاديش', 'ميانمار', 'إندونيسيا', 'الفلبين', 'فيتنام', 'آسيا', 'китай', 'пекин', 'тайван', 'япони', 'токио', 'коре', 'индия', 'индии', 'пакистан', 'афганистан', 'мьянм', 'индонез', 'филиппин', 'вьетнам', 'азии', '中国', '北京', '台湾', '日本', '东京', '朝鲜', '韩国', '印度', '巴基斯坦', '阿富汗', '缅甸', '印尼', '菲律宾', '越南', '亚洲', '南海', '印太']
+    ),
+    africa: mk(
+        ['africa', 'sahel', 'sudan', 'khartoum', 'ethiopia', 'addis', 'somalia', 'kenya', 'nairobi', 'nigeria', 'lagos', 'congo', 'kinshasa', 'rwanda', 'uganda', 'mali\\b', 'niger\\b', 'burkina', 'chad\\b', 'libya', 'tripoli', 'tunisia', 'algeria', 'morocco', 'mozambique', 'tigray', 'darfur', 'ghana', 'senegal', 'cameroon', 'afrique', 'soudan', 'éthiopie', 'libye', 'algérie', 'maroc', 'áfrica', 'sudán', 'libia', 'afrika', 'etiyopya', 'cezayir'],
+        ['أفريقيا', 'إفريقيا', 'الساحل', 'السودان', 'الخرطوم', 'إثيوبيا', 'الصومال', 'كينيا', 'نيجيريا', 'الكونغو', 'رواندا', 'مالي', 'النيجر', 'بوركينا', 'تشاد', 'ليبيا', 'طرابلس', 'تونس', 'الجزائر', 'المغرب', 'موزمبيق', 'دارفور', 'африк', 'сахел', 'судан', 'хартум', 'эфиопи', 'сомали', 'кени', 'нигери', 'конго', 'руанд', 'мали', 'буркина', 'ливи', 'тунис', 'алжир', 'марокко', '非洲', '萨赫勒', '苏丹', '埃塞俄比亚', '索马里', '肯尼亚', '尼日利亚', '刚果', '卢旺达', '马里', '尼日尔', '布基纳', '乍得', '利比亚', '突尼斯', '阿尔及利亚', '摩洛哥']
+    ),
+    americas: mk(
+        ['united states', 'u\\.s\\.', 'washington', 'white house', 'trump', 'biden', 'congress', 'canada', 'ottawa', 'mexico', 'brazil', 'lula\\b', 'argentina', 'milei', 'venezuela', 'maduro', 'colombia', 'cuba\\b', 'peru\\b', 'chile\\b', 'latin america', 'caribbean', 'panama', 'haiti', 'ecuador', 'bolivia', 'états-unis', 'etats-unis', 'estados unidos', 'amerika birleşik', 'abd\\b', 'kanada', 'meksika', 'brezilya', 'brésil', 'brasil', 'méxico'],
+        ['الولايات المتحدة', 'واشنطن', 'البيت الأبيض', 'ترامب', 'بايدن', 'الكونغرس', 'كندا', 'المكسيك', 'البرازيل', 'الأرجنتين', 'فنزويلا', 'مادورو', 'كولومبيا', 'كوبا', 'أمريكا', 'сша', 'вашингтон', 'белый дом', 'трамп', 'байден', 'конгресс', 'канад', 'мексик', 'бразил', 'аргентин', 'венесуэл', 'мадуро', 'колумби', 'америк', '美国', '华盛顿', '白宫', '特朗普', '拜登', '国会', '加拿大', '墨西哥', '巴西', '阿根廷', '委内瑞拉', '马杜罗', '哥伦比亚', '古巴', '秘鲁', '智利', '美洲']
+    )
 };
+
+const CAT_KEYS = Object.keys(CAT_DEFS);
+const TOPIC_KEYS = ['military', 'diplomacy', 'economy', 'energy', 'humanitarian', 'security', 'cyber'];
+const REGION_KEYS = ['middleeast', 'europe', 'asia', 'africa', 'americas'];
+
+const THEATER_DEFS = {
+    yemen: mk(
+        ['yemen', 'houthi', 'red sea', 'sanaa', 'sana\'a', 'aden\\b', 'bab el-mandeb', 'bab al-mandab', 'yémen', 'mer rouge', 'hutíes', 'kızıldeniz'],
+        ['اليمن', 'الحوثي', 'البحر الأحمر', 'صنعاء', 'йемен', 'хуси', 'хути', 'красное море', '也门', '胡塞', '红海']
+    ),
+    ukraine: mk(
+        ['ukrain', 'kyiv', 'kiev', 'zelensk', 'donbas', 'donetsk', 'kharkiv', 'kherson', 'zaporizh', 'crimea', 'odesa', 'odessa', 'kremlin', 'moscow', 'putin', 'poutine', 'ucrania', 'ukrayna'],
+        ['украин', 'киев', 'зеленск', 'донбас', 'донецк', 'харьков', 'херсон', 'запорож', 'крым', 'одесс', 'кремл', 'москв', 'путин', 'أوكرانيا', 'كييف', 'زيلينسكي', 'دونباس', 'القرم', 'الكرملين', 'موسكو', 'بوتين', '乌克兰', '基辅', '泽连斯基', '顿巴斯', '克里米亚', '克里姆林', '莫斯科', '普京']
+    ),
+    taiwan: mk(
+        ['taiwan', 'taipei', 'taïwan', 'tayvan', 'south china sea', 'pla\\b', 'indo-pacific', 'senkaku', 'philippine sea', 'mer de chine', 'mar de china'],
+        ['台湾', '台海', '南海', '解放军', '印太', 'тайван', 'южно-китайск', 'تايوان', 'بحر الصين الجنوبي']
+    ),
+    korea: mk(
+        ['north korea', 'south korea', 'pyongyang', 'seoul', 'kim jong', 'korean peninsula', 'dmz\\b', 'corée', 'corea', 'kuzey kore', 'güney kore'],
+        ['朝鲜', '韩国', '平壤', '首尔', '金正恩', 'северная коре', 'южная коре', 'пхеньян', 'сеул', 'ким чен', 'كوريا الشمالية', 'كوريا الجنوبية', 'بيونغ يانغ', 'سيول']
+    ),
+    sahel: mk(
+        ['sahel', 'mali\\b', 'niger\\b', 'burkina', 'chad\\b', 'bamako', 'niamey', 'ouagadougou', 'jnim', 'africa corps', 'wagner', 'mauritania'],
+        ['الساحل', 'مالي', 'النيجر', 'بوركينا', 'تشاد', 'باماكو', 'сахел', 'мали', 'буркина', '萨赫勒', '马里', '尼日尔', '布基纳', '乍得']
+    ),
+    brics: mk(
+        ['brics', 'de-?dollari[sz]', 'opec', 'oil price', 'petrodollar', 'new development bank', 'shanghai cooperation', 'g20\\b', 'g7\\b', 'imf\\b', 'world bank'],
+        ['بريكس', 'أوبك', 'سعر النفط', 'брикс', 'опек', '金砖', '欧佩克', '去美元化']
+    ),
+    mideast: mk(
+        ['israel', 'gaza', 'hamas', 'hezbollah', 'lebanon', 'beirut', 'iran\\b', 'iranian', 'tehran', 'syria', 'damascus', 'iraq', 'baghdad', 'west bank', 'palestin', 'idf\\b', 'jerusalem', 'tel aviv', 'golan', 'middle east', 'moyen-orient', 'oriente medio', 'orta doğu', 'israël', 'liban\\b', 'líbano', 'irak\\b', 'siria', 'suriye', 'filistin', 'lübnan', 'israil'],
+        ['إسرائيل', 'غزة', 'حماس', 'حزب الله', 'لبنان', 'بيروت', 'إيران', 'طهران', 'سوريا', 'دمشق', 'العراق', 'بغداد', 'الضفة', 'فلسطين', 'القدس', 'الشرق الأوسط', 'израил', 'сектор.? газа', 'хамас', 'хезболл', 'ливан', 'иран', 'тегеран', 'сири', 'дамаск', 'ирак', 'ближн\\S* восток', '以色列', '加沙', '哈马斯', '真主党', '黎巴嫩', '伊朗', '叙利亚', '伊拉克', '中东']
+    )
+};
+const THEATER_ORDER = ['yemen', 'ukraine', 'taiwan', 'korea', 'sahel', 'brics', 'mideast'];
+
+const ENTITY_WORDS = ['afghanistan', 'africa', 'algeria', 'america', 'argentina', 'armenia', 'assad', 'azerbaijan', 'bahrain', 'baghdad', 'beijing', 'beirut', 'belarus', 'biden', 'brazil', 'brics', 'britain', 'canada', 'china', 'council', 'crimea', 'cuba', 'cyprus', 'damascus', 'donbas', 'egypt', 'erdogan', 'ethiopia', 'europe', 'france', 'gaza', 'germany', 'greece', 'hamas', 'hezbollah', 'houthi', 'india', 'indonesia', 'iran', 'iraq', 'israel', 'italy', 'japan', 'jerusalem', 'jordan', 'kashmir', 'khamenei', 'korea', 'kremlin', 'kuwait', 'lebanon', 'libya', 'macron', 'mexico', 'morocco', 'moscow', 'myanmar', 'nato', 'netanyahu', 'nigeria', 'north', 'opec', 'pakistan', 'palestine', 'pentagon', 'poland', 'putin', 'pyongyang', 'qatar', 'russia', 'sahel', 'saudi', 'security', 'sharaa', 'somalia', 'south', 'strait', 'strip', 'sudan', 'syria', 'taiwan', 'tehran', 'trump', 'tunisia', 'turkey', 'turkiye', 'ukraine', 'vietnam', 'yemen', 'zelensky', 'zelenskyy'];
+const ENTITY_TOKENS = new Set(ENTITY_WORDS);
+
+const CONCEPTS = [
+    { keys: ['الاسد', 'بشار الاسد', 'assad', 'al assad', 'alassad', 'asad', 'al asad', 'esad', 'esed', 'bashar al assad', 'bashar', 'bachar', 'эсад', 'асад', 'башар', '阿萨德'], en: 'Bashar al-Assad', vars: ['Assad', 'Syria', 'الأسد'] },
+    { keys: ['الجولاني', 'الشرع', 'احمد الشرع', 'jolani', 'julani', 'golani', 'al sharaa', 'sharaa', 'şara', 'шараа', 'джулани', '朱拉尼'], en: 'Ahmed al-Sharaa', vars: ['Sharaa', 'Jolani', 'Syria', 'الشرع'] },
+    { keys: ['حزب الله', 'hezbollah', 'hizbullah', 'hizballah', 'hizbollah', 'hezbolah', 'hizbullah', 'хезболла', 'хизбалла', '真主党'], en: 'Hezbollah', vars: ['Hezbollah', 'Lebanon', 'حزب الله'] },
+    { keys: ['حماس', 'hamas', 'hamaz', 'hammas', 'хамас', '哈马斯'], en: 'Hamas', vars: ['Hamas', 'Gaza', 'حماس'] },
+    { keys: ['الحوثي', 'الحوثيين', 'houthi', 'houthis', 'houti', 'husi', 'hutiler', 'хуситы', 'хуси', '胡塞'], en: 'Houthi', vars: ['Houthi', 'Yemen', 'الحوثي'] },
+    { keys: ['زيلينسكي', 'zelensky', 'zelenskyy', 'zelenski', 'zelenskiy', 'zelenskyi', 'зеленский', '泽连斯基'], en: 'Zelensky', vars: ['Zelensky', 'Ukraine', 'زيلينسكي'] },
+    { keys: ['نتنياهو', 'netanyahu', 'netanyau', 'natanyahu', 'nethanyahu', 'netanyahou', 'нетаньяху', '内塔尼亚胡'], en: 'Netanyahu', vars: ['Netanyahu', 'Israel', 'نتنياهو'] },
+    { keys: ['اردوغان', 'erdogan', 'erdoğan', 'erdowan', 'erdoan', 'эрдоган', '埃尔多安'], en: 'Erdogan', vars: ['Erdogan', 'Turkey', 'أردوغان'] },
+    { keys: ['خامنئي', 'khamenei', 'khamanei', 'hamaney', 'хаменеи', '哈梅内伊'], en: 'Khamenei', vars: ['Khamenei', 'Iran', 'خامنئي'] },
+    { keys: ['السيسي', 'sisi', 'el sisi', 'al sisi', 'сиси', '塞西'], en: 'Sisi', vars: ['Sisi', 'Egypt', 'السيسي'] }
+].map(c => ({ ...c, keys: c.keys.map(k => norm(k)) }));
+
+function hits(re, text) {
+    if (!text) return 0;
+    const m = String(text).match(re);
+    if (!m) return 0;
+    return new Set(m.map(x => x.toLowerCase())).size;
+}
+
+function annotate(it) {
+    const cs = {};
+    for (const k of CAT_KEYS) {
+        const th = hits(CAT_DEFS[k], it.title);
+        const dh = hits(CAT_DEFS[k], it.description);
+        if (th >= 1 || dh >= 2) cs[k] = th * 3 + dh;
+    }
+    it._cs = cs;
+    let best = null;
+    let bs = 0;
+    for (const k of TOPIC_KEYS) if (cs[k] > bs) { best = k; bs = cs[k]; }
+    if (!best) for (const k of REGION_KEYS) if (cs[k] > bs) { best = k; bs = cs[k]; }
+    it._cat = best || 'intel';
+    return it;
+}
 
 const RANGE_HOURS = { '24h': 24, '7d': 168, '30d': 720 };
 const FEED_TTL = 5 * 60 * 1000;
@@ -198,6 +320,7 @@ function parseFeed(xml, feed) {
             _dn: norm(desc)
         });
     }
+    items.forEach(annotate);
     return items;
 }
 
@@ -277,16 +400,16 @@ module.exports = function createSearch({ translator, matchSource }) {
         if (!corpus.length) await refreshing;
     }
 
-    function correct(token) {
-        if (token.length < 4 || isCJK(token) || /[^\x00-\x7f]/.test(token) || vocab.has(token)) return null;
-        const max = token.length >= 5 ? 2 : 1;
+    function nearest(token, source, max) {
         let best = null;
         let bestD = max + 1;
         let bestW = -1;
-        for (const [cand, w] of vocab) {
+        const weight = source instanceof Map ? c => source.get(c) : () => 1;
+        for (const cand of (source instanceof Map ? source.keys() : source)) {
             if (cand[0] !== token[0] || Math.abs(cand.length - token.length) > max) continue;
             const d = dist(token, cand, max);
-            if (d <= max && (d < bestD || (d === bestD && w > bestW))) {
+            const w = weight(cand);
+            if (d <= max && d > 0 && (d < bestD || (d === bestD && w > bestW))) {
                 best = cand;
                 bestD = d;
                 bestW = w;
@@ -295,7 +418,35 @@ module.exports = function createSearch({ translator, matchSource }) {
         return best;
     }
 
+    function correct(token) {
+        if (token.length < 4 || isCJK(token) || /[^\x00-\x7f]/.test(token) || ENTITY_TOKENS.has(token)) return null;
+        const known = vocab.get(token) || 0;
+        if (known < 4) {
+            const e = nearest(token, ENTITY_TOKENS, token.length >= 7 ? 2 : 1);
+            if (e) return e;
+        }
+        if (known) return null;
+        return nearest(token, vocab, token.length >= 5 ? 2 : 1);
+    }
+
+    function findConcept(q) {
+        const nq = norm(q);
+        if (!nq) return { exact: null, partial: null };
+        const arabic = /[\u0600-\u06FF]/.test(nq);
+        const tokens = nq.split(' ');
+        let partial = null;
+        for (const c of CONCEPTS) {
+            for (const k of c.keys) {
+                if (nq === k) return { exact: c, partial: null };
+                if (!arabic && k.length >= 5 && !k.includes(' ') && Math.abs(nq.length - k.length) <= 1 && dist(nq, k, 1) <= 1) return { exact: c, partial: null };
+                if (!partial && tokens.length > 1 && !k.includes(' ') && tokens.includes(k)) partial = c;
+            }
+        }
+        return { exact: null, partial };
+    }
+
     async function expand(q, client) {
+        const found = findConcept(q);
         const d = await translator.detectToEnglish(q);
         let english = q;
         let detected = null;
@@ -309,20 +460,31 @@ module.exports = function createSearch({ translator, matchSource }) {
             detected = translator.normalizeLang(client.detected);
             ok = true;
         }
+        if (found.exact) {
+            english = found.exact.en;
+            ok = true;
+            if (!detected) detected = /[\u0600-\u06FF]/.test(q) ? 'ar' : /[\u0400-\u04FF]/.test(q) ? 'ru' : /[\u3400-\u9FFF]/.test(q) ? 'zh' : null;
+        }
         const variants = new Map();
         variants.set(q, 1);
         variants.set(english, 1);
-        if (client && Array.isArray(client.vars)) client.vars.slice(0, 12).forEach(v => variants.set(String(v).slice(0, 80), 0.9));
-        if (ok && !(client && client.vars && client.vars.length)) {
+        const concept = found.exact || found.partial;
+        if (concept) {
+            variants.set(concept.en, 1);
+            concept.vars.forEach(v => variants.set(v, 0.9));
+        }
+        if (client && Array.isArray(client.vars) && !found.exact) client.vars.slice(0, 12).forEach(v => variants.set(String(v).slice(0, 80), 0.9));
+        if (ok && !(client && client.vars && client.vars.length && !found.exact)) {
             const langs = ['ar', 'fr', 'es', 'ru', 'zh', 'tr'];
             const res = await Promise.all(langs.map(l => translator.translateTexts([english], l, 'en').catch(() => [null])));
             res.forEach(r => { if (r && r[0]) variants.set(r[0], 0.9); });
         }
-        return { english, detected, ok, variants };
+        return { english, detected, ok, variants, concept: !!found.exact };
     }
 
     function buildTerms(q, ex) {
         const terms = new Map();
+        terms.exact = new Set();
         const put = (t, w) => {
             if (!t || t.length < 2 || STOP.has(t)) return;
             if (!terms.has(t) || terms.get(t) < w) terms.set(t, w);
@@ -335,12 +497,15 @@ module.exports = function createSearch({ translator, matchSource }) {
         });
         tokensOf(q).concat(tokensOf(ex.english)).forEach(t => {
             const fix = correct(t);
-            if (fix) put(fix, 0.9);
+            if (!fix) return;
+            put(fix, 0.9);
+            terms.exact.add(fix);
+            if (ENTITY_TOKENS.has(fix) && (vocab.get(t) || 0) < 4) terms.delete(t);
         });
         return terms;
     }
 
-    function matchTerm(term, it) {
+    function matchTerm(term, it, exact) {
         if (isCJK(term)) {
             if (it._tn.includes(term)) return 4;
             if (it._dn.includes(term)) return 2;
@@ -348,7 +513,7 @@ module.exports = function createSearch({ translator, matchSource }) {
         }
         if (it._t.has(term)) return 4;
         if (it._d.has(term)) return 2;
-        if (term.length >= 4) {
+        if (term.length >= 4 && !exact) {
             for (const t of it._tl) if (t.length >= 4 && (t.startsWith(term) || term.startsWith(t))) return 3;
             for (const t of it._dl) if (t.length >= 4 && (t.startsWith(term) || term.startsWith(t))) return 1.5;
         }
@@ -401,6 +566,7 @@ module.exports = function createSearch({ translator, matchSource }) {
                 break;
             }
         }
+        out.forEach(annotate);
         if (gnewsCache.size > 120) gnewsCache.delete(gnewsCache.keys().next().value);
         gnewsCache.set(ck, { items: out, exp: Date.now() + 30 * 60 * 1000 });
         return out;
@@ -424,7 +590,9 @@ module.exports = function createSearch({ translator, matchSource }) {
         const size = opts.size;
         const cutoffHours = RANGE_HOURS[opts.range];
         const cutoff = cutoffHours ? Date.now() - cutoffHours * 3600000 : 0;
-        const catRe = CATS[opts.category] || null;
+        const cat = CAT_DEFS[opts.category] ? opts.category : 'all';
+        const catOk = it => cat === 'all' || !!(it._cs && it._cs[cat]);
+        const catBoost = it => (cat === 'all' ? 0 : Math.min(3, (it._cs[cat] || 0) / 3));
         const now = Date.now();
         let uiLang = opts.uiLang;
         let english = q;
@@ -438,25 +606,43 @@ module.exports = function createSearch({ translator, matchSource }) {
 
         if (!q) {
             results = corpus
-                .filter(it => it.ts >= cutoff && (!catRe || catRe.test(it.title + ' ' + it.description)))
-                .map(it => ({ it, score: (GEO.test(it.title) ? 2 : 0) + (GEO.test(it.description) ? 1 : 0) + recency(it) + (it.lang === uiLang ? 1.5 : 0) + (it.image ? 0.3 : 0) }));
+                .filter(it => it.ts >= cutoff && catOk(it))
+                .map(it => ({ it, score: (GEO.test(it.title) ? 2 : 0) + (GEO.test(it.description) ? 1 : 0) + recency(it) + catBoost(it) + (it.lang === uiLang ? 1.5 : 0) + (it.image ? 0.3 : 0) }));
         } else {
             const ex = await expand(q, opts.client);
             english = ex.english;
             needsExpansion = !ex.ok && !(opts.client && opts.client.english);
             if (opts.detect) uiLang = decideLang(q, english, ex.detected, uiLang);
             const terms = buildTerms(q, ex);
+            const groups = [];
+            if (!ex.concept) {
+                tokensOf(ex.english).forEach(t => {
+                    if (t.length < 2 || STOP.has(t) || isCJK(t) || /[^\x00-\x7f]/.test(t)) return;
+                    const g = new Set([t]);
+                    const fix = correct(t);
+                    if (fix) g.add(fix);
+                    ALIASES.forEach(group => { if (group.includes(t)) group.forEach(x => { if (!x.includes(' ')) g.add(x); }); });
+                    groups.push(g);
+                });
+            }
+            const need = groups.length >= 3 ? Math.ceil(groups.length / 2) : 0;
             const key = process.env.GNEWS_API_KEY;
             const from = cutoffHours ? new Date(Math.floor((now - cutoffHours * 3600000) / 3600000) * 3600000).toISOString() : null;
             const extra = await gnews(english, from, key);
             const pool = dedupe(corpus.concat(extra));
             pool.forEach(it => {
                 if (it.ts < cutoff) return;
-                if (catRe && !catRe.test(it.title + ' ' + it.description)) return;
+                if (!catOk(it)) return;
                 let score = 0;
-                terms.forEach((w, term) => { score += w * matchTerm(term, it); });
+                terms.forEach((w, term) => { score += w * matchTerm(term, it, terms.exact.has(term)); });
                 if (score <= 0) return;
-                score += recency(it) + (it.lang === uiLang ? 1.5 : 0) + (it.image ? 0.3 : 0);
+                if (groups.length && it.lang === 'en') {
+                    let covered = 0;
+                    groups.forEach(g => { for (const t of g) { if (matchTerm(t, it) > 0) { covered++; break; } } });
+                    if (need && covered < need) return;
+                    score += covered * 2;
+                }
+                score += recency(it) + catBoost(it) + (it.lang === uiLang ? 1.5 : 0) + (it.image ? 0.3 : 0);
                 results.push({ it, score });
             });
         }
@@ -472,9 +658,48 @@ module.exports = function createSearch({ translator, matchSource }) {
             image: r.it.image,
             publishedAt: r.it.publishedAt,
             source: r.it.source,
-            lang: r.it.lang
+            lang: r.it.lang,
+            cat: r.it._cat
         }));
         return { articles, page, totalPages, total, lang: uiLang, queryEnglish: english, needsExpansion };
+    }
+
+    function pub(it) {
+        return { title: it.title, description: it.description, url: it.url, image: it.image, publishedAt: it.publishedAt, source: it.source, lang: it.lang };
+    }
+
+    let theaterCache = { at: 0, data: null };
+
+    function theaters() {
+        const now = Date.now();
+        if (theaterCache.data && now - theaterCache.at < 45000) return theaterCache.data;
+        const buckets = {};
+        THEATER_ORDER.forEach(id => { buckets[id] = []; });
+        for (const it of corpus) {
+            if (now - it.ts > 72 * 3600000) continue;
+            const id = THEATER_ORDER.find(k => hits(THEATER_DEFS[k], it.title) >= 1 || hits(THEATER_DEFS[k], it.description) >= 2);
+            if (id) buckets[id].push(it);
+        }
+        const out = {};
+        THEATER_ORDER.forEach(id => {
+            const list = buckets[id].sort((a, b) => b.ts - a.ts);
+            const day = list.filter(it => now - it.ts <= 24 * 3600000);
+            const lead = list[0] || null;
+            let tag = 'latest';
+            if (lead) {
+                const h = (now - lead.ts) / 3600000;
+                tag = h < 1.5 ? 'breaking' : h < 8 ? 'new' : 'latest';
+            }
+            out[id] = {
+                lead: lead ? pub(lead) : null,
+                more: list.slice(1, 3).map(pub),
+                tag,
+                count24h: day.length,
+                sources24h: new Set(day.map(it => it.source)).size
+            };
+        });
+        theaterCache = { at: now, data: { theaters: out, updatedAt: lastRefresh ? new Date(lastRefresh).toISOString() : null } };
+        return theaterCache.data;
     }
 
     function feedHealth() {
@@ -485,5 +710,17 @@ module.exports = function createSearch({ translator, matchSource }) {
         return { corpus: corpus.length, vocabulary: vocab.size, working: feeds.filter(f => f.ok).length, total: feeds.length, feeds };
     }
 
-    return { search, feedHealth, warm: () => ensure().catch(() => { }) };
+    function warm() {
+        ensure().catch(() => { });
+        setInterval(() => {
+            if (!refreshing) refreshing = refresh().finally(() => { refreshing = null; });
+        }, FEED_TTL).unref();
+    }
+
+    async function theatersLive() {
+        await ensure();
+        return theaters();
+    }
+
+    return { search, feedHealth, warm, theaters: theatersLive };
 };
