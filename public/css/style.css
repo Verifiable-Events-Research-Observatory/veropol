@@ -48,8 +48,8 @@
 }
 
 :root[lang="ar"] {
-    --font-head: 'IBM Plex Sans Arabic', 'Manrope', sans-serif;
-    --font-body: 'IBM Plex Sans Arabic', 'Manrope', sans-serif;
+    --font-head: 'Alexandria', 'Readex Pro', 'Manrope', sans-serif;
+    --font-body: 'Readex Pro', 'Alexandria', 'Manrope', sans-serif;
 }
 
 :root[lang="zh"] {
@@ -223,10 +223,15 @@ img {
 .brand-logo {
     width: 34px;
     height: 34px;
-    object-fit: cover;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px var(--line);
-    background: #000;
+    object-fit: contain;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    transition: opacity 0.25s;
+}
+
+.brand-logo:not([data-vl]) {
+    opacity: 0;
 }
 
 .nav-links {
@@ -2068,4 +2073,288 @@ img {
 .news-card img {
     background: var(--surface-2);
     transition: opacity 0.4s ease;
+}
+
+:root[lang="ar"] h1,
+:root[lang="ar"] h2,
+:root[lang="ar"] h3,
+:root[lang="ar"] h4,
+:root[lang="ar"] .hero-title,
+:root[lang="ar"] .hero-title span,
+:root[lang="ar"] .hero-title em,
+:root[lang="ar"] .card-title,
+:root[lang="ar"] .btn-nav,
+:root[lang="ar"] .btn-primary,
+:root[lang="ar"] .btn-ghost,
+:root[lang="ar"] .btn-submit,
+:root[lang="ar"] .filter-btn,
+:root[lang="ar"] .range-btn,
+:root[lang="ar"] .btn-theater-action,
+:root[lang="ar"] .stat-val,
+:root[lang="ar"] .hero-stats strong {
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+:root[lang="ar"] .hero-title {
+    line-height: 1.4;
+}
+
+:root[lang="ar"] .nav-links>a,
+:root[lang="ar"] .card-tag,
+:root[lang="ar"] .theater-badge,
+:root[lang="ar"] .stat-label,
+:root[lang="ar"] .kicker,
+:root[lang="ar"] .card-date,
+:root[lang="ar"] .read-more,
+:root[lang="ar"] .source-info {
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+:root[lang="ar"] .brand,
+:root[lang="ar"] .brand-line {
+    font-family: 'Unbounded', 'Manrope', sans-serif;
+}
+
+.filter-btn i {
+    margin-inline-end: 6px;
+    vertical-align: -2px;
+}
+
+.live-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.live-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: livePulse 1.6s infinite;
+}
+
+@keyframes livePulse {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.flex-grid.theaters-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px;
+    max-width: 1220px;
+    margin-inline: auto;
+}
+
+.theaters-grid>.theater-card {
+    flex: none;
+    max-width: none;
+    flex-direction: row;
+    min-height: 380px;
+}
+
+.theaters-grid>.theater-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+.theaters-grid .theater-cover {
+    flex: 0 0 38%;
+    height: auto;
+    min-height: 100%;
+}
+
+.theaters-grid>.theater-card:last-child:nth-child(odd) .theater-cover {
+    flex-basis: 32%;
+}
+
+.theaters-grid .theater-info {
+    position: static;
+    z-index: auto;
+    justify-content: center;
+    gap: 14px;
+    padding: 28px;
+}
+
+.theaters-grid .theater-info h3 {
+    font-size: 1.35rem;
+}
+
+.theaters-grid .theater-desc {
+    flex: 0 0 auto;
+    font-size: 0.95rem;
+}
+
+.theaters-grid .theater-actions {
+    position: relative;
+    z-index: 3;
+}
+
+.theater-overview-label {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.theater-live {
+    display: grid;
+    gap: 9px;
+    padding: 14px 16px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--bg);
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.25s;
+}
+
+.theater-live[hidden] {
+    display: none;
+}
+
+.theater-live::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: var(--r-lg);
+}
+
+.theater-live:focus-visible::after {
+    outline: 2px solid var(--accent);
+    outline-offset: -3px;
+}
+
+.theater-card:hover .theater-live {
+    border-color: var(--accent);
+}
+
+.live-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.live-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.live-tag.breaking {
+    background: var(--danger);
+    color: #fff;
+}
+
+.live-tag.breaking::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fff;
+    animation: livePulse 1.2s infinite;
+}
+
+.live-tag.latest {
+    background: var(--bg-2);
+    color: var(--muted);
+}
+
+.live-time {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.live-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: var(--font-body);
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.live-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.live-foot .go {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--accent);
+}
+
+.live-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.live-meta b {
+    color: var(--text);
+}
+
+:root[dir="rtl"] .live-foot .go i {
+    transform: scaleX(-1);
+}
+
+@media (max-width: 1100px) {
+    .flex-grid.theaters-grid {
+        grid-template-columns: 1fr;
+        max-width: 760px;
+    }
+
+    .theaters-grid>.theater-card:last-child:nth-child(odd) .theater-cover {
+        flex-basis: 38%;
+    }
+}
+
+@media (max-width: 680px) {
+    .theaters-grid>.theater-card {
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .theaters-grid .theater-cover,
+    .theaters-grid>.theater-card:last-child:nth-child(odd) .theater-cover {
+        flex: none;
+        height: 200px;
+        min-height: 0;
+    }
+
+    .theaters-grid .theater-info {
+        padding: 22px;
+    }
 }
