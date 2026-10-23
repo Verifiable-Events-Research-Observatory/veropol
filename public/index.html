@@ -69,7 +69,7 @@
             href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap">
     </noscript>
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=11">
+    <link rel="stylesheet" href="/css/style.css?v=12">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -213,15 +213,18 @@
                 <span class="kicker" data-tr>Situation rooms</span>
                 <h2 data-tr>Active Conflict Theaters & Strategic Analysis</h2>
                 <p data-tr>Real-time situation maps, theater breakdowns, and dynamic operational monitoring.</p>
+                <p class="live-status"><span class="dot"></span><span data-tr>Live. Updated automatically every 5
+                        minutes.</span></p>
             </div>
             <div class="flex-grid theaters-grid" id="theatersGrid">
-                <article class="theater-card reveal">
+                <article class="theater-card reveal" data-theater="ukraine">
                     <div class="theater-cover cv-ukraine">
                         <div class="theater-badge danger"><i class="ph ph-warning-diamond"></i> <span data-tr>Active
                                 War Zone</span></div>
                     </div>
                     <div class="theater-info">
                         <h3 data-tr>Russo-Ukrainian Conflict</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
                         <p class="theater-desc" data-tr>Frontline monitoring, territory changes, and tactical
                             air/artillery activity.</p>
                         <div class="theater-stats">
@@ -230,6 +233,7 @@
                             <div class="stat-box"><span class="stat-label" data-tr>Air Defense</span><span
                                     class="stat-val" data-tr>Active</span></div>
                         </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action" data-quick="Ukraine war Russia conflict"><i
                                     class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
@@ -239,13 +243,14 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal">
+                <article class="theater-card reveal" data-theater="mideast">
                     <div class="theater-cover cv-mideast">
                         <div class="theater-badge danger"><i class="ph ph-crosshair"></i> <span data-tr>Escalation
                                 Index</span></div>
                     </div>
                     <div class="theater-info">
                         <h3 data-tr>Middle East Conflict</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
                         <p class="theater-desc" data-tr>US-Israeli military stance, Lebanese front, Iranian proxy
                             strikes, and naval security.</p>
                         <div class="theater-stats">
@@ -254,6 +259,7 @@
                             <div class="stat-box"><span class="stat-label" data-tr>Naval Posture</span><span
                                     class="stat-val" data-tr>CSG Deployed</span></div>
                         </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action"
                                 data-quick="Israel Lebanon Iran Middle East"><i class="ph ph-arrows-clockwise"></i>
@@ -261,13 +267,14 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal">
+                <article class="theater-card reveal" data-theater="yemen">
                     <div class="theater-cover cv-yemen">
                         <div class="theater-badge danger"><i class="ph ph-anchor"></i> <span data-tr>Chokepoint
                                 Crisis</span></div>
                     </div>
                     <div class="theater-info">
                         <h3 data-tr>Yemeni Civil War & Red Sea</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
                         <p class="theater-desc" data-tr>Houthi anti-ship ballistic missile strikes, naval coalition
                             defenses, and maritime trade disruption.</p>
                         <div class="theater-stats">
@@ -276,6 +283,7 @@
                             <div class="stat-box"><span class="stat-label" data-tr>Naval Escort</span><span
                                     class="stat-val" data-tr>Active</span></div>
                         </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action"
                                 data-quick="Yemen Houthi Red Sea military"><i class="ph ph-arrows-clockwise"></i> <span
@@ -286,13 +294,14 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal">
+                <article class="theater-card reveal" data-theater="taiwan">
                     <div class="theater-cover cv-taiwan">
                         <div class="theater-badge warning"><i class="ph ph-eye"></i> <span data-tr>Indo-Pacific
                                 Watch</span></div>
                     </div>
                     <div class="theater-info">
                         <h3 data-tr>China - Taiwan Strait</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
                         <p class="theater-desc" data-tr>PLA naval encirclement exercises, ADIZ incursions, and US
                             deterrence shifts.</p>
                         <div class="theater-stats">
@@ -301,19 +310,21 @@
                             <div class="stat-box"><span class="stat-label" data-tr>Chokepoint</span><span
                                     class="stat-val" data-tr>Monitored</span></div>
                         </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action" data-quick="China Taiwan US military"><i
                                     class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal">
+                <article class="theater-card reveal" data-theater="brics">
                     <div class="theater-cover cv-brics">
                         <div class="theater-badge info"><i class="ph ph-currency-dollar-simple"></i> <span
                                 data-tr>Geo-Economics</span></div>
                     </div>
                     <div class="theater-info">
                         <h3 data-tr>BRICS & Multipolarity</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
                         <p class="theater-desc" data-tr>De-dollarization initiatives, alternative payment routing, and
                             resource corridors.</p>
                         <div class="theater-stats">
@@ -322,6 +333,7 @@
                             <div class="stat-box"><span class="stat-label" data-tr>Sanctions</span><span
                                     class="stat-val" data-tr>Systemic</span></div>
                         </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action"
                                 data-quick="BRICS economy sanctions trade"><i class="ph ph-arrows-clockwise"></i> <span
@@ -329,13 +341,14 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal">
+                <article class="theater-card reveal" data-theater="korea">
                     <div class="theater-cover cv-korea">
                         <div class="theater-badge warning"><i class="ph ph-warning"></i> <span data-tr>East Asia
                                 Watch</span></div>
                     </div>
                     <div class="theater-info">
                         <h3 data-tr>Korean Peninsula</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
                         <p class="theater-desc" data-tr>Ballistic missile tests, demilitarized zone tensions, and
                             trilateral defense pacts.</p>
                         <div class="theater-stats">
@@ -344,6 +357,7 @@
                             <div class="stat-box"><span class="stat-label" data-tr>Border Status</span><span
                                     class="stat-val" data-tr>Tense</span></div>
                         </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action"
                                 data-quick="North Korea South Korea military"><i class="ph ph-arrows-clockwise"></i>
@@ -351,13 +365,14 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal">
+                <article class="theater-card reveal" data-theater="sahel">
                     <div class="theater-cover cv-sahel">
                         <div class="theater-badge danger"><i class="ph ph-fire"></i> <span data-tr>High
                                 Instability</span></div>
                     </div>
                     <div class="theater-info">
                         <h3 data-tr>Sahel Region Crisis</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
                         <p class="theater-desc" data-tr>Military juntas, insurgent expansions, and shifts in foreign
                             military influence.</p>
                         <div class="theater-stats">
@@ -366,6 +381,7 @@
                             <div class="stat-box"><span class="stat-label" data-tr>Insurgency</span><span
                                     class="stat-val" data-tr>Expanding</span></div>
                         </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action" data-quick="Sahel Africa military coup"><i
                                     class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
@@ -382,10 +398,32 @@
                 <p data-tr>Click on any intelligence card to access verified reporting at source.</p>
             </div>
             <div class="filters" id="filterContainer">
-                <button type="button" class="filter-btn active" data-filter="all" data-tr>Global Overview</button>
-                <button type="button" class="filter-btn" data-filter="diplomacy" data-tr>Diplomacy</button>
-                <button type="button" class="filter-btn" data-filter="military" data-tr>Military</button>
-                <button type="button" class="filter-btn" data-filter="economy" data-tr>Economy</button>
+                <button type="button" class="filter-btn active" data-filter="all"><i
+                        class="ph ph-globe-hemisphere-west"></i><span data-tr>Global Overview</span></button>
+                <button type="button" class="filter-btn" data-filter="diplomacy"><i class="ph ph-handshake"></i><span
+                        data-tr>Diplomacy</span></button>
+                <button type="button" class="filter-btn" data-filter="military"><i class="ph ph-crosshair"></i><span
+                        data-tr>Military</span></button>
+                <button type="button" class="filter-btn" data-filter="economy"><i class="ph ph-chart-line-up"></i><span
+                        data-tr>Economy</span></button>
+                <button type="button" class="filter-btn" data-filter="energy"><i class="ph ph-gas-pump"></i><span
+                        data-tr>Energy</span></button>
+                <button type="button" class="filter-btn" data-filter="humanitarian"><i
+                        class="ph ph-first-aid-kit"></i><span data-tr>Humanitarian</span></button>
+                <button type="button" class="filter-btn" data-filter="security"><i
+                        class="ph ph-shield-warning"></i><span data-tr>Security</span></button>
+                <button type="button" class="filter-btn" data-filter="cyber"><i class="ph ph-cpu"></i><span
+                        data-tr>Cyber &amp; Tech</span></button>
+                <button type="button" class="filter-btn" data-filter="middleeast"><i class="ph ph-mosque"></i><span
+                        data-tr>Middle East</span></button>
+                <button type="button" class="filter-btn" data-filter="europe"><i class="ph ph-castle-turret"></i><span
+                        data-tr>Europe</span></button>
+                <button type="button" class="filter-btn" data-filter="asia"><i class="ph ph-buildings"></i><span
+                        data-tr>Asia-Pacific</span></button>
+                <button type="button" class="filter-btn" data-filter="africa"><i class="ph ph-compass"></i><span
+                        data-tr>Africa</span></button>
+                <button type="button" class="filter-btn" data-filter="americas"><i class="ph ph-flag"></i><span
+                        data-tr>Americas</span></button>
             </div>
             <div class="range-filters" id="rangeContainer">
                 <span class="range-label"><i class="ph ph-clock"></i> <span data-tr>Timeframe</span></span>
@@ -464,7 +502,7 @@
                 </div>
                 <form class="feedback-form" id="feedbackForm" novalidate>
                     <fieldset class="topic-set">
-                        <legend data-tr>What is this about?</legend>
+                        <legend data-tr>What is this about? (optional)</legend>
                         <div class="topic-chips">
                             <label class="chip"><input type="radio" name="topic" value="feature" required><span><i
                                         class="ph ph-sparkle"></i> <b data-tr>New feature</b></span></label>
@@ -627,11 +665,11 @@
                 <h4 data-tr>Article contributors</h4>
                 <p data-tr>To write articles you create an account with your email, a password, your name, age (18 or
                     older), nationality and country of residence. Passwords are stored only as salted hashes. A session
-                    cookie keeps you signed in. A profile photo and an article cover are optional. Publicly, only your
+                    cookie keeps you signed in. A profile photo is required and an article cover is optional. Publicly,
+                    only your
                     first name, the initial of your last name, your nationality, your photo and a verification badge
-                    appear. Your age, email, residence and verification options are never shown. We do not collect
-                    copies of identity documents; if we need to confirm your identity we will ask privately by email,
-                    and you can delete your account and all of your articles at any time.</p>
+                    appear. Your age, email and residence are never shown. We never ask for copies of identity
+                    documents, and you can delete your account and all of your articles at any time.</p>
                 <h4 data-tr>Your rights</h4>
                 <p data-tr>You can ask to access, correct or delete your data at any time by emailing
                     veropol@proton.me.</p>
@@ -662,8 +700,8 @@
         </div>
     </div>
 
-    <script defer src="/javascript/common.js?v=11"></script>
-    <script defer src="/javascript/script.js?v=11"></script>
+    <script defer src="/javascript/common.js?v=12"></script>
+    <script defer src="/javascript/script.js?v=12"></script>
 </body>
 
 </html>
