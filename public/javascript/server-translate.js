@@ -1,12 +1,15 @@
 const crypto = require('crypto');
 
 const SUPPORTED_LANGS = { en: 'en', fr: 'fr', es: 'es', ru: 'ru', ar: 'ar', zh: 'zh-CN', tr: 'tr' };
+const MS_LANGS = { en: 'en', fr: 'fr', es: 'es', ru: 'ru', ar: 'ar', 'zh-CN': 'zh-Hans', tr: 'tr' };
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+const CACHE_SALT = 'v2';
 
 const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const prepare = t => escapeHtml(t).replace(/\bVERO\b/g, '<span class="notranslate">VERO</span>');
 const clean = s => String(s)
     .replace(/<[^>]+>/g, '')
+    .replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16)))
     .replace(/&#(\d+);/g, (m, n) => String.fromCodePoint(+n))
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
@@ -15,12 +18,72 @@ const clean = s => String(s)
     .replace(/&amp;/g, '&');
 
 const GLOSS = {
-    tr: { 'Feed': 'Haber Akışı', 'Articles': 'Makaleler', 'Methodology': 'Metodoloji', 'Strategic Theaters': 'Stratejik Cepheler', 'Feedback': 'Geri Bildirim', 'Load Intelligence': 'İstihbaratı Yükle', 'Live Map': 'Canlı Harita', 'Breaking News': 'Son Dakika', 'Analysis': 'Analiz' },
-    ar: { 'Feed': 'آخر الأخبار', 'Articles': 'مقالات', 'Methodology': 'المنهجية', 'Strategic Theaters': 'ساحات الصراع الاستراتيجية', 'Feedback': 'ملاحظاتك', 'Load Intelligence': 'تحميل المعلومات', 'Live Map': 'الخريطة المباشرة', 'Breaking News': 'عاجل', 'Analysis': 'تحليل' },
-    ru: { 'Feed': 'Лента', 'Articles': 'Статьи', 'Methodology': 'Методология', 'Strategic Theaters': 'Театры военных действий', 'Feedback': 'Обратная связь', 'Load Intelligence': 'Загрузить сводки', 'Live Map': 'Живая карта', 'Breaking News': 'Срочно', 'Analysis': 'Анализ' },
-    fr: { 'Feed': 'Fil d’actualité', 'Articles': 'Articles', 'Methodology': 'Méthodologie', 'Strategic Theaters': 'Théâtres stratégiques', 'Feedback': 'Avis', 'Load Intelligence': 'Charger le renseignement', 'Live Map': 'Carte en direct', 'Breaking News': 'Dernière minute', 'Analysis': 'Analyse' },
-    es: { 'Feed': 'Noticias', 'Articles': 'Artículos', 'Methodology': 'Metodología', 'Strategic Theaters': 'Teatros estratégicos', 'Feedback': 'Comentarios', 'Load Intelligence': 'Cargar inteligencia', 'Live Map': 'Mapa en vivo', 'Breaking News': 'Última hora', 'Analysis': 'Análisis' },
-    zh: { 'Feed': '动态', 'Articles': '文章', 'Methodology': '方法论', 'Strategic Theaters': '战略战区', 'Feedback': '反馈', 'Load Intelligence': '加载情报', 'Live Map': '实时地图', 'Breaking News': '突发新闻', 'Analysis': '分析' }
+    tr: {
+        'Feed': 'Haber Akışı', 'Articles': 'Makaleler', 'Methodology': 'Metodoloji', 'Strategic Theaters': 'Stratejik Cepheler',
+        'Feedback': 'Geri Bildirim', 'Load Intelligence': 'İstihbaratı Yükle', 'Live Map': 'Canlı Harita', 'Breaking News': 'Son Dakika',
+        'Analysis': 'Analiz', 'Global Overview': 'Genel Bakış', 'Diplomacy': 'Diplomasi', 'Military': 'Askeri', 'Economy': 'Ekonomi',
+        'Energy': 'Enerji', 'Humanitarian': 'İnsani Durum', 'Security': 'Güvenlik', 'Cyber & Tech': 'Siber ve Teknoloji',
+        'Middle East': 'Orta Doğu', 'Europe': 'Avrupa', 'Asia-Pacific': 'Asya-Pasifik', 'Africa': 'Afrika', 'Americas': 'Amerika Kıtası',
+        'Any time': 'Tüm zamanlar', 'Timeframe': 'Zaman aralığı', 'Live feed': 'Canlı akış', 'Situation rooms': 'Durum odaları',
+        'Vetted sources': 'Doğrulanmış kaynaklar', 'Active theaters': 'Aktif cepheler', 'Read at source': 'Kaynakta oku',
+        'Open desk': 'Açık Kürsü', 'New': 'Yeni', 'Latest': 'Güncel', 'VERO Overview': 'VERO Özeti', 'Reports (24h)': 'Haber (24 sa)',
+        'Sources': 'Kaynaklar', 'Intelligence': 'İstihbarat', 'Languages': 'Diller'
+    },
+    ar: {
+        'Feed': 'آخر الأخبار', 'Articles': 'مقالات', 'Methodology': 'المنهجية', 'Strategic Theaters': 'ساحات الصراع الاستراتيجية',
+        'Feedback': 'ملاحظاتك', 'Load Intelligence': 'تحميل المعلومات', 'Live Map': 'الخريطة المباشرة', 'Breaking News': 'عاجل',
+        'Analysis': 'تحليل', 'Global Overview': 'نظرة عامة', 'Diplomacy': 'الدبلوماسية', 'Military': 'العسكرية', 'Economy': 'الاقتصاد',
+        'Energy': 'الطاقة', 'Humanitarian': 'الشأن الإنساني', 'Security': 'الأمن', 'Cyber & Tech': 'السيبراني والتقنية',
+        'Middle East': 'الشرق الأوسط', 'Europe': 'أوروبا', 'Asia-Pacific': 'آسيا والمحيط الهادئ', 'Africa': 'أفريقيا', 'Americas': 'الأمريكتان',
+        'Any time': 'في أي وقت', 'Timeframe': 'الفترة الزمنية', 'Live feed': 'بث مباشر', 'Situation rooms': 'غرف المتابعة',
+        'Vetted sources': 'مصادر موثّقة', 'Active theaters': 'جبهات نشطة', 'Read at source': 'اقرأ في المصدر',
+        'Open desk': 'منبر مفتوح', 'New': 'جديد', 'Latest': 'الأحدث', 'VERO Overview': 'ملخص VERO', 'Reports (24h)': 'تقارير (24 ساعة)',
+        'Sources': 'المصادر', 'Intelligence': 'استخبارات', 'Languages': 'اللغات'
+    },
+    ru: {
+        'Feed': 'Лента', 'Articles': 'Статьи', 'Methodology': 'Методология', 'Strategic Theaters': 'Театры военных действий',
+        'Feedback': 'Обратная связь', 'Load Intelligence': 'Загрузить сводки', 'Live Map': 'Живая карта', 'Breaking News': 'Срочно',
+        'Analysis': 'Анализ', 'Global Overview': 'Общий обзор', 'Diplomacy': 'Дипломатия', 'Military': 'Военные', 'Economy': 'Экономика',
+        'Energy': 'Энергетика', 'Humanitarian': 'Гуманитарная ситуация', 'Security': 'Безопасность', 'Cyber & Tech': 'Кибербезопасность и технологии',
+        'Middle East': 'Ближний Восток', 'Europe': 'Европа', 'Asia-Pacific': 'Азиатско-Тихоокеанский регион', 'Africa': 'Африка', 'Americas': 'Америка',
+        'Any time': 'За всё время', 'Timeframe': 'Период', 'Live feed': 'Прямая лента', 'Situation rooms': 'Ситуационные центры',
+        'Vetted sources': 'Проверенные источники', 'Active theaters': 'Активные театры', 'Read at source': 'Читать в источнике',
+        'Open desk': 'Открытая трибуна', 'New': 'Новое', 'Latest': 'Последнее', 'VERO Overview': 'Обзор VERO', 'Reports (24h)': 'Сообщений за 24 ч',
+        'Sources': 'Источники', 'Intelligence': 'Разведка', 'Languages': 'Языки'
+    },
+    fr: {
+        'Feed': 'Fil d’actualité', 'Articles': 'Articles', 'Methodology': 'Méthodologie', 'Strategic Theaters': 'Théâtres stratégiques',
+        'Feedback': 'Votre avis', 'Load Intelligence': 'Charger le renseignement', 'Live Map': 'Carte en direct', 'Breaking News': 'Dernière minute',
+        'Analysis': 'Analyse', 'Global Overview': 'Vue d’ensemble', 'Diplomacy': 'Diplomatie', 'Military': 'Militaire', 'Economy': 'Économie',
+        'Energy': 'Énergie', 'Humanitarian': 'Humanitaire', 'Security': 'Sécurité', 'Cyber & Tech': 'Cyber et tech',
+        'Middle East': 'Moyen-Orient', 'Europe': 'Europe', 'Asia-Pacific': 'Asie-Pacifique', 'Africa': 'Afrique', 'Americas': 'Amériques',
+        'Any time': 'Toute période', 'Timeframe': 'Période', 'Live feed': 'Flux en direct', 'Situation rooms': 'Salles de situation',
+        'Vetted sources': 'Sources vérifiées', 'Active theaters': 'Théâtres actifs', 'Read at source': 'Lire à la source',
+        'Open desk': 'Tribune libre', 'New': 'Nouveau', 'Latest': 'Dernières', 'VERO Overview': 'Synthèse VERO', 'Reports (24h)': 'Reportages (24 h)',
+        'Sources': 'Sources', 'Intelligence': 'Renseignement', 'Languages': 'Langues'
+    },
+    es: {
+        'Feed': 'Noticias', 'Articles': 'Artículos', 'Methodology': 'Metodología', 'Strategic Theaters': 'Teatros estratégicos',
+        'Feedback': 'Comentarios', 'Load Intelligence': 'Cargar inteligencia', 'Live Map': 'Mapa en vivo', 'Breaking News': 'Última hora',
+        'Analysis': 'Análisis', 'Global Overview': 'Panorama global', 'Diplomacy': 'Diplomacia', 'Military': 'Militar', 'Economy': 'Economía',
+        'Energy': 'Energía', 'Humanitarian': 'Humanitario', 'Security': 'Seguridad', 'Cyber & Tech': 'Ciberseguridad y tecnología',
+        'Middle East': 'Oriente Medio', 'Europe': 'Europa', 'Asia-Pacific': 'Asia-Pacífico', 'Africa': 'África', 'Americas': 'América',
+        'Any time': 'Cualquier fecha', 'Timeframe': 'Periodo', 'Live feed': 'En directo', 'Situation rooms': 'Salas de situación',
+        'Vetted sources': 'Fuentes verificadas', 'Active theaters': 'Teatros activos', 'Read at source': 'Leer en la fuente',
+        'Open desk': 'Tribuna abierta', 'New': 'Nuevo', 'Latest': 'Lo último', 'VERO Overview': 'Resumen de VERO', 'Reports (24h)': 'Informes (24 h)',
+        'Sources': 'Fuentes', 'Intelligence': 'Inteligencia', 'Languages': 'Idiomas'
+    },
+    zh: {
+        'Feed': '动态', 'Articles': '文章', 'Methodology': '方法论', 'Strategic Theaters': '战略战区',
+        'Feedback': '反馈', 'Load Intelligence': '加载情报', 'Live Map': '实时地图', 'Breaking News': '突发新闻',
+        'Analysis': '分析', 'Global Overview': '全球概览', 'Diplomacy': '外交', 'Military': '军事', 'Economy': '经济',
+        'Energy': '能源', 'Humanitarian': '人道主义', 'Security': '安全', 'Cyber & Tech': '网络与科技',
+        'Middle East': '中东', 'Europe': '欧洲', 'Asia-Pacific': '亚太', 'Africa': '非洲', 'Americas': '美洲',
+        'Any time': '不限时间', 'Timeframe': '时间范围', 'Live feed': '实时动态', 'Situation rooms': '态势室',
+        'Vetted sources': '已审核来源', 'Active theaters': '活跃战区', 'Read at source': '阅读原文',
+        'Open desk': '开放专栏', 'New': '最新', 'Latest': '近期', 'VERO Overview': 'VERO 概览', 'Reports (24h)': '24小时报道',
+        'Sources': '来源', 'Intelligence': '情报', 'Languages': '语言'
+    }
 };
 
 function normalizeLang(code) {
@@ -46,6 +109,7 @@ module.exports = function createTranslator({ TransCache, dbReady }) {
     const mem = new Map();
     const stats = {};
     const MAX_MEM = 8000;
+    let msToken = { v: '', exp: 0 };
 
     const note = (name, ok, info) => {
         const s = stats[name] || (stats[name] = { ok: 0, fail: 0, last: '' });
@@ -54,7 +118,7 @@ module.exports = function createTranslator({ TransCache, dbReady }) {
         s.last = info || '';
     };
 
-    const keyOf = (src, target, text) => crypto.createHash('sha1').update(src + '|' + target + '|' + text).digest('hex');
+    const keyOf = (src, target, text) => crypto.createHash('sha1').update(CACHE_SALT + '|' + src + '|' + target + '|' + text).digest('hex');
 
     async function officialBatch(texts, target, source, key) {
         const out = new Array(texts.length).fill(null);
@@ -91,6 +155,62 @@ module.exports = function createTranslator({ TransCache, dbReady }) {
                 }
             } catch (e) {
                 note('official', false, String(e.message || e));
+            }
+            start = end;
+        }
+        return out;
+    }
+
+    async function msAuth(force) {
+        if (!force && msToken.v && msToken.exp > Date.now()) return msToken.v;
+        const response = await fetch('https://edge.microsoft.com/translate/auth', { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(7000) });
+        if (!response.ok) throw new Error('auth HTTP ' + response.status);
+        const v = (await response.text()).trim();
+        if (!v) throw new Error('empty token');
+        msToken = { v, exp: Date.now() + 8 * 60 * 1000 };
+        return v;
+    }
+
+    async function msCall(slice, target, source, retry) {
+        const to = MS_LANGS[target] || target;
+        let url = 'https://api-edge.cognitive.microsofttranslator.com/translate?api-version=3.0&textType=html&to=' + encodeURIComponent(to);
+        if (source) url += '&from=' + encodeURIComponent(MS_LANGS[source] || source);
+        const token = await msAuth(retry);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'User-Agent': UA },
+            body: JSON.stringify(slice.map(t => ({ Text: prepare(t) }))),
+            signal: AbortSignal.timeout(12000)
+        });
+        if ((response.status === 401 || response.status === 403) && !retry) return msCall(slice, target, source, true);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        if (!Array.isArray(data) || data.length !== slice.length) throw new Error('bad format');
+        return data.map(item => {
+            const t = item && item.translations && item.translations[0];
+            if (!t || !t.text) return null;
+            const det = item.detectedLanguage && item.detectedLanguage.language;
+            return { v: clean(t.text), d: det || null };
+        });
+    }
+
+    async function msBatch(texts, target, source) {
+        const out = new Array(texts.length).fill(null);
+        let start = 0;
+        while (start < texts.length) {
+            let end = start;
+            let chars = 0;
+            while (end < texts.length && end - start < 100 && chars + texts[end].length <= 18000) {
+                chars += texts[end].length;
+                end++;
+            }
+            if (end === start) end++;
+            try {
+                const res = await msCall(texts.slice(start, end), target, source, false);
+                res.forEach((r, k) => { out[start + k] = r; });
+                note('microsoft', true, 'ok');
+            } catch (e) {
+                note('microsoft', false, String(e.message || e));
             }
             start = end;
         }
@@ -197,7 +317,12 @@ module.exports = function createTranslator({ TransCache, dbReady }) {
             let results = new Array(list.length).fill(null);
             const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
             if (apiKey) results = await officialBatch(list, target, source, apiKey);
-            const missing = results.map((r, k) => (r ? -1 : k)).filter(k => k >= 0);
+            let missing = results.map((r, k) => (r ? -1 : k)).filter(k => k >= 0);
+            if (missing.length && process.env.DISABLE_MS_TRANSLATE !== '1') {
+                const sub = await msBatch(missing.map(k => list[k]), target, source);
+                missing.forEach((k, n) => { results[k] = sub[n]; });
+                missing = results.map((r, k) => (r ? -1 : k)).filter(k => k >= 0);
+            }
             if (missing.length) {
                 const free = await pool(missing, 6, k => freeTranslate(list[k], target, source));
                 missing.forEach((k, n) => { results[k] = free[n]; });
@@ -230,6 +355,12 @@ module.exports = function createTranslator({ TransCache, dbReady }) {
 
     async function health() {
         const report = { official: process.env.GOOGLE_TRANSLATE_API_KEY ? 'key set' : 'no key', providers: {}, stats };
+        try {
+            const r = await msCall(['Feed'], 'tr', 'en', false);
+            report.providers.microsoft = { ok: true, sample: r[0] && r[0].v };
+        } catch (e) {
+            report.providers.microsoft = { ok: false, error: String(e.message || e) };
+        }
         for (const p of providers) {
             try {
                 const r = await p.run('Hello world', 'tr', 'en');
