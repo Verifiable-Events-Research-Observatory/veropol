@@ -562,7 +562,7 @@
                 btn.title = me.user.firstName + ' ' + me.user.lastName;
             } else {
                 const i = document.createElement('i');
-                i.className = 'ph ph-user-circle';
+                i.className = 'ph ph-user';
                 btn.appendChild(i);
                 btn.classList.remove('signed');
             }
