@@ -11,6 +11,20 @@
         economy: 'Economy',
         diplomacy: 'Diplomacy',
         intel: 'Intelligence',
+        energy: 'Energy',
+        humanitarian: 'Humanitarian',
+        security: 'Security',
+        cyber: 'Cyber & Tech',
+        middleeast: 'Middle East',
+        europe: 'Europe',
+        asia: 'Asia-Pacific',
+        africa: 'Africa',
+        americas: 'Americas',
+        breaking: 'Breaking News',
+        fresh: 'New',
+        latest: 'Latest',
+        reports24: 'Reports (24h)',
+        sources: 'Sources',
         goTo: 'Go to',
         goToAria: 'Go to page',
         recent: 'Recent',
@@ -25,7 +39,6 @@
         sent: 'Thank you. Your feedback was sent.',
         failed: 'Something went wrong. Please try again.',
         unavailable: 'Feedback is temporarily unavailable. Please email us instead.',
-        needTopic: 'Please choose a topic.',
         needMessage: 'Please write at least 10 characters.',
         badEmail: 'Please enter a valid email address.',
         send: 'Send feedback'
@@ -152,6 +165,17 @@
         return { key: 'intel', icon: 'ph-globe' };
     }
 
+    const CATMETA = {
+        military: 'ph-crosshair', economy: 'ph-chart-line-up', diplomacy: 'ph-handshake', energy: 'ph-gas-pump',
+        humanitarian: 'ph-first-aid-kit', security: 'ph-shield-warning', cyber: 'ph-cpu', middleeast: 'ph-mosque',
+        europe: 'ph-castle-turret', asia: 'ph-buildings', africa: 'ph-compass', americas: 'ph-flag', intel: 'ph-globe'
+    };
+
+    function tagFor(item) {
+        const k = item.cat && CATMETA[item.cat] ? item.cat : analyzeTag(item.title, item.description || '').key;
+        return { key: k, icon: CATMETA[k] || 'ph-globe' };
+    }
+
     function proxiedImage(url) {
         return 'https://wsrv.nl/?url=' + encodeURIComponent(url) + '&w=600&h=340&fit=cover&a=attention&output=webp&q=78';
     }
@@ -254,7 +278,7 @@
             card.rel = 'noopener noreferrer';
 
             const title = item.title === 'Untitled Report' ? T('untitled') : item.title;
-            const tag = analyzeTag(item.title, item.description || '');
+            const tag = tagFor(item);
             let date = T('recentDate');
             if (item.publishedAt) {
                 try {
@@ -263,7 +287,8 @@
             }
             const img = item.image;
             const invalid = !img || !img.startsWith('http') || ['generic', 'business', 'placeholder', 'logo', 'avatar', 'default', 'icon', 'stock'].some(k => img.toLowerCase().includes(k));
-            const sources = invalid ? [coverFallbacks[tag.key]] : [proxiedImage(img), img, coverFallbacks[tag.key]];
+            const fallback = coverFallbacks[tag.key] || coverFallbacks.intel;
+            const sources = invalid ? [fallback] : [proxiedImage(img), img, fallback];
             const desc = item.description ? shortDesc(item) + (item.description.length > 150 ? '...' : '') : T('fallbackDesc');
 
             const banner = el('div', 'card-banner loading');
@@ -520,6 +545,88 @@
         });
     }
 
+    const THEATER_REFRESH = 5 * 60 * 1000;
+    let theaterData = null;
+    let theaterLoadedAt = 0;
+    let theaterTitles = [];
+
+    function renderTheaters() {
+        if (!theaterData) return;
+        theaterTitles = [];
+        document.querySelectorAll('.theater-card[data-theater]').forEach(card => {
+            const d = theaterData.theaters[card.dataset.theater];
+            const box = card.querySelector('.theater-live');
+            if (!box) return;
+            if (!d || !d.lead) {
+                box.hidden = true;
+                return;
+            }
+            const lead = d.lead;
+            box.hidden = false;
+            box.href = lead.url;
+            box.innerHTML = '';
+            const head = el('div', 'live-head');
+            const tagKey = d.tag === 'breaking' ? 'breaking' : d.tag === 'new' ? 'fresh' : 'latest';
+            head.appendChild(el('span', 'live-tag ' + d.tag, T(tagKey)));
+            const time = el('span', 'live-time', VT.ago(lead.publishedAt));
+            time.dataset.t = lead.publishedAt;
+            head.appendChild(time);
+            box.appendChild(head);
+            const title = el('span', 'live-title', lead.title);
+            title.setAttribute('dir', 'auto');
+            box.appendChild(title);
+            if (lead.lang && lead.lang !== VT.lang) theaterTitles.push({ node: title, text: lead.title });
+            const foot = el('div', 'live-foot');
+            foot.appendChild(el('span', '', lead.source || ''));
+            const go = el('span', 'go');
+            go.appendChild(document.createTextNode(T('readSource') + ' '));
+            go.appendChild(el('i', 'ph ph-arrow-up-right'));
+            foot.appendChild(go);
+            box.appendChild(foot);
+            const meta = el('div', 'live-meta');
+            const a = el('span', '', T('reports24') + ': ');
+            a.appendChild(el('b', '', String(d.count24h)));
+            const b = el('span', '', T('sources') + ': ');
+            b.appendChild(el('b', '', String(d.sources24h)));
+            meta.appendChild(a);
+            meta.appendChild(b);
+            box.appendChild(meta);
+        });
+    }
+
+    async function translateTheaters() {
+        const jobs = theaterTitles.slice();
+        if (!jobs.length) return;
+        await VT.load(jobs.map(j => j.text), VT.lang, true);
+        jobs.forEach(j => {
+            if (j.node.isConnected) j.node.textContent = VT.tx(j.text);
+        });
+    }
+
+    async function loadTheaters() {
+        try {
+            const r = await fetch('/api/theaters');
+            if (!r.ok) return;
+            theaterData = await r.json();
+            theaterLoadedAt = Date.now();
+            await preload();
+            renderTheaters();
+            translateTheaters();
+        } catch (e) { }
+    }
+
+    function tickTheaterTimes() {
+        document.querySelectorAll('.live-time[data-t]').forEach(n => { n.textContent = VT.ago(n.dataset.t); });
+    }
+
+    setInterval(() => {
+        if (!document.hidden) loadTheaters();
+    }, THEATER_REFRESH);
+    setInterval(tickTheaterTimes, 60000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && Date.now() - theaterLoadedAt > THEATER_REFRESH) loadTheaters();
+    });
+
     const form = document.getElementById('feedbackForm');
     if (form) {
         const otherWrap = document.getElementById('otherWrap');
@@ -546,7 +653,6 @@
             const topic = form.querySelector('input[name="topic"]:checked');
             const email = document.getElementById('fbEmail').value.trim();
             const message = msg.value.trim();
-            if (!topic) return fail(T('needTopic'));
             if (message.length < 10) return fail(T('needMessage'));
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return fail(T('badEmail'));
 
@@ -558,7 +664,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        topic: topic.value,
+                        topic: topic ? topic.value : 'other',
                         otherTopic: document.getElementById('otherTopic').value,
                         name: document.getElementById('fbName').value,
                         email,
@@ -590,6 +696,8 @@
         setGreeting();
         loadSuggestions();
         renderRecent();
+        renderTheaters();
+        translateTheaters();
         if (lastPagination) renderPagination(lastPagination.page, lastPagination.totalPages);
         fetchNews({ page: state.page });
     });
@@ -601,6 +709,7 @@
         renderRecent();
         setInterval(setGreeting, 60000);
         state.booted = true;
+        loadTheaters();
         fetchNews({ q: '' });
     });
 })();
