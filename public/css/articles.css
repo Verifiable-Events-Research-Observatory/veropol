@@ -351,21 +351,6 @@
     margin-top: 8px;
 }
 
-.id-docs {
-    border: 1px dashed var(--line);
-    border-radius: var(--r-md);
-    padding: 18px;
-}
-
-.id-docs legend {
-    padding: 0 8px;
-    font-size: 0.8rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
 .field-help {
     margin-bottom: 12px;
     font-size: 0.84rem;
@@ -897,4 +882,65 @@
 .art-hero h1,
 .write-head h1 {
     letter-spacing: -0.02em;
+}
+
+.avatar-block {
+    display: grid;
+    gap: 12px;
+}
+
+.avatar-img.required {
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+
+.preset {
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    line-height: 0;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.preset img {
+    width: 100%;
+    height: auto;
+    border-radius: 50%;
+}
+
+.preset:hover {
+    transform: scale(1.06);
+}
+
+.preset.on {
+    border-color: var(--accent);
+}
+
+.avatar-panel {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+}
+
+.avatar-panel summary {
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.avatar-panel .preset-grid {
+    margin-top: 14px;
+}
+
+@media (max-width: 520px) {
+    .preset-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
