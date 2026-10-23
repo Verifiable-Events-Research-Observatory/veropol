@@ -64,6 +64,7 @@
     let listId = 0;
 
     const T = key => VT.s(TXT[key]);
+    const codeOf = r => (r.data && r.data.code ? ' (' + r.data.code + ')' : '');
     const preload = () => VT.load(Object.values(TXT));
     const $ = id => document.getElementById(id);
     const user = () => VT.me.user;
@@ -431,7 +432,7 @@
             $('lPass').value = '';
             afterAuth();
         } else if (r.status === 429) showError(err, T('tooMany'));
-        else if (r.status === 503) showError(err, T('unavailable'));
+        else if (r.status === 503) showError(err, T('unavailable') + codeOf(r));
         else if (r.data.error === 'banned') showError(err, T('banned'));
         else showError(err, T('badLogin'));
     });
@@ -545,7 +546,7 @@
         if (!r.ok) {
             btn.disabled = false;
             if (r.status === 429) return showError(err, T('tooMany'));
-            if (r.status === 503) return showError(err, T('unavailable'));
+            if (r.status === 503) return showError(err, T('unavailable') + codeOf(r));
             if (r.data.error === 'exists') return showError(err, T('exists'));
             if (r.data.error === 'age') return showError(err, T('minor'));
             if (r.data.error === 'password') return showError(err, T('shortPass'));
@@ -795,7 +796,7 @@
             } else if (r.status === 429) {
                 showError($('wError'), r.data.error === 'pending' ? T('pendingLimit') : T('tooMany'));
             } else if (r.status === 503) {
-                showError($('wError'), T('unavailable'));
+                showError($('wError'), T('unavailable') + codeOf(r));
             } else {
                 showError($('wError'), T('failed'));
             }
