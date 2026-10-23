@@ -35,8 +35,8 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Manrope:wght@400;600;700;800&display=swap">
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=11">
-    <link rel="stylesheet" href="/css/articles.css?v=11">
+    <link rel="stylesheet" href="/css/style.css?v=12">
+    <link rel="stylesheet" href="/css/articles.css?v=12">
 </head>
 
 <body class="articles-body">
@@ -189,15 +189,18 @@
                             class="ph ph-sign-in"></i></button>
                 </form>
                 <form class="panel-form" id="registerForm" novalidate hidden>
-                    <div class="avatar-pick">
-                        <img class="avatar-img big" id="regAvatarPreview" alt="" width="84" height="84">
-                        <div class="avatar-actions">
-                            <label class="btn-ghost small" for="regAvatar"><i class="ph ph-camera"></i> <span
-                                    data-tr>Profile photo (optional)</span></label>
-                            <input type="file" id="regAvatar" accept="image/*" hidden>
-                            <button type="button" class="link-btn" id="regAvatarClear" hidden data-tr>Remove
-                                photo</button>
+                    <div class="avatar-block">
+                        <div class="avatar-pick">
+                            <img class="avatar-img big required" id="regAvatarPreview" alt="" width="84" height="84">
+                            <div class="avatar-actions">
+                                <strong data-tr>Profile photo (required)</strong>
+                                <label class="btn-ghost small" for="regAvatar"><i class="ph ph-upload-simple"></i> <span
+                                        data-tr>Upload a photo</span></label>
+                                <input type="file" id="regAvatar" accept="image/*" hidden>
+                            </div>
                         </div>
+                        <p class="field-help" data-tr>Or choose one of our avatars:</p>
+                        <div class="preset-grid" id="regPresets"></div>
                     </div>
                     <div class="form-row">
                         <div class="input-group">
@@ -234,21 +237,6 @@
                             <label for="rResidence" data-tr>Country of residence</label>
                         </div>
                     </div>
-                    <fieldset class="id-docs">
-                        <legend data-tr>Identity verification (optional)</legend>
-                        <p class="field-help" data-tr>Tick the official documents you could show if an editor needs to
-                            confirm who you are. Never upload or send documents here. We only record the type, and any
-                            check happens privately by email. Verified authors get a badge.</p>
-                        <div class="topic-chips">
-                            <label class="chip"><input type="checkbox" name="idDocs" value="passport"><span><i
-                                        class="ph ph-airplane-tilt"></i> <b data-tr>Passport</b></span></label>
-                            <label class="chip"><input type="checkbox" name="idDocs" value="drivers_license"><span><i
-                                        class="ph ph-car-profile"></i> <b data-tr>Driver's licence</b></span></label>
-                            <label class="chip"><input type="checkbox" name="idDocs" value="national_id"><span><i
-                                        class="ph ph-identification-card"></i> <b data-tr>National ID
-                                        card</b></span></label>
-                        </div>
-                    </fieldset>
                     <label class="check-row"><input type="checkbox" id="rConsent"><span><span data-tr>I am 18 or older
                                 and I agree to the terms and the privacy policy.</span> <a href="/#modal-terms"
                                 target="_blank" rel="noopener" data-tr>Terms</a> · <a href="/#modal-privacy"
@@ -280,13 +268,15 @@
                     <label class="btn-ghost small" for="acPhoto"><i class="ph ph-camera"></i> <span data-tr>Change
                             photo</span></label>
                     <input type="file" id="acPhoto" accept="image/*" hidden>
-                    <button type="button" class="btn-ghost small" id="acRemovePhoto"><i class="ph ph-trash"></i> <span
-                            data-tr>Remove photo</span></button>
                     <a href="/admin" class="btn-ghost small" id="acAdmin" hidden><i class="ph ph-shield-star"></i> <span
                             data-tr>Admin panel</span></a>
                     <button type="button" class="btn-ghost small" id="acLogout"><i class="ph ph-sign-out"></i> <span
                             data-tr>Sign out</span></button>
                 </div>
+                <details class="avatar-panel">
+                    <summary data-tr>Choose an avatar</summary>
+                    <div class="preset-grid" id="acPresets"></div>
+                </details>
                 <h2 class="account-sub" data-tr>My articles</h2>
                 <ul class="my-articles" id="acArticles"></ul>
                 <details class="danger-zone">
@@ -489,9 +479,10 @@
             </div>
             <div class="modal-body">
                 <h4 data-tr>How information reaches VERO</h4>
-                <p data-tr>VERO does not write news. We query a licensed news aggregation interface for headlines,
-                    short descriptions and cover images published by outlets, then filter the results so that only
-                    outlets on our vetted list can appear.</p>
+                <p data-tr>VERO does not write news. We read the public RSS feeds that vetted outlets publish in several
+                    languages, and we add results from a licensed news aggregation interface. Only outlets on our vetted
+                    list can appear, and articles are shown in their original language first, then machine-translated
+                    into yours on request.</p>
                 <h4 data-tr>How outlets are chosen</h4>
                 <p data-tr>We select established outlets with a public editorial process, a large audience and a
                     track record of issuing corrections. We deliberately mix perspectives: Arab regional media, European
@@ -509,8 +500,8 @@
         </div>
     </div>
 
-    <script defer src="/javascript/common.js?v=11"></script>
-    <script defer src="/javascript/articles.js?v=11"></script>
+    <script defer src="/javascript/common.js?v=12"></script>
+    <script defer src="/javascript/articles.js?v=12"></script>
 </body>
 
 </html>
