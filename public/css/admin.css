@@ -165,3 +165,24 @@
     font-weight: 700;
     color: var(--muted);
 }
+.admin-card.is-read {
+    opacity: 0.66;
+}
+
+.admin-actions .link-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.admin-page {
+    padding-top: 120px;
+}
+
+.admin-body {
+    min-height: 0;
+}
