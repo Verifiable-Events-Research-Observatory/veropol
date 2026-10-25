@@ -38,7 +38,7 @@
         sending: 'Sending...',
         sent: 'Thank you. Your feedback was sent.',
         failed: 'Something went wrong. Please try again.',
-        unavailable: 'Feedback is temporarily unavailable. Please email us instead.',
+        unavailable: 'Feedback is temporarily unavailable. Please write to veropol@proton.me instead.',
         needMessage: 'Please write at least 10 characters.',
         badEmail: 'Please enter a valid email address.',
         send: 'Send feedback'
@@ -174,14 +174,24 @@
         return '/img?u=' + encodeURIComponent(url);
     }
 
+    function giveUpCover(banner, img) {
+        if (img) img.remove();
+        banner.classList.remove('loading');
+        banner.classList.add('noimg');
+        if (!banner.querySelector('.cover-fallback')) {
+            const i = el('i', 'ph ph-globe-hemisphere-west cover-fallback');
+            i.setAttribute('aria-hidden', 'true');
+            banner.appendChild(i);
+        }
+    }
+
     function attachCover(banner, sources, index) {
         const img = new Image();
         img.alt = T('coverAlt');
         img.decoding = 'async';
         img.referrerPolicy = 'no-referrer';
         if (!sources.length) {
-            banner.classList.remove('loading');
-            banner.classList.add('noimg');
+            giveUpCover(banner, null);
             return;
         }
         img.loading = index < 6 ? 'eager' : 'lazy';
@@ -191,11 +201,7 @@
             clearTimeout(timer);
             step++;
             if (step < sources.length) load();
-            else {
-                img.remove();
-                banner.classList.remove('loading');
-                banner.classList.add('noimg');
-            }
+            else giveUpCover(banner, img);
         };
         const load = () => {
             img.src = sources[step];
@@ -203,6 +209,10 @@
         };
         img.onload = () => {
             clearTimeout(timer);
+            if (img.naturalWidth && img.naturalWidth < 360) {
+                giveUpCover(banner, img);
+                return;
+            }
             img.classList.add('ready');
             banner.classList.remove('loading');
         };
@@ -587,21 +597,6 @@
             const d = theaterData.theaters[card.dataset.theater];
             const box = card.querySelector('.theater-live');
             if (!box) return;
-            const cover = card.querySelector('.theater-cover');
-            if (cover) {
-                cover.querySelectorAll('.cover-live').forEach(n => n.remove());
-                if (d && d.lead && d.lead.image && /^https?:/.test(d.lead.image)) {
-                    const pic = new Image();
-                    pic.className = 'cover-live';
-                    pic.alt = '';
-                    pic.decoding = 'async';
-                    pic.referrerPolicy = 'no-referrer';
-                    pic.onload = () => pic.classList.add('ready');
-                    pic.onerror = () => pic.remove();
-                    pic.src = proxiedImage(d.lead.image);
-                    cover.appendChild(pic);
-                }
-            }
             if (!d || !d.lead) {
                 box.hidden = true;
                 return;
