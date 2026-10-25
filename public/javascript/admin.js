@@ -72,7 +72,8 @@
             { text: a.category },
             { text: a.language.toUpperCase() },
             { text: new Date(a.createdAt).toLocaleString() },
-            { text: a.status, cls: a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'bad' : '' }
+            { text: a.status, cls: a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'bad' : '' },
+            { text: a.likeCount + ' likes · ' + a.dislikeCount + ' dislikes · ' + a.commentCount + ' comments' }
         ]));
         card.appendChild(node('p', '', a.summary));
         if (a.coverUrl) {
@@ -93,8 +94,8 @@
             av.alt = '';
             box.appendChild(av);
             const info = node('div');
-            info.appendChild(node('b', '', au.name + (au.verified ? ' (verified)' : '') + (au.banned ? ' (banned)' : '')));
-            info.appendChild(document.createTextNode(au.email + ' · ' + au.age + ' · ' + au.nationality + ' · lives in ' + au.residence));
+            info.appendChild(node('b', '', au.name + ' (@' + au.username + ')' + (au.verified ? ' (verified)' : '') + (au.banned ? ' (banned)' : '')));
+            info.appendChild(document.createTextNode(au.email + ' · age ' + au.age));
             box.appendChild(info);
             card.appendChild(box);
         }
@@ -129,8 +130,8 @@
         av.alt = '';
         row.appendChild(av);
         const info = node('div');
-        info.appendChild(node('b', '', u.firstName + ' ' + u.lastName + (u.verified ? ' (verified)' : '') + (u.banned ? ' (banned)' : '') + (u.isAdmin ? ' (admin)' : '')));
-        info.appendChild(document.createTextNode(u.email + ' · ' + u.age + ' · ' + u.nationality + ' · lives in ' + u.residence));
+        info.appendChild(node('b', '', u.firstName + ' ' + u.lastName + ' (@' + u.username + ')' + (u.verified ? ' (verified)' : '') + (u.banned ? ' (banned)' : '') + (u.isAdmin ? ' (admin)' : '')));
+        info.appendChild(document.createTextNode(u.email + ' · age ' + u.age + (u.isMinor ? ' · minor' : '')));
         row.appendChild(info);
         card.appendChild(row);
         if (!u.isAdmin) {
@@ -142,8 +143,55 @@
         return card;
     }
 
+    function feedbackCard(f) {
+        const card = node('article', 'admin-card' + (f.read ? ' is-read' : ''));
+        card.appendChild(meta([
+            { text: f.topic + (f.otherTopic ? ': ' + f.otherTopic : '') },
+            { text: new Date(f.date).toLocaleString() },
+            { text: f.page || '-' },
+            { text: f.mailed ? 'emailed' : 'not emailed', cls: f.mailed ? 'ok' : 'bad' },
+            { text: f.read ? 'read' : 'new', cls: f.read ? '' : 'ok' }
+        ]));
+        const who = node('div', 'admin-author');
+        const info = node('div');
+        info.appendChild(node('b', '', f.name || 'Anonymous'));
+        info.appendChild(document.createTextNode(f.email || 'no email left'));
+        who.appendChild(info);
+        card.appendChild(who);
+        const body = node('div', 'admin-body', f.message);
+        body.setAttribute('dir', 'auto');
+        card.appendChild(body);
+        const actions = node('div', 'admin-actions');
+        actions.appendChild(button(f.read ? 'Mark as new' : 'Mark as read', f.read ? '' : 'good', async () => {
+            await api('/api/admin/feedback/' + f.id, 'POST', { read: !f.read });
+            load();
+        }));
+        if (f.email) {
+            const reply = node('a', 'link-btn', 'Reply by email');
+            reply.href = 'mailto:' + f.email + '?subject=' + encodeURIComponent('Re: VERO feedback');
+            actions.appendChild(reply);
+        }
+        actions.appendChild(button('Delete', 'danger', async () => {
+            if (!window.confirm('Delete this feedback permanently?')) return;
+            await api('/api/admin/feedback/' + f.id, 'DELETE');
+            load();
+        }));
+        card.appendChild(actions);
+        return card;
+    }
+
     async function load() {
         message('Loading...');
+        if (state.tab === 'feedback') {
+            const r = await api('/api/admin/feedback');
+            if (!r.ok) return message('Could not load feedback.');
+            root.innerHTML = '';
+            const list = node('div', 'admin-list');
+            r.data.items.forEach(f => list.appendChild(feedbackCard(f)));
+            if (!r.data.items.length) list.appendChild(node('div', 'admin-msg', 'No feedback yet.'));
+            root.appendChild(list);
+            return;
+        }
         if (state.tab === 'users') {
             const r = await api('/api/admin/users?q=' + encodeURIComponent(state.q));
             if (!r.ok) return message('Could not load users.');
