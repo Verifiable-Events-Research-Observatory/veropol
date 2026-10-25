@@ -33,18 +33,18 @@
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik+Arabic:wght@300..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
-    </script>
-    <link rel="stylesheet" href="/css/style.css?v=13">
-    <link rel="stylesheet" href="/css/articles.css?v=13">
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="/css/style.css?v=14">
+    <link rel="stylesheet" href="/css/articles.css?v=14">
 </head>
 
 <body class="articles-body">
     <div class="toast-box" id="toastBox" role="status"></div>
     <nav class="nav-container" id="navbar">
         <a href="/" class="brand" aria-label="VERO">
-            <img src="/assets/logo-96.webp" width="34" height="34" alt="VERO" class="brand-logo"
-                onerror="if(!this.dataset.f){this.dataset.f=1;this.src='/assets/VERO.png'}else{this.style.display='none'}">
+            <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36"
+                alt="VERO" class="brand-logo" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
             <span>VERO</span>
         </a>
         <button class="nav-burger" id="navBurger" type="button" aria-expanded="false" aria-controls="navLinks"
@@ -134,12 +134,15 @@
                     <p class="reader-summary" id="rdSummary" dir="auto"></p>
                     <img class="reader-cover" id="rdCover" alt="" hidden>
                     <div class="byline">
-                        <img class="avatar-img" id="rdAvatar" alt="" width="44" height="44">
-                        <div>
-                            <strong><span id="rdAuthor"></span> <i class="ph-fill ph-seal-check verified-icon"
-                                    id="rdVerified" hidden></i></strong>
-                            <span id="rdMeta"></span>
-                        </div>
+                        <a class="byline-user" id="rdUserLink" href="/articles">
+                            <img class="avatar-img" id="rdAvatar" alt="" width="48" height="48">
+                            <div>
+                                <strong><span id="rdAuthor"></span> <i class="ph-fill ph-seal-check verified-icon"
+                                        id="rdVerified" hidden></i></strong>
+                                <span class="handle" id="rdHandle"></span>
+                                <span id="rdMeta"></span>
+                            </div>
+                        </a>
                         <button type="button" class="btn-ghost small" id="shareBtn"><i class="ph ph-share-network"></i>
                             <span data-tr>Share</span></button>
                     </div>
@@ -152,11 +155,63 @@
                 <div class="reader-body" id="rdBody">
                     <!--SSR-->
                 </div>
+                <div class="engage" id="engage">
+                    <button type="button" class="react-btn" id="likeBtn" aria-pressed="false"><i
+                            class="ph ph-thumbs-up"></i> <span id="likeCount">0</span></button>
+                    <button type="button" class="react-btn" id="dislikeBtn" aria-pressed="false"><i
+                            class="ph ph-thumbs-down"></i> <span id="dislikeCount">0</span></button>
+                    <a href="#comments" class="engage-meta" id="goComments"><i class="ph ph-chat-circle-text"></i>
+                        <span id="commentTotal">0</span></a>
+                </div>
                 <footer class="reader-foot">
                     <p data-tr>Articles are contributed by independent authors and reviewed before publication. They
                         express the views of their authors, not of VERO.</p>
                 </footer>
             </article>
+            <section class="comments" id="comments">
+                <h2 class="account-sub" data-tr>Comments</h2>
+                <form class="comment-form" id="commentForm" novalidate>
+                    <textarea id="cBody" rows="3" maxlength="1000" data-tr-ph placeholder="Add a comment"></textarea>
+                    <div class="comment-actions">
+                        <span class="counter" id="cCount">0 / 1000</span>
+                        <button type="submit" class="btn-primary small" id="cSubmit"><i
+                                class="ph ph-paper-plane-right"></i> <span data-tr>Post comment</span></button>
+                    </div>
+                    <p class="form-error" id="cError" role="alert" hidden></p>
+                </form>
+                <p class="comment-login" id="commentLogin" hidden><a href="/articles#account" data-tr>Sign in</a> <span
+                        data-tr>to like, dislike or comment.</span></p>
+                <ul class="comment-list" id="commentList"></ul>
+                <button type="button" class="btn-ghost small" id="commentMore" hidden><span data-tr>Load more
+                        comments</span></button>
+            </section>
+        </section>
+
+        <section id="view-profile" hidden>
+            <a href="/articles" class="back-link" data-back><i class="ph ph-arrow-left"></i> <span data-tr>All
+                    articles</span></a>
+            <div class="profile-card">
+                <img class="avatar-img profile-avatar" id="pfAvatar" alt="" width="128" height="128">
+                <div class="profile-main">
+                    <h1 id="pfName"></h1>
+                    <span class="handle" id="pfHandle"></span>
+                    <span class="verified-pill" id="pfVerified" hidden><i class="ph-fill ph-seal-check"></i> <span
+                            data-tr>Verified author</span></span>
+                    <p class="profile-bio" id="pfBio" dir="auto"></p>
+                    <ul class="profile-stats">
+                        <li><b id="pfArticles">0</b> <span data-tr>Articles</span></li>
+                        <li><b id="pfFollowers">0</b> <span data-tr>Followers</span></li>
+                        <li><b id="pfFollowing">0</b> <span data-tr>Following</span></li>
+                    </ul>
+                    <div class="profile-actions">
+                        <button type="button" class="btn-primary small" id="pfFollow" hidden><i
+                                class="ph ph-user-plus"></i> <span data-tr>Follow</span></button>
+                        <a href="/articles#account" class="btn-ghost small" id="pfEdit" hidden><i
+                                class="ph ph-pencil-simple"></i> <span data-tr>Edit profile</span></a>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-grid" id="profileGrid" aria-live="polite"></div>
         </section>
 
         <section id="view-auth" hidden>
@@ -166,8 +221,7 @@
                 <header class="write-head">
                     <span class="kicker" data-tr>Contributor account</span>
                     <h1 data-tr>Sign in to write</h1>
-                    <p data-tr>An account lets us keep authorship accountable and lets you manage your own articles. It
-                        is free.</p>
+                    <p data-tr>An account keeps authorship accountable and allows contributors to manage their own articles. It is free.</p>
                 </header>
                 <div class="auth-tabs" id="authTabs">
                     <button type="button" class="active" data-tab="login" data-tr>Sign in</button>
@@ -175,8 +229,9 @@
                 </div>
                 <form class="panel-form" id="loginForm" novalidate>
                     <div class="input-group">
-                        <input type="email" id="lEmail" maxlength="120" placeholder=" " autocomplete="email">
-                        <label for="lEmail" data-tr>Email</label>
+                        <input type="text" id="lEmail" maxlength="120" placeholder=" " autocomplete="username"
+                            autocapitalize="none" spellcheck="false">
+                        <label for="lEmail" data-tr>Email or username</label>
                     </div>
                     <div class="input-group">
                         <input type="password" id="lPass" maxlength="128" placeholder=" "
@@ -190,17 +245,25 @@
                 <form class="panel-form" id="registerForm" novalidate hidden>
                     <div class="avatar-block">
                         <div class="avatar-pick">
-                            <img class="avatar-img big required" id="regAvatarPreview" alt="" width="84" height="84">
+                            <img class="avatar-img big" id="regAvatarPreview" alt="" width="96" height="96">
                             <div class="avatar-actions">
-                                <strong data-tr>Profile photo (required)</strong>
+                                <strong data-tr>Profile picture</strong>
                                 <label class="btn-ghost small" for="regAvatar"><i class="ph ph-upload-simple"></i> <span
                                         data-tr>Upload a photo</span></label>
                                 <input type="file" id="regAvatar" accept="image/*" hidden>
+                                <small class="field-help" data-tr>Optional. Square images work best (at least 512 × 512).</small>
                             </div>
                         </div>
-                        <p class="field-help" data-tr>Or choose one of our avatars:</p>
+                        <p class="field-help" data-tr>Or choose one of the VERO avatars:</p>
                         <div class="preset-grid" id="regPresets"></div>
                     </div>
+                    <div class="input-group has-prefix">
+                        <span class="prefix">@</span>
+                        <input type="text" id="rUsername" maxlength="20" placeholder=" " autocomplete="username"
+                            autocapitalize="none" spellcheck="false">
+                        <label for="rUsername" data-tr>Username</label>
+                    </div>
+                    <p class="field-status" id="rUserStatus" hidden></p>
                     <div class="form-row">
                         <div class="input-group">
                             <input type="text" id="rFirst" maxlength="60" placeholder=" " autocomplete="given-name">
@@ -211,35 +274,24 @@
                             <label for="rLast" data-tr>Last name</label>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="input-group">
-                            <input type="number" id="rAge" min="1" max="110" inputmode="numeric" placeholder=" ">
-                            <label for="rAge" data-tr>Age</label>
-                        </div>
-                        <div class="input-group">
-                            <input type="email" id="rEmail" maxlength="120" placeholder=" " autocomplete="email">
-                            <label for="rEmail" data-tr>Email (never published)</label>
-                        </div>
+                    <div class="input-group">
+                        <input type="text" id="rBirth" inputmode="numeric" maxlength="10" placeholder=" "
+                            autocomplete="bday" dir="ltr">
+                        <label for="rBirth" data-tr>Date of birth (DD/MM/YYYY)</label>
+                    </div>
+                    <p class="field-status" id="rBirthStatus" hidden></p>
+                    <div class="input-group">
+                        <input type="email" id="rEmail" maxlength="120" placeholder=" " autocomplete="email">
+                        <label for="rEmail" data-tr>Email (never published)</label>
                     </div>
                     <div class="input-group">
                         <input type="password" id="rPass" maxlength="128" placeholder=" " autocomplete="new-password">
                         <label for="rPass" data-tr>Password (at least 8 characters)</label>
                     </div>
-                    <div class="form-row">
-                        <div class="input-group">
-                            <input type="text" id="rNationality" maxlength="80" placeholder=" ">
-                            <label for="rNationality" data-tr>Nationality</label>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="rResidence" maxlength="80" placeholder=" "
-                                autocomplete="country-name">
-                            <label for="rResidence" data-tr>Country of residence</label>
-                        </div>
-                    </div>
-                    <label class="check-row"><input type="checkbox" id="rConsent"><span><span data-tr>I am 18 or older
-                                and I agree to the terms and the privacy policy.</span> <a href="/#modal-terms"
-                                target="_blank" rel="noopener" data-tr>Terms</a> · <a href="/#modal-privacy"
-                                target="_blank" rel="noopener" data-tr>Privacy</a></span></label>
+                    <label class="check-row"><input type="checkbox" id="rConsent"><span><span data-tr>I agree to the
+                                terms and the privacy policy.</span> <a href="/#modal-terms" target="_blank"
+                                rel="noopener" data-tr>Terms</a> · <a href="/#modal-privacy" target="_blank"
+                                rel="noopener" data-tr>Privacy</a></span></label>
                     <input type="text" id="rWebsite" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
                     <p class="form-error" id="rError" role="alert" hidden></p>
                     <button type="submit" class="btn-submit" id="rSubmit"><span data-tr>Create account</span> <i
@@ -253,7 +305,7 @@
                     articles</span></a>
             <div class="account-card">
                 <div class="account-head">
-                    <img class="avatar-img big" id="acAvatar" alt="" width="84" height="84">
+                    <img class="avatar-img big" id="acAvatar" alt="" width="96" height="96">
                     <div>
                         <h1 id="acName"></h1>
                         <p id="acMeta"></p>
@@ -262,6 +314,8 @@
                     </div>
                 </div>
                 <div class="account-actions">
+                    <a href="/articles" class="btn-ghost small" id="acProfile"><i class="ph ph-identification-card"></i>
+                        <span data-tr>View my profile</span></a>
                     <a href="#write" class="btn-primary small" id="acWrite"><i class="ph ph-pen-nib"></i> <span
                             data-tr>Write an article</span></a>
                     <label class="btn-ghost small" for="acPhoto"><i class="ph ph-camera"></i> <span data-tr>Change
@@ -272,6 +326,17 @@
                     <button type="button" class="btn-ghost small" id="acLogout"><i class="ph ph-sign-out"></i> <span
                             data-tr>Sign out</span></button>
                 </div>
+                <p class="field-help" id="acMinorNote" hidden data-tr>Accounts under 18 can read, react, comment and
+                    follow. Writing articles opens at 18.</p>
+                <form class="bio-form" id="bioForm" novalidate>
+                    <div class="input-group">
+                        <textarea id="acBio" rows="2" maxlength="160" placeholder=" "></textarea>
+                        <label for="acBio" data-tr>Short bio (optional)</label>
+                        <span class="counter" id="bioCount">0 / 160</span>
+                    </div>
+                    <button type="submit" class="btn-ghost small" id="bioSave"><i class="ph ph-floppy-disk"></i> <span
+                            data-tr>Save bio</span></button>
+                </form>
                 <details class="avatar-panel">
                     <summary data-tr>Choose an avatar</summary>
                     <div class="preset-grid" id="acPresets"></div>
@@ -280,8 +345,8 @@
                 <ul class="my-articles" id="acArticles"></ul>
                 <details class="danger-zone">
                     <summary data-tr>Delete my account</summary>
-                    <p data-tr>This permanently deletes your account, photo and every article you wrote. It cannot be
-                        undone.</p>
+                    <p data-tr>This permanently deletes your account, photo, comments and every article you wrote. It
+                        cannot be undone.</p>
                     <div class="input-group">
                         <input type="password" id="acDelPw" maxlength="128" placeholder=" "
                             autocomplete="current-password">
@@ -309,6 +374,13 @@
                     <li data-step="2"><b>2</b> <span data-tr>Cover</span></li>
                     <li data-step="3"><b>3</b> <span data-tr>Review & send</span></li>
                 </ol>
+                <div class="success-panel minor-panel" id="minorPanel" hidden>
+                    <i class="ph ph-lock-simple"></i>
+                    <h2 data-tr>Writing opens at 18</h2>
+                    <p data-tr>Accounts under 18 can read, like, comment and follow. Publishing articles is available to
+                        adults only.</p>
+                    <a href="/articles" class="btn-primary"><span data-tr>Back to articles</span></a>
+                </div>
                 <form id="writeForm" novalidate>
                     <p class="form-error" id="wError" role="alert" hidden></p>
                     <div class="pane" data-pane="1">
@@ -390,11 +462,11 @@
                         <div class="review-box">
                             <h3 data-tr>What readers will see</h3>
                             <div class="review-author">
-                                <img class="avatar-img" id="rvAvatar" alt="" width="44" height="44">
+                                <img class="avatar-img" id="rvAvatar" alt="" width="48" height="48">
                                 <strong id="rvName"></strong>
                             </div>
-                            <p class="field-help" data-tr>Only your first name, the initial of your last name, your
-                                nationality and your photo are public. Your age, email and residence are never
+                            <p class="field-help" data-tr>Only your username, your first name with the initial of your
+                                last name and your photo are public. Your date of birth and email are never
                                 shown.</p>
                         </div>
                         <label class="check-row"><input type="checkbox" id="cOriginal"><span data-tr>This is my own
@@ -424,11 +496,15 @@
     </main>
 
     <footer class="site-footer">
+        <div class="banner-wrap">
+            <img src="/assets/BANNER.png" width="1584" height="672" loading="lazy" decoding="async" alt="VERO Banner"
+                class="banner-img" onerror="this.parentElement.style.display='none'">
+        </div>
         <div class="footer-grid">
             <div class="footer-brand">
                 <div class="brand-line">
-                    <img src="/assets/logo-96.webp" width="34" height="34" alt="VERO" class="brand-logo"
-                        onerror="if(!this.dataset.f){this.dataset.f=1;this.src='/assets/VERO.png'}else{this.style.display='none'}">
+                    <img src="/assets/logo-192.webp" width="44" height="44" alt="VERO" class="brand-logo"
+                        onerror="this.onerror=null;this.src='/assets/icon-192.png'">
                     <span>VERO</span>
                 </div>
                 <p data-tr>Independent global intelligence and diplomatic monitoring observatory.</p>
@@ -478,29 +554,20 @@
             </div>
             <div class="modal-body">
                 <h4 data-tr>How information reaches VERO</h4>
-                <p data-tr>VERO does not write news. We read the public RSS feeds that vetted outlets publish in several
-                    languages, and we add results from a licensed news aggregation interface. Only outlets on our vetted
-                    list can appear, and articles are shown in their original language first, then machine-translated
-                    into yours on request.</p>
+                <p data-tr>VERO does not write news. It reads the public RSS feeds that vetted outlets publish in several languages and adds results from a licensed news aggregation interface. Only outlets on the vetted list can appear, and reports are shown in their original language first, then machine-translated into the reader's language on request.</p>
                 <h4 data-tr>How outlets are chosen</h4>
-                <p data-tr>We select established outlets with a public editorial process, a large audience and a
-                    track record of issuing corrections. We deliberately mix perspectives: Arab regional media, European
-                    public and independent media, United Nations reporting, and US-based wire services and non-profit
-                    broadcasters.</p>
-                <p data-tr>No outlet is perfectly neutral, and we do not claim otherwise. Some outlets on the list are
-                    funded or owned by states or state-linked groups. We include them for regional perspective and show
-                    the region of each outlet so you can weigh its viewpoint.</p>
+                <p data-tr>VERO selects established outlets with a public editorial process, a large audience and a track record of issuing corrections. Perspectives are deliberately mixed: Arab regional media, European public and independent media, United Nations reporting, and US-based wire services and non-profit broadcasters.</p>
+                <p data-tr>No outlet is perfectly neutral, and VERO does not claim otherwise. Some outlets on the list are funded or owned by states or state-linked groups. They are included for regional perspective, and the region of each outlet is shown so that readers can weigh its viewpoint.</p>
                 <h4 data-tr>Contributed articles</h4>
-                <p data-tr>Articles on this section are written by named contributors, are reviewed by an editor
-                    before publication, and express the views of their authors.</p>
+                <p data-tr>Articles in this section are written by named contributors, are reviewed by an editor before publication, and express the views of their authors.</p>
                 <h4 data-tr>Current source list</h4>
                 <ul class="sources-list" id="sourcesList"></ul>
             </div>
         </div>
     </div>
 
-    <script defer src="/javascript/common.js?v=13"></script>
-    <script defer src="/javascript/articles.js?v=13"></script>
+    <script defer src="/javascript/common.js?v=14"></script>
+    <script defer src="/javascript/articles.js?v=14"></script>
 </body>
 
 </html>
