@@ -16,20 +16,21 @@
     </script>
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik+Arabic:wght@300..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
-    </script>
-    <link rel="stylesheet" href="/css/style.css?v=13">
-    <link rel="stylesheet" href="/css/articles.css?v=13">
-    <link rel="stylesheet" href="/css/admin.css?v=13">
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="/css/style.css?v=14">
+    <link rel="stylesheet" href="/css/articles.css?v=14">
+    <link rel="stylesheet" href="/css/admin.css?v=14">
 </head>
 
 <body>
     <nav class="nav-container" id="navbar">
         <a href="/" class="brand" aria-label="VERO">
-            <img src="/assets/logo-96.webp" width="34" height="34" alt="VERO" class="brand-logo">
+            <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36" alt="VERO" class="brand-logo" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
             <span>VERO</span>
         </a>
-        <div class="nav-links open" id="navLinks" style="display:flex">
+        <button class="nav-burger" id="navBurger" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Menu"><i class="ph ph-list"></i></button>
+        <div class="nav-links" id="navLinks">
             <a href="/articles">Articles</a>
             <a href="/articles#account" id="accountBtn" class="icon-btn"><svg class="user-svg" viewBox="0 0 24 24"
                     width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
@@ -51,11 +52,12 @@
             <button type="button" data-tab="approved">Published</button>
             <button type="button" data-tab="rejected">Rejected</button>
             <button type="button" data-tab="users">Users</button>
+            <button type="button" data-tab="feedback">Feedback</button>
         </div>
         <div id="adminRoot"></div>
     </main>
-    <script defer src="/javascript/common.js?v=13"></script>
-    <script defer src="/javascript/admin.js?v=13"></script>
+    <script defer src="/javascript/common.js?v=14"></script>
+    <script defer src="/javascript/admin.js?v=14"></script>
 </body>
 
 </html>
