@@ -10,7 +10,7 @@
     };
     const TARGETS = { zh: 'zh-CN' };
     const FONT_URLS = {
-        ar: 'https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700&family=Readex+Pro:wght@300;400;500;600&display=swap',
+        ar: 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap',
         zh: 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap'
     };
     const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23262630'/><circle cx='32' cy='25' r='11' fill='%238D8984'/><path d='M10 64c2-14 12-22 22-22s20 8 22 22z' fill='%238D8984'/></svg>";
@@ -24,75 +24,19 @@
     let lang = 'en';
     let saveTimer;
     let auroraRGB = '255,138,76';
-    let logoAlpha = null;
-    let logoSize = 0;
-    let logoStarted = false;
-
-    function paintLogos() {
-        if (!logoAlpha) return;
-        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const rgb = dark ? [245, 241, 232] : [18, 18, 20];
-        const c = document.createElement('canvas');
-        c.width = logoSize;
-        c.height = logoSize;
-        const x = c.getContext('2d');
-        const out = x.createImageData(logoSize, logoSize);
-        for (let i = 0, n = logoSize * logoSize; i < n; i++) {
-            out.data[i * 4] = rgb[0];
-            out.data[i * 4 + 1] = rgb[1];
-            out.data[i * 4 + 2] = rgb[2];
-            out.data[i * 4 + 3] = logoAlpha[i];
-        }
-        x.putImageData(out, 0, 0);
-        const url = c.toDataURL('image/png');
-        document.querySelectorAll('img.brand-logo').forEach(img => {
-            img.src = url;
-            img.dataset.vl = '1';
-        });
-    }
 
     function initLogos() {
-        if (logoStarted) return;
-        const first = document.querySelector('img.brand-logo');
-        if (!first) return;
-        logoStarted = true;
-        setTimeout(() => {
-            document.querySelectorAll('img.brand-logo:not([data-vl])').forEach(img => { img.dataset.vl = '0'; });
-        }, 3000);
-        const img = new Image();
-        img.onload = () => {
-            try {
-                const size = 192;
-                const c = document.createElement('canvas');
-                c.width = size;
-                c.height = size;
-                const x = c.getContext('2d', { willReadFrequently: true });
-                x.drawImage(img, 0, 0, size, size);
-                const px = x.getImageData(0, 0, size, size).data;
-                const lum = i => (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
-                const corners = [0, (size - 1) * 4, size * (size - 1) * 4, (size * size - 1) * 4];
-                const solid = corners.filter(i => px[i + 3] > 200);
-                const bg = solid.length ? solid.reduce((a, i) => a + lum(i), 0) / solid.length : null;
-                const denom = bg === null ? 1 : Math.max(bg > 0.5 ? bg : 1 - bg, 0.2);
-                const alpha = new Uint8ClampedArray(size * size);
-                for (let p = 0; p < size * size; p++) {
-                    const i = p * 4;
-                    const a0 = px[i + 3] / 255;
-                    let a = a0;
-                    if (bg !== null) a = a0 * Math.min(1, Math.abs(lum(i) - bg) / denom);
-                    alpha[p] = Math.round(Math.min(1, a * 1.12) * 255);
-                }
-                logoAlpha = alpha;
-                logoSize = size;
-                paintLogos();
-            } catch (e) {
-                document.querySelectorAll('img.brand-logo').forEach(el => { el.dataset.vl = '0'; });
-            }
-        };
-        img.onerror = () => {
-            document.querySelectorAll('img.brand-logo').forEach(el => { el.dataset.vl = '0'; });
-        };
-        img.src = first.getAttribute('src');
+        document.querySelectorAll('img.brand-logo').forEach(img => {
+            img.dataset.vl = '1';
+            img.addEventListener('error', () => {
+                if (!img.dataset.f) {
+                    img.dataset.f = '1';
+                    img.removeAttribute('srcset');
+                    img.src = '/assets/icon-192.png';
+                } else img.style.display = 'none';
+            });
+            if (img.complete && img.naturalWidth === 0) img.dispatchEvent(new Event('error'));
+        });
     }
 
     function ago(iso) {
@@ -326,7 +270,6 @@
             auroraRGB = theme === 'dark' ? '255,138,76' : '196,64,24';
             try { localStorage.setItem('vero_theme', theme); } catch (e) { }
             if (icon) icon.className = theme === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
-            paintLogos();
         };
         paint(document.documentElement.getAttribute('data-theme') || 'dark');
         if (btn) btn.addEventListener('click', () => paint(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
@@ -545,6 +488,8 @@
         start();
     }
 
+    const USER_SVG = '<svg class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7"/><path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2"/></svg>';
+    const AVATAR_PRESETS = Array.from({ length: 12 }, (_, i) => 'nature-' + String(i + 1).padStart(2, '0'));
     const me = { user: null };
 
     function paintAccount() {
@@ -559,12 +504,11 @@
             if (me.user) {
                 btn.appendChild(img);
                 btn.classList.add('signed');
-                btn.title = me.user.firstName + ' ' + me.user.lastName;
+                btn.title = '@' + (me.user.username || me.user.firstName);
             } else {
-                const i = document.createElement('i');
-                i.className = 'ph ph-user';
-                btn.appendChild(i);
+                btn.insertAdjacentHTML('beforeend', USER_SVG);
                 btn.classList.remove('signed');
+                btn.removeAttribute('title');
             }
         });
     }
@@ -605,6 +549,7 @@
     window.VT = {
         LANGS,
         DEFAULT_AVATAR,
+        AVATAR_PRESETS,
         me,
         get lang() { return lang; },
         load,
