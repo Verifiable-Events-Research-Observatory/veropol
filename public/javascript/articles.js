@@ -18,20 +18,30 @@
         failed: 'Something went wrong. Please check your details and try again.',
         sending: 'Sending...',
         submitLabel: 'Submit for review',
-        badLogin: 'Incorrect email or password.',
+        badLogin: 'Incorrect email, username or password.',
         banned: 'This account has been suspended.',
         exists: 'An account with this email already exists.',
         needName: 'Please enter your first and last name.',
-        needAge: 'Please enter your age.',
-        minor: 'You must be 18 or older to create an account.',
+        needUsername: 'Please choose a username.',
+        badUsername: 'Use 3 to 20 characters: lowercase letters, numbers and underscores.',
+        usernameTaken: 'This username is already taken.',
+        usernameFree: 'This username is available.',
+        usernameChecking: 'Checking availability...',
+        usernameUnavailable: 'This username is not available.',
+        needBirth: 'Please enter your date of birth as DD/MM/YYYY.',
+        badBirth: 'Please enter a real date of birth.',
+        birthFuture: 'This date is in the future.',
+        birthOld: 'This date is too far in the past.',
+        tooYoung: 'VERO accounts require a minimum age of 13.',
+        birthAdult: 'Adult account: reading, reacting, commenting and writing.',
+        birthMinor: 'Account under 18: reading, reacting, commenting and following. Writing opens at 18.',
         badEmail: 'Please enter a valid email address.',
         shortPass: 'The password must have at least 8 characters.',
-        needCountry: 'Please enter your nationality and country of residence.',
-        needRegConsent: 'Please confirm that you are 18 or older and accept the terms.',
+        needRegConsent: 'Please accept the terms and the privacy policy.',
         badImage: 'This image is not supported or is too large. Try a different one.',
-        needAvatar: 'Please upload a profile photo or choose an avatar.',
         pendingLimit: 'You already have 5 articles waiting for review.',
         confirmDelete: 'Delete this article permanently?',
+        confirmDeleteComment: 'Delete this comment?',
         statusPending: 'Pending review',
         statusApproved: 'Published',
         statusRejected: 'Rejected',
@@ -40,6 +50,18 @@
         remove: 'Delete',
         wrongPassword: 'The password is incorrect.',
         needPassword: 'Enter your password to confirm.',
+        follow: 'Follow',
+        following: 'Following',
+        profileMissing: 'This profile does not exist.',
+        profileEmpty: 'No articles yet',
+        profileEmptySelf: 'Your published articles will appear here.',
+        profileEmptyOther: 'This author has not published any articles yet.',
+        commentShort: 'Write at least 2 characters.',
+        commentFailed: 'The comment could not be posted. Please try again.',
+        commentsEmpty: 'No comments yet. Start the conversation.',
+        needLogin: 'Sign in to continue.',
+        bioSaved: 'Profile updated.',
+        avatarSaved: 'Profile picture updated.',
         Diplomacy: 'Diplomacy',
         Military: 'Military',
         Economy: 'Economy',
@@ -51,17 +73,20 @@
     const CAT_ICONS = { diplomacy: 'ph-handshake', military: 'ph-crosshair', economy: 'ph-chart-line-up', regional: 'ph-map-trifold', analysis: 'ph-magnifying-glass', opinion: 'ph-chat-teardrop-text' };
     const CAT_LABEL = { diplomacy: 'Diplomacy', military: 'Military', economy: 'Economy', regional: 'Regional', analysis: 'Analysis', opinion: 'Opinion' };
     const DRAFT_KEY = 'vero_draft';
-    const NAMES = ['list', 'read', 'auth', 'account', 'write'];
+    const NAMES = ['list', 'read', 'profile', 'auth', 'account', 'write'];
     const views = {};
     NAMES.forEach(n => { views[n] = document.getElementById('view-' + n); });
     const grid = document.getElementById('articlesGrid');
     const pager = document.getElementById('artPagination');
-    const state = { view: 'list', cat: 'all', page: 1, step: 1, booted: false, after: 'write' };
-    const read = { slug: null, original: null, translated: null, showing: 'original' };
-    const media = { regAvatar: null, cover: null };
-    const PRESET_BG = [['#D9431A', '#F08A24'], ['#0B7F7A', '#2FC48D'], ['#2F3A8F', '#4C8DFF'], ['#5B2A86', '#B07CFF'], ['#1F2937', '#475569'], ['#8A5A00', '#FFB04D'], ['#7A1F3D', '#E0527A'], ['#14532D', '#4ADE80'], ['#0F4C5C', '#5EE6DB'], ['#3B2F2F', '#A47148'], ['#312E81', '#818CF8'], ['#7C2D12', '#FB923C']];
-    const PRESET_ICONS = ["<circle cx='64' cy='64' r='34'/><path d='M82 46L71 71L46 82L57 57Z' fill='#fff'/>", "<circle cx='64' cy='64' r='34'/><ellipse cx='64' cy='64' rx='14' ry='34'/><path d='M32 52H96M32 76H96'/>", "<path d='M64 28L94 40V66C94 84 80 96 64 102C48 96 34 84 34 66V40Z'/><path d='M50 64L60 74L80 52'/>", "<path d='M28 62L102 30L82 100L62 76Z'/><path d='M102 30L62 76'/>", "<circle cx='44' cy='64' r='16'/><path d='M60 64H104M92 64V78M80 64V74'/>", "<path d='M22 64C36 44 52 36 64 36S92 44 106 64C92 84 76 92 64 92S36 84 22 64Z'/><circle cx='64' cy='64' r='12' fill='#fff'/>", "<circle cx='64' cy='36' r='8'/><path d='M64 44V100M44 60H84M30 80C32 94 48 102 64 102S96 94 98 80'/>", "<path d='M64 26L96 44V82L64 100L32 82V44Z'/><path d='M64 62V100M32 44L64 62L96 44'/>", "<path d='M74 24L40 72H62L54 104L88 56H66Z'/>", "<path d='M30 84L36 42L54 62L64 36L74 62L92 42L98 84Z'/><path d='M30 98H98'/>", "<path d='M34 38L50 50H78L94 38V80C94 94 80 104 64 104S34 94 34 80Z'/><circle cx='52' cy='68' r='8'/><circle cx='76' cy='68' r='8'/><path d='M60 84L64 92L68 84'/>", "<path d='M26 84C40 80 50 70 56 58C62 46 72 38 86 40L104 34L94 48C94 66 84 84 66 92C54 97 40 96 30 90Z'/><path d='M56 60C60 74 70 82 82 84'/>"];
+    const state = { view: 'list', cat: 'all', page: 1, step: 1, booted: false, after: 'write', returnTo: '' };
+    const read = { slug: null, original: null, translated: null, showing: 'original', article: null, myReaction: 0, commentPage: 1, commentPages: 1 };
+    const media = { regAvatar: null, regPreset: null, cover: null };
+    const profileState = { username: '', data: null };
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     let listId = 0;
+    let userCheckTimer = 0;
+    let userCheckSeq = 0;
+    let birthInfo = null;
 
     const T = key => VT.s(TXT[key]);
     const codeOf = r => (r.data && r.data.code ? ' (' + r.data.code + ')' : '');
@@ -82,12 +107,21 @@
         return n;
     }
 
-    function avatarImg(url, cls) {
+    function icon(name) {
+        return node('i', 'ph ' + name);
+    }
+
+    function avatarImg(url, cls, size) {
         const img = node('img', cls || 'avatar-img');
         img.alt = '';
-        img.width = 36;
-        img.height = 36;
+        img.width = size || 36;
+        img.height = size || 36;
+        img.loading = 'lazy';
+        img.decoding = 'async';
         img.src = url || VT.DEFAULT_AVATAR;
+        img.addEventListener('error', () => {
+            if (img.src !== VT.DEFAULT_AVATAR) img.src = VT.DEFAULT_AVATAR;
+        });
         return img;
     }
 
@@ -162,8 +196,10 @@
                 const c = document.createElement('canvas');
                 c.width = dw;
                 c.height = dh;
-                c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
-                let q = 0.86;
+                const ctx = c.getContext('2d');
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
+                let q = 0.88;
                 let type = 'image/webp';
                 let out = c.toDataURL(type, q);
                 if (out.indexOf('data:image/webp') !== 0) {
@@ -190,19 +226,95 @@
         return r.ok ? r.data : null;
     }
 
-    function message(cls, icon, text) {
-        grid.innerHTML = '';
+    function message(target, cls, iconName, text) {
+        target.innerHTML = '';
         const p = node('div', cls);
-        if (icon) p.appendChild(node('i', 'ph ' + icon));
+        if (iconName) p.appendChild(node('i', 'ph ' + iconName));
         p.appendChild(document.createTextNode(text));
-        grid.appendChild(p);
+        target.appendChild(p);
+    }
+
+    function userLink(username, className) {
+        const a = node('a', className || '');
+        a.href = '/u/' + encodeURIComponent(username);
+        a.setAttribute('data-link', '');
+        return a;
+    }
+
+    function renderCards(target, items) {
+        target.innerHTML = '';
+        items.forEach(a => {
+            const card = node('article', 'card art-card');
+            card.dataset.cat = a.category;
+            const href = '/articles/' + encodeURIComponent(a.slug);
+            card.addEventListener('click', e => {
+                if (e.target.closest('a')) return;
+                go(href);
+            });
+            const top = node('div', 'art-top');
+            if (a.coverUrl) {
+                top.classList.add('has-cover');
+                const cover = node('img', 'art-cover');
+                cover.alt = '';
+                cover.loading = 'lazy';
+                cover.decoding = 'async';
+                cover.src = a.coverUrl;
+                top.appendChild(cover);
+            }
+            const tag = node('div', 'card-tag');
+            tag.appendChild(icon(CAT_ICONS[a.category] || 'ph-globe'));
+            tag.appendChild(document.createTextNode(' ' + VT.s(CAT_LABEL[a.category] || 'Analysis')));
+            top.appendChild(tag);
+            top.appendChild(node('span', 'lang-badge', (a.language || 'en').toUpperCase()));
+            const content = node('div', 'card-content');
+            content.appendChild(node('span', 'card-date', fmtDate(a.publishedAt)));
+            const h = node('h3', 'card-title');
+            const link = node('a', 'card-title-link', a.title);
+            link.href = href;
+            link.setAttribute('data-link', '');
+            h.appendChild(link);
+            h.setAttribute('dir', 'auto');
+            const s = node('p', 'card-desc', a.summary);
+            s.setAttribute('dir', 'auto');
+            content.appendChild(h);
+            content.appendChild(s);
+            const foot = node('div', 'card-footer art-foot');
+            let by;
+            if (a.username) {
+                by = userLink(a.username, 'art-by');
+                by.title = '@' + a.username;
+            } else by = node('div', 'art-by');
+            by.appendChild(avatarImg(a.avatarUrl, 'avatar-img', 36));
+            const who = node('span', 'art-who');
+            who.appendChild(node('b', '', a.authorName));
+            who.appendChild(node('small', '', a.username ? '@' + a.username : ''));
+            by.appendChild(who);
+            if (a.verified) by.appendChild(node('i', 'ph-fill ph-seal-check verified-icon'));
+            const stats = node('div', 'art-stats');
+            const likes = node('span', 'stat');
+            likes.appendChild(icon('ph-thumbs-up'));
+            likes.appendChild(document.createTextNode(' ' + (a.likeCount || 0)));
+            const comments = node('span', 'stat');
+            comments.appendChild(icon('ph-chat-circle-text'));
+            comments.appendChild(document.createTextNode(' ' + (a.commentCount || 0)));
+            const mins = node('span', 'stat mins', VT.s((a.readMinutes || 1) + ' min read'));
+            stats.appendChild(likes);
+            stats.appendChild(comments);
+            stats.appendChild(mins);
+            foot.appendChild(by);
+            foot.appendChild(stats);
+            content.appendChild(foot);
+            card.appendChild(top);
+            card.appendChild(content);
+            target.appendChild(card);
+        });
     }
 
     async function loadList() {
         const id = ++listId;
         show('list');
         await preload();
-        message('grid-msg', 'ph-spinner ph-spin', ' ' + T('loading'));
+        message(grid, 'grid-msg', 'ph-spinner ph-spin', ' ' + T('loading'));
         pager.hidden = true;
         try {
             const params = new URLSearchParams({ page: state.page, size: 9, lang: VT.lang });
@@ -215,60 +327,14 @@
             const mins = [...new Set(items.map(a => a.readMinutes || 1))];
             await VT.load(mins.map(m => m + ' min read'));
             if (!items.length) {
-                message('empty-art', 'ph-newspaper', T('empty'));
+                message(grid, 'empty-art', 'ph-newspaper', T('empty'));
                 return;
             }
-            grid.innerHTML = '';
-            items.forEach(a => {
-                const card = document.createElement('a');
-                card.className = 'card art-card';
-                card.dataset.cat = a.category;
-                card.href = '/articles/' + encodeURIComponent(a.slug);
-                card.addEventListener('click', e => {
-                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-                    e.preventDefault();
-                    go(card.getAttribute('href'));
-                });
-                const top = node('div', 'art-top');
-                if (a.coverUrl) {
-                    top.classList.add('has-cover');
-                    const cover = node('img', 'art-cover');
-                    cover.alt = '';
-                    cover.loading = 'lazy';
-                    cover.decoding = 'async';
-                    cover.src = a.coverUrl;
-                    top.appendChild(cover);
-                }
-                const tag = node('div', 'card-tag');
-                tag.appendChild(node('i', 'ph ' + (CAT_ICONS[a.category] || 'ph-globe')));
-                tag.appendChild(document.createTextNode(' ' + VT.s(CAT_LABEL[a.category] || 'Analysis')));
-                top.appendChild(tag);
-                top.appendChild(node('span', 'lang-badge', (a.language || 'en').toUpperCase()));
-                const content = node('div', 'card-content');
-                content.appendChild(node('span', 'card-date', fmtDate(a.publishedAt)));
-                const h = node('h3', 'card-title', a.title);
-                h.setAttribute('dir', 'auto');
-                const s = node('p', 'card-desc', a.summary);
-                s.setAttribute('dir', 'auto');
-                content.appendChild(h);
-                content.appendChild(s);
-                const foot = node('div', 'card-footer');
-                const by = node('div', 'art-by');
-                by.appendChild(avatarImg(a.avatarUrl));
-                by.appendChild(node('span', '', a.authorName + ' · ' + a.nationality));
-                if (a.verified) by.appendChild(node('i', 'ph-fill ph-seal-check verified-icon'));
-                const more = node('div', 'read-more', VT.s((a.readMinutes || 1) + ' min read'));
-                foot.appendChild(by);
-                foot.appendChild(more);
-                content.appendChild(foot);
-                card.appendChild(top);
-                card.appendChild(content);
-                grid.appendChild(card);
-            });
+            renderCards(grid, items);
             renderPager(d.page || 1, d.totalPages || 1);
         } catch (e) {
             if (id !== listId) return;
-            message('grid-msg error', '', T('error'));
+            message(grid, 'grid-msg error', '', T('error'));
         }
     }
 
@@ -303,12 +369,146 @@
         });
     });
 
+    function paintEngage() {
+        const a = read.article;
+        if (!a) return;
+        $('likeCount').textContent = a.likeCount || 0;
+        $('dislikeCount').textContent = a.dislikeCount || 0;
+        $('commentTotal').textContent = a.commentCount || 0;
+        $('likeBtn').classList.toggle('on', read.myReaction === 1);
+        $('dislikeBtn').classList.toggle('on', read.myReaction === -1);
+        $('likeBtn').setAttribute('aria-pressed', read.myReaction === 1 ? 'true' : 'false');
+        $('dislikeBtn').setAttribute('aria-pressed', read.myReaction === -1 ? 'true' : 'false');
+        $('likeBtn').firstElementChild.className = read.myReaction === 1 ? 'ph-fill ph-thumbs-up' : 'ph ph-thumbs-up';
+        $('dislikeBtn').firstElementChild.className = read.myReaction === -1 ? 'ph-fill ph-thumbs-down' : 'ph ph-thumbs-down';
+    }
+
+    function paintCommentAccess() {
+        const u = user();
+        $('commentForm').hidden = !u;
+        $('commentLogin').hidden = !!u;
+    }
+
+    async function requireLogin() {
+        if (user()) return true;
+        await preload();
+        VT.toast(T('needLogin'), 'ph-lock-simple');
+        state.returnTo = location.pathname;
+        showAuth('write');
+        return false;
+    }
+
+    async function react(value) {
+        if (!(await requireLogin()) || !read.article) return;
+        const next = read.myReaction === value ? 0 : value;
+        const r = await api('/api/articles/' + read.article.id + '/react', 'POST', { value: next });
+        if (!r.ok) {
+            await preload();
+            VT.toast(r.status === 429 ? T('tooMany') : T('failed'), 'ph-warning');
+            return;
+        }
+        read.myReaction = r.data.myReaction;
+        read.article.likeCount = r.data.likeCount;
+        read.article.dislikeCount = r.data.dislikeCount;
+        paintEngage();
+    }
+
+    $('likeBtn').addEventListener('click', () => react(1));
+    $('dislikeBtn').addEventListener('click', () => react(-1));
+
+    function commentItem(c) {
+        const li = node('li', 'comment');
+        li.dataset.id = c.id;
+        const left = c.username ? userLink(c.username, 'comment-avatar') : node('span', 'comment-avatar');
+        left.appendChild(avatarImg(c.avatarUrl, 'avatar-img', 40));
+        li.appendChild(left);
+        const body = node('div', 'comment-main');
+        const head = node('div', 'comment-head');
+        const name = c.username ? userLink(c.username, 'comment-name') : node('span', 'comment-name');
+        name.appendChild(node('b', '', c.name));
+        if (c.verified) name.appendChild(node('i', 'ph-fill ph-seal-check verified-icon'));
+        if (c.username) name.appendChild(node('small', '', '@' + c.username));
+        head.appendChild(name);
+        const time = node('span', 'comment-time', VT.ago(c.createdAt));
+        time.dataset.t = c.createdAt;
+        head.appendChild(time);
+        body.appendChild(head);
+        const text = node('p', 'comment-body', c.body);
+        text.setAttribute('dir', 'auto');
+        body.appendChild(text);
+        if (c.canDelete) {
+            const del = node('button', 'link-btn danger', T('remove'));
+            del.type = 'button';
+            del.addEventListener('click', async () => {
+                if (!window.confirm(T('confirmDeleteComment'))) return;
+                const r = await api('/api/comments/' + c.id, 'DELETE');
+                if (r.ok) {
+                    li.remove();
+                    if (read.article) {
+                        read.article.commentCount = Math.max(0, (read.article.commentCount || 1) - 1);
+                        paintEngage();
+                    }
+                    if (!$('commentList').children.length) $('commentList').appendChild(node('li', 'my-empty', T('commentsEmpty')));
+                }
+            });
+            body.appendChild(del);
+        }
+        li.appendChild(body);
+        return li;
+    }
+
+    async function loadComments(reset) {
+        if (!read.article) return;
+        const list = $('commentList');
+        if (reset) {
+            read.commentPage = 1;
+            list.innerHTML = '';
+        }
+        const r = await api('/api/articles/' + read.article.id + '/comments?page=' + read.commentPage);
+        if (!r.ok) return;
+        const items = r.data.comments || [];
+        read.commentPages = r.data.totalPages || 1;
+        if (reset && !items.length) list.appendChild(node('li', 'my-empty', T('commentsEmpty')));
+        items.forEach(c => list.appendChild(commentItem(c)));
+        $('commentMore').hidden = read.commentPage >= read.commentPages;
+    }
+
+    $('commentMore').addEventListener('click', async () => {
+        read.commentPage++;
+        await loadComments(false);
+    });
+
+    $('cBody').addEventListener('input', () => { $('cCount').textContent = $('cBody').value.length + ' / 1000'; });
+
+    $('commentForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        await preload();
+        const err = $('cError');
+        err.hidden = true;
+        const text = $('cBody').value.trim();
+        if (text.length < 2) return showError(err, T('commentShort'));
+        if (!read.article) return;
+        const btn = $('cSubmit');
+        btn.disabled = true;
+        const r = await api('/api/articles/' + read.article.id + '/comments', 'POST', { body: text });
+        btn.disabled = false;
+        if (!r.ok) return showError(err, r.status === 429 ? T('tooMany') : r.status === 401 ? T('needLogin') : T('commentFailed'));
+        const list = $('commentList');
+        const empty = list.querySelector('.my-empty');
+        if (empty) empty.remove();
+        list.insertBefore(commentItem(r.data.comment), list.firstChild);
+        read.article.commentCount = (read.article.commentCount || 0) + 1;
+        paintEngage();
+        $('cBody').value = '';
+        $('cCount').textContent = '0 / 1000';
+    });
+
     async function paintArticle(which) {
         const a = which === 'translated' && read.translated ? read.translated : read.original;
         read.showing = a === read.translated ? 'translated' : 'original';
         const tag = $('rdTag');
         tag.innerHTML = '';
-        tag.appendChild(node('i', 'ph ' + (CAT_ICONS[a.category] || 'ph-globe')));
+        tag.appendChild(icon(CAT_ICONS[a.category] || 'ph-globe'));
         tag.appendChild(document.createTextNode(' ' + VT.s(CAT_LABEL[a.category] || 'Analysis')));
         $('rdTitle').textContent = a.title;
         $('rdSummary').textContent = a.summary;
@@ -319,9 +519,18 @@
         } else {
             cover.hidden = true;
         }
+        const link = $('rdUserLink');
+        if (a.username) {
+            link.href = '/u/' + encodeURIComponent(a.username);
+            link.setAttribute('data-link', '');
+        } else {
+            link.removeAttribute('href');
+            link.removeAttribute('data-link');
+        }
         $('rdAvatar').src = a.avatarUrl || VT.DEFAULT_AVATAR;
         $('rdVerified').hidden = !a.verified;
-        $('rdAuthor').textContent = a.authorName + ' · ' + a.nationality;
+        $('rdAuthor').textContent = a.authorName;
+        $('rdHandle').textContent = a.username ? '@' + a.username : '';
         $('rdMeta').textContent = fmtDate(a.publishedAt) + ' · ' + VT.s((a.readMinutes || 1) + ' min read');
         const body = $('rdBody');
         body.innerHTML = '';
@@ -351,18 +560,21 @@
     async function openArticle(slug) {
         show('read');
         await preload();
+        await VT.meReady;
         read.slug = slug;
         read.translated = null;
-        let orig = window.__ARTICLE__ && window.__ARTICLE__.slug === slug ? window.__ARTICLE__ : null;
+        read.article = null;
+        $('commentList').innerHTML = '';
+        $('commentMore').hidden = true;
         try {
-            if (!orig) {
-                const r = await fetch('/api/articles/' + encodeURIComponent(slug));
-                if (!r.ok) throw new Error('nf');
-                orig = (await r.json()).article;
-            }
+            const r = await fetch('/api/articles/' + encodeURIComponent(slug), { credentials: 'same-origin' });
+            if (!r.ok) throw new Error('nf');
+            const orig = (await r.json()).article;
             read.original = orig;
+            read.article = { id: orig.id, likeCount: orig.likeCount, dislikeCount: orig.dislikeCount, commentCount: orig.commentCount };
+            read.myReaction = orig.myReaction || 0;
             if (VT.lang !== orig.language) {
-                const r2 = await fetch('/api/articles/' + encodeURIComponent(slug) + '?lang=' + VT.lang);
+                const r2 = await fetch('/api/articles/' + encodeURIComponent(slug) + '?lang=' + VT.lang, { credentials: 'same-origin' });
                 if (r2.ok) {
                     const t = (await r2.json()).article;
                     if (t && t.translatedFrom) read.translated = t;
@@ -370,12 +582,19 @@
             }
             await VT.load([(orig.readMinutes || 1) + ' min read']);
             await paintArticle(read.translated ? 'translated' : 'original');
+            $('engage').hidden = false;
+            $('comments').hidden = false;
+            paintEngage();
+            paintCommentAccess();
+            loadComments(true);
         } catch (e) {
             $('rdTitle').textContent = T('notFound');
             $('rdSummary').textContent = '';
             $('rdBody').innerHTML = '';
             $('rdCover').hidden = true;
             $('rdNotice').hidden = true;
+            $('engage').hidden = true;
+            $('comments').hidden = true;
         }
     }
 
@@ -396,6 +615,84 @@
         } catch (e) { }
     });
 
+    function profileEmpty(target, self) {
+        target.innerHTML = '';
+        const box = node('div', 'profile-empty');
+        const ring = node('div', 'empty-ring');
+        ring.appendChild(icon('ph-article'));
+        box.appendChild(ring);
+        box.appendChild(node('h3', '', T('profileEmpty')));
+        box.appendChild(node('p', '', self ? T('profileEmptySelf') : T('profileEmptyOther')));
+        target.appendChild(box);
+    }
+
+    function paintFollow(p) {
+        const btn = $('pfFollow');
+        btn.hidden = p.isSelf;
+        $('pfEdit').hidden = !p.isSelf;
+        btn.classList.toggle('active', p.isFollowing);
+        btn.innerHTML = '';
+        btn.appendChild(icon(p.isFollowing ? 'ph-user-check' : 'ph-user-plus'));
+        btn.appendChild(document.createTextNode(' '));
+        btn.appendChild(node('span', '', p.isFollowing ? T('following') : T('follow')));
+        $('pfFollowers').textContent = p.followers;
+    }
+
+    async function showProfile(name) {
+        show('profile');
+        await preload();
+        await VT.meReady;
+        profileState.username = name;
+        const grid2 = $('profileGrid');
+        message(grid2, 'grid-msg', 'ph-spinner ph-spin', ' ' + T('loading'));
+        const r = await api('/api/users/' + encodeURIComponent(name));
+        if (!r.ok) {
+            document.querySelector('#view-profile .profile-card').hidden = true;
+            grid2.innerHTML = '';
+            const box = node('div', 'profile-empty');
+            const ring = node('div', 'empty-ring');
+            ring.appendChild(icon('ph-user-circle-dashed'));
+            box.appendChild(ring);
+            box.appendChild(node('h3', '', r.status === 404 ? T('profileMissing') : T('unavailable') + codeOf(r)));
+            grid2.appendChild(box);
+            return;
+        }
+        document.querySelector('#view-profile .profile-card').hidden = false;
+        const p = r.data.profile;
+        profileState.data = p;
+        $('pfAvatar').src = p.avatarUrl || VT.DEFAULT_AVATAR;
+        $('pfName').textContent = p.name;
+        $('pfHandle').textContent = '@' + p.username;
+        $('pfVerified').hidden = !p.verified;
+        $('pfBio').textContent = p.bio || '';
+        $('pfBio').hidden = !p.bio;
+        $('pfArticles').textContent = p.articleCount;
+        $('pfFollowing').textContent = p.following;
+        paintFollow(p);
+        document.title = '@' + p.username + ' | VERO';
+        const items = r.data.articles || [];
+        if (!items.length) profileEmpty(grid2, p.isSelf);
+        else renderCards(grid2, items);
+    }
+
+    $('pfFollow').addEventListener('click', async () => {
+        const p = profileState.data;
+        if (!p) return;
+        if (!(await requireLogin())) return;
+        const btn = $('pfFollow');
+        btn.disabled = true;
+        const r = await api('/api/users/' + encodeURIComponent(p.username) + '/follow', 'POST', { follow: !p.isFollowing });
+        btn.disabled = false;
+        if (!r.ok) {
+            await preload();
+            VT.toast(T('failed'), 'ph-warning');
+            return;
+        }
+        p.isFollowing = r.data.isFollowing;
+        p.followers = r.data.followers;
+        paintFollow(p);
+    });
+
     function showAuth(after) {
         state.after = after;
         show('auth');
@@ -412,7 +709,11 @@
     });
 
     function afterAuth() {
-        go('/articles#' + state.after);
+        if (state.returnTo) {
+            const target = state.returnTo;
+            state.returnTo = '';
+            go(target);
+        } else go('/articles#' + (state.after === 'write' && user() && user().isMinor ? 'account' : state.after));
     }
 
     $('loginForm').addEventListener('submit', async e => {
@@ -420,12 +721,12 @@
         await preload();
         const err = $('lError');
         err.hidden = true;
-        const email = $('lEmail').value.trim();
+        const login = $('lEmail').value.trim();
         const password = $('lPass').value;
-        if (!email || !password) return showError(err, T('badLogin'));
+        if (!login || !password) return showError(err, T('badLogin'));
         const btn = $('lSubmit');
         btn.disabled = true;
-        const r = await api('/api/auth/login', 'POST', { email, password });
+        const r = await api('/api/auth/login', 'POST', { login, password });
         btn.disabled = false;
         if (r.ok) {
             await VT.refreshMe();
@@ -443,7 +744,7 @@
             input.value = '';
             if (!file) return;
             try {
-                await onData(await resizeImage(file, 256, 256, true));
+                await onData(await resizeImage(file, 512, 512, true));
             } catch (e) {
                 await preload();
                 VT.toast(T('badImage'), 'ph-warning');
@@ -451,47 +752,27 @@
         });
     }
 
-    function presetSvg(i) {
-        const c = PRESET_BG[i];
-        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="256" height="256"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/></linearGradient></defs><rect width="128" height="128" fill="url(#g)"/><g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">' + PRESET_ICONS[i] + '</g></svg>';
-    }
-
-    function presetUrl(i) {
-        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(presetSvg(i));
-    }
-
-    function rasterPreset(i) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                const c = document.createElement('canvas');
-                c.width = 256;
-                c.height = 256;
-                c.getContext('2d').drawImage(img, 0, 0, 256, 256);
-                let out = c.toDataURL('image/webp', 0.92);
-                if (out.indexOf('data:image/webp') !== 0) out = c.toDataURL('image/jpeg', 0.92);
-                resolve(out);
-            };
-            img.onerror = () => reject(new Error('preset'));
-            img.src = presetUrl(i);
-        });
+    function presetUrl(id) {
+        return '/assets/avatars/' + id + '.webp';
     }
 
     function buildPresets(box, onPick) {
         box.innerHTML = '';
-        PRESET_BG.forEach((x, i) => {
+        VT.AVATAR_PRESETS.forEach(id => {
             const b = node('button', 'preset');
             b.type = 'button';
+            b.dataset.id = id;
             const im = node('img');
             im.alt = '';
-            im.width = 56;
-            im.height = 56;
-            im.src = presetUrl(i);
+            im.width = 64;
+            im.height = 64;
+            im.loading = 'lazy';
+            im.src = presetUrl(id);
             b.appendChild(im);
             b.addEventListener('click', async () => {
                 box.querySelectorAll('.preset').forEach(p => p.classList.toggle('on', p === b));
                 try {
-                    await onPick(await rasterPreset(i));
+                    await onPick(id);
                 } catch (e) {
                     await preload();
                     VT.toast(T('badImage'), 'ph-warning');
@@ -501,66 +782,164 @@
         });
     }
 
-    function setRegAvatar(data) {
+    function clearPresetMarks(box) {
+        box.querySelectorAll('.preset').forEach(p => p.classList.remove('on'));
+    }
+
+    function setRegAvatar(data, preset) {
         media.regAvatar = data;
-        $('regAvatarPreview').src = data || VT.DEFAULT_AVATAR;
-        $('regAvatarPreview').classList.toggle('required', !data);
-        if (!data) $('regPresets').querySelectorAll('.preset').forEach(p => p.classList.remove('on'));
+        media.regPreset = preset;
+        $('regAvatarPreview').src = data || (preset ? presetUrl(preset) : VT.DEFAULT_AVATAR);
     }
 
     bindPhotoPicker($('regAvatar'), async data => {
-        $('regPresets').querySelectorAll('.preset').forEach(p => p.classList.remove('on'));
-        setRegAvatar(data);
+        clearPresetMarks($('regPresets'));
+        setRegAvatar(data, null);
     });
-    buildPresets($('regPresets'), async data => setRegAvatar(data));
+    buildPresets($('regPresets'), async id => setRegAvatar(null, id));
     $('regAvatarPreview').src = VT.DEFAULT_AVATAR;
+
+    function setStatus(el, kind, text) {
+        if (!text) {
+            el.hidden = true;
+            el.textContent = '';
+            return;
+        }
+        el.hidden = false;
+        el.className = 'field-status ' + kind;
+        el.textContent = text;
+    }
+
+    function parseBirthText(v) {
+        const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
+        if (!m) return { error: 'needBirth' };
+        const d = parseInt(m[1], 10);
+        const mo = parseInt(m[2], 10);
+        const y = parseInt(m[3], 10);
+        const now = new Date();
+        if (mo < 1 || mo > 12 || d < 1 || d > 31) return { error: 'badBirth' };
+        const date = new Date(Date.UTC(y, mo - 1, d));
+        if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return { error: 'badBirth' };
+        if (date.getTime() > now.getTime()) return { error: 'birthFuture' };
+        if (y < now.getUTCFullYear() - 110) return { error: 'birthOld' };
+        let age = now.getUTCFullYear() - y;
+        const dm = now.getUTCMonth() - (mo - 1);
+        if (dm < 0 || (dm === 0 && now.getUTCDate() < d)) age--;
+        if (age > 110) return { error: 'birthOld' };
+        if (age < 13) return { error: 'tooYoung', age };
+        return { d, m: mo, y, age };
+    }
+
+    async function checkBirth(final) {
+        await preload();
+        const v = $('rBirth').value;
+        if (v.length < 10) {
+            birthInfo = null;
+            setStatus($('rBirthStatus'), 'bad', final && v ? T('needBirth') : '');
+            return null;
+        }
+        const r = parseBirthText(v);
+        if (r.error) {
+            birthInfo = null;
+            setStatus($('rBirthStatus'), 'bad', T(r.error));
+            return null;
+        }
+        birthInfo = r;
+        setStatus($('rBirthStatus'), 'ok', r.age >= 18 ? T('birthAdult') : T('birthMinor'));
+        return r;
+    }
+
+    $('rBirth').addEventListener('input', () => {
+        const digits = $('rBirth').value.replace(/\D/g, '').slice(0, 8);
+        let out = digits;
+        if (digits.length > 4) out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+        else if (digits.length > 2) out = digits.slice(0, 2) + '/' + digits.slice(2);
+        $('rBirth').value = out;
+        checkBirth(false);
+    });
+    $('rBirth').addEventListener('blur', () => checkBirth(true));
+
+    $('rUsername').addEventListener('input', () => {
+        const el = $('rUsername');
+        el.value = el.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
+        clearTimeout(userCheckTimer);
+        const v = el.value;
+        const status = $('rUserStatus');
+        if (!v) {
+            setStatus(status, '', '');
+            return;
+        }
+        if (v.length < 3) {
+            preload().then(() => setStatus(status, 'bad', T('badUsername')));
+            return;
+        }
+        const seq = ++userCheckSeq;
+        preload().then(() => setStatus(status, 'pending', T('usernameChecking')));
+        userCheckTimer = setTimeout(async () => {
+            const r = await api('/api/auth/username?u=' + encodeURIComponent(v));
+            if (seq !== userCheckSeq) return;
+            await preload();
+            if (r.status === 503) return setStatus(status, 'bad', T('unavailable') + codeOf(r));
+            if (!r.ok) return setStatus(status, '', '');
+            if (!r.data.valid) return setStatus(status, 'bad', T('usernameUnavailable'));
+            setStatus(status, r.data.available ? 'ok' : 'bad', r.data.available ? T('usernameFree') : T('usernameTaken'));
+        }, 420);
+    });
 
     $('registerForm').addEventListener('submit', async e => {
         e.preventDefault();
         await preload();
         const err = $('rError');
         err.hidden = true;
-        const age = parseInt($('rAge').value, 10);
+        const username = $('rUsername').value.trim();
+        if (!username) return showError(err, T('needUsername'));
+        if (!/^[a-z0-9_]{3,20}$/.test(username)) return showError(err, T('badUsername'));
         if (!$('rFirst').value.trim() || !$('rLast').value.trim()) return showError(err, T('needName'));
-        if (!age) return showError(err, T('needAge'));
-        if (age < 18) return showError(err, T('minor'));
+        const birth = await checkBirth(true);
+        if (!birth) {
+            const parsed = parseBirthText($('rBirth').value);
+            return showError(err, T(parsed.error || 'needBirth'));
+        }
         if (!EMAIL_RE.test($('rEmail').value.trim())) return showError(err, T('badEmail'));
         if ($('rPass').value.length < 8) return showError(err, T('shortPass'));
-        if (!$('rNationality').value.trim() || !$('rResidence').value.trim()) return showError(err, T('needCountry'));
-        if (!media.regAvatar) return showError(err, T('needAvatar'));
         if (!$('rConsent').checked) return showError(err, T('needRegConsent'));
         const btn = $('rSubmit');
         btn.disabled = true;
-        const r = await api('/api/auth/register', 'POST', {
+        const payload = {
+            username,
             firstName: $('rFirst').value,
             lastName: $('rLast').value,
-            age,
+            birth: { d: birth.d, m: birth.m, y: birth.y },
             email: $('rEmail').value,
             password: $('rPass').value,
-            nationality: $('rNationality').value,
-            residence: $('rResidence').value,
-            avatar: media.regAvatar,
             consent: true,
             website: $('rWebsite').value
-        });
+        };
+        if (media.regAvatar) payload.avatar = media.regAvatar;
+        else if (media.regPreset) payload.avatarPreset = media.regPreset;
+        const r = await api('/api/auth/register', 'POST', payload);
+        btn.disabled = false;
         if (!r.ok) {
-            btn.disabled = false;
             if (r.status === 429) return showError(err, T('tooMany'));
             if (r.status === 503) return showError(err, T('unavailable') + codeOf(r));
-            if (r.data.error === 'exists') return showError(err, T('exists'));
-            if (r.data.error === 'age') return showError(err, T('minor'));
-            if (r.data.error === 'password') return showError(err, T('shortPass'));
-            if (r.data.error === 'avatar') return showError(err, T('badImage'));
+            const code = r.data.error;
+            if (code === 'exists') return showError(err, T('exists'));
+            if (code === 'username_taken') return showError(err, T('usernameTaken'));
+            if (code === 'username') return showError(err, T('usernameUnavailable'));
+            if (code === 'too_young') return showError(err, T('tooYoung'));
+            if (code === 'birth') return showError(err, T('badBirth'));
+            if (code === 'password') return showError(err, T('shortPass'));
+            if (code === 'avatar') return showError(err, T('badImage'));
             return showError(err, T('failed'));
         }
-        btn.disabled = false;
         $('registerForm').reset();
-        setRegAvatar(null);
+        clearPresetMarks($('regPresets'));
+        setRegAvatar(null, null);
+        setStatus($('rUserStatus'), '', '');
+        setStatus($('rBirthStatus'), '', '');
         await VT.refreshMe();
         afterAuth();
     });
-
-    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
     async function showAccount() {
         show('account');
@@ -568,9 +947,15 @@
         const u = user();
         $('acAvatar').src = u.avatarUrl || VT.DEFAULT_AVATAR;
         $('acName').textContent = u.firstName + ' ' + u.lastName;
-        $('acMeta').textContent = u.email + ' · ' + u.nationality;
+        $('acMeta').textContent = '@' + u.username + ' · ' + u.email;
         $('acVerified').hidden = !u.verified;
         $('acAdmin').hidden = !u.isAdmin;
+        $('acProfile').href = '/u/' + encodeURIComponent(u.username);
+        $('acProfile').setAttribute('data-link', '');
+        $('acWrite').hidden = !!u.isMinor;
+        $('acMinorNote').hidden = !u.isMinor;
+        $('acBio').value = u.bio || '';
+        $('bioCount').textContent = (u.bio || '').length + ' / 160';
         $('acError').hidden = true;
         const list = $('acArticles');
         list.innerHTML = '';
@@ -593,10 +978,7 @@
             if (a.status === 'approved') {
                 const v = node('a', 'link-btn', T('view'));
                 v.href = '/articles/' + encodeURIComponent(a.slug);
-                v.addEventListener('click', ev => {
-                    ev.preventDefault();
-                    go(v.getAttribute('href'));
-                });
+                v.setAttribute('data-link', '');
                 actions.appendChild(v);
             }
             const d = node('button', 'link-btn danger', T('remove'));
@@ -612,21 +994,33 @@
         });
     }
 
+    $('acBio').addEventListener('input', () => { $('bioCount').textContent = $('acBio').value.length + ' / 160'; });
+
+    $('bioForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        await preload();
+        const r = await api('/api/me', 'PATCH', { bio: $('acBio').value });
+        if (r.ok) {
+            await VT.refreshMe();
+            VT.toast(T('bioSaved'), 'ph-check-circle');
+        } else VT.toast(T('failed'), 'ph-warning');
+    });
+
+    async function saveAvatar(patch) {
+        const r = await api('/api/me', 'PATCH', patch);
+        if (!r.ok) throw new Error('save');
+        await VT.refreshMe();
+        await showAccount();
+        VT.toast(T('avatarSaved'), 'ph-check-circle');
+    }
+
     bindPhotoPicker($('acPhoto'), async data => {
         const up = await uploadMedia(data, 'avatar');
         if (!up) throw new Error('upload');
-        await api('/api/me', 'PATCH', { avatarId: up.id });
-        await VT.refreshMe();
-        showAccount();
+        await saveAvatar({ avatarId: up.id });
     });
 
-    buildPresets($('acPresets'), async data => {
-        const up = await uploadMedia(data, 'avatar');
-        if (!up) throw new Error('upload');
-        await api('/api/me', 'PATCH', { avatarId: up.id });
-        await VT.refreshMe();
-        showAccount();
-    });
+    buildPresets($('acPresets'), async id => saveAvatar({ avatarPreset: id }));
 
     $('acLogout').addEventListener('click', async () => {
         await api('/api/auth/logout', 'POST', {});
@@ -651,8 +1045,16 @@
     function showWrite() {
         show('write');
         const u = user();
+        if (u.isMinor) {
+            $('minorPanel').hidden = false;
+            $('writeForm').hidden = true;
+            $('stepper').hidden = true;
+            $('wDone').hidden = true;
+            return;
+        }
+        $('minorPanel').hidden = true;
         $('rvAvatar').src = u.avatarUrl || VT.DEFAULT_AVATAR;
-        $('rvName').textContent = u.firstName + ' ' + String(u.lastName).charAt(0).toUpperCase() + '. · ' + u.nationality;
+        $('rvName').textContent = u.firstName + ' ' + String(u.lastName).charAt(0).toUpperCase() + '. · @' + u.username;
         $('writeForm').hidden = false;
         $('stepper').hidden = false;
         $('wDone').hidden = true;
@@ -793,6 +1195,9 @@
             } else if (r.status === 401) {
                 await VT.refreshMe();
                 showAuth('write');
+            } else if (r.status === 403 && r.data.error === 'minor') {
+                await VT.refreshMe();
+                showWrite();
             } else if (r.status === 429) {
                 showError($('wError'), r.data.error === 'pending' ? T('pendingLimit') : T('tooMany'));
             } else if (r.status === 503) {
@@ -807,13 +1212,18 @@
     });
 
     async function route() {
-        const m = location.pathname.match(/^\/articles\/([^/]+)/);
-        if (m) return openArticle(decodeURIComponent(m[1]));
+        const art = location.pathname.match(/^\/articles\/([^/]+)/);
+        if (art) return openArticle(decodeURIComponent(art[1]));
+        const prof = location.pathname.match(/^\/u\/([^/]+)/);
+        if (prof) return showProfile(decodeURIComponent(prof[1]).replace(/^@/, '').toLowerCase());
         const hash = location.hash;
         if (hash === '#write' || hash === '#account') {
             await VT.meReady;
             const target = hash.slice(1);
-            if (!user()) return showAuth(target);
+            if (!user()) {
+                state.returnTo = '';
+                return showAuth(target);
+            }
             return target === 'write' ? showWrite() : showAccount();
         }
         document.title = 'Articles & Analysis | VERO';
@@ -830,6 +1240,10 @@
         e.preventDefault();
         go('/articles#write');
     });
+    $('goComments').addEventListener('click', e => {
+        e.preventDefault();
+        $('comments').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     document.querySelectorAll('[data-back], #backLink').forEach(a => {
         a.addEventListener('click', e => {
             e.preventDefault();
@@ -837,10 +1251,24 @@
         });
     });
     document.addEventListener('click', e => {
-        const a = e.target.closest('#accountBtn');
-        if (!a) return;
+        const acc = e.target.closest('#accountBtn');
+        if (acc) {
+            e.preventDefault();
+            go('/articles#account');
+            return;
+        }
+        const a = e.target.closest('a[data-link]');
+        if (!a || !a.getAttribute('href') || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
         e.preventDefault();
-        go('/articles#account');
+        go(a.getAttribute('href'));
+    });
+
+    window.addEventListener('vero:me', () => {
+        if (!state.booted) return;
+        if (state.view === 'read') {
+            paintCommentAccess();
+            if (read.article) loadComments(true);
+        }
     });
 
     window.addEventListener('vero:lang', async () => {
@@ -849,7 +1277,12 @@
         if (state.view === 'list') loadList();
         else if (state.view === 'read' && read.slug) openArticle(read.slug);
         else if (state.view === 'account') showAccount();
+        else if (state.view === 'profile' && profileState.username) showProfile(profileState.username);
     });
+
+    setInterval(() => {
+        document.querySelectorAll('.comment-time[data-t]').forEach(n => { n.textContent = VT.ago(n.dataset.t); });
+    }, 60000);
 
     VT.ready.then(() => {
         state.booted = true;
