@@ -80,6 +80,7 @@ async function connectDb() {
             await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000, maxPoolSize: 10 });
             dbError = '';
             console.log('MongoDB connected');
+            migrateUsers().catch(e => console.error('migrate failed:', e && e.message));
             return;
         } catch (e) {
             dbError = String((e && e.message) || e);
@@ -123,6 +124,8 @@ const Feedback = mongoose.models.Feedback || mongoose.model('Feedback', new Sche
     email: String,
     message: String,
     page: String,
+    mailed: { type: Boolean, default: false },
+    read: { type: Boolean, default: false },
     date: { type: Date, default: Date.now }
 }));
 
@@ -135,13 +138,15 @@ const TransCache = mongoose.models.TransCache || mongoose.model('TransCache', ne
 
 const User = mongoose.models.User || mongoose.model('User', new Schema({
     email: { type: String, unique: true, index: true },
+    username: { type: String, unique: true, sparse: true, index: true },
     passHash: String,
     firstName: String,
     lastName: String,
+    birthDate: Date,
     age: Number,
-    nationality: String,
-    residence: String,
+    bio: { type: String, default: '' },
     avatarId: String,
+    avatarPreset: String,
     verified: { type: Boolean, default: false },
     banned: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
@@ -172,9 +177,36 @@ const Article = mongoose.models.Article || mongoose.model('Article', new Schema(
     coverId: String,
     userId: { type: ObjectId, ref: 'User', index: true },
     status: { type: String, default: 'pending', index: true },
+    likeCount: { type: Number, default: 0 },
+    dislikeCount: { type: Number, default: 0 },
+    commentCount: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
     publishedAt: Date
 }));
+
+const reactionSchema = new Schema({
+    articleId: { type: ObjectId, index: true },
+    userId: { type: ObjectId, index: true },
+    value: Number,
+    createdAt: { type: Date, default: Date.now }
+});
+reactionSchema.index({ articleId: 1, userId: 1 }, { unique: true });
+const Reaction = mongoose.models.Reaction || mongoose.model('Reaction', reactionSchema);
+
+const Comment = mongoose.models.Comment || mongoose.model('Comment', new Schema({
+    articleId: { type: ObjectId, index: true },
+    userId: { type: ObjectId, index: true },
+    body: String,
+    createdAt: { type: Date, default: Date.now }
+}));
+
+const followSchema = new Schema({
+    follower: { type: ObjectId, index: true },
+    following: { type: ObjectId, index: true },
+    createdAt: { type: Date, default: Date.now }
+});
+followSchema.index({ follower: 1, following: 1 }, { unique: true });
+const Follow = mongoose.models.Follow || mongoose.model('Follow', followSchema);
 
 const translator = require('./server-translate')({ TransCache, dbReady });
 const { SUPPORTED_LANGS } = translator;
@@ -278,6 +310,58 @@ async function startSession(req, res, userId) {
 
 const isAdmin = u => !!u && ADMIN_EMAILS.has(String(u.email).toLowerCase());
 
+const AVATAR_PRESETS = Array.from({ length: 12 }, (_, i) => 'nature-' + String(i + 1).padStart(2, '0'));
+const RESERVED_NAMES = new Set(['admin', 'administrator', 'vero', 'veropol', 'support', 'staff', 'moderator', 'mod', 'root', 'system', 'official', 'editor', 'editors', 'help', 'press', 'security', 'null', 'undefined', 'api', 'www']);
+const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+const MIN_AGE = 13;
+
+function ageOf(birth) {
+    if (!birth) return null;
+    const b = new Date(birth);
+    const now = new Date();
+    let a = now.getUTCFullYear() - b.getUTCFullYear();
+    const m = now.getUTCMonth() - b.getUTCMonth();
+    if (m < 0 || (m === 0 && now.getUTCDate() < b.getUTCDate())) a--;
+    return a;
+}
+
+function isMinorUser(u) {
+    if (!u || !u.birthDate) return false;
+    return ageOf(u.birthDate) < 18;
+}
+
+function parseBirth(b) {
+    if (!b || typeof b !== 'object') return { error: 'birth' };
+    const d = parseInt(b.d, 10);
+    const m = parseInt(b.m, 10);
+    const y = parseInt(b.y, 10);
+    if (![d, m, y].every(Number.isInteger)) return { error: 'birth' };
+    const now = new Date();
+    if (y < now.getUTCFullYear() - 110 || y > now.getUTCFullYear()) return { error: 'birth' };
+    if (m < 1 || m > 12 || d < 1 || d > 31) return { error: 'birth' };
+    const date = new Date(Date.UTC(y, m - 1, d));
+    if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return { error: 'birth' };
+    if (date.getTime() > Date.now()) return { error: 'birth' };
+    const age = ageOf(date);
+    if (age > 110) return { error: 'birth' };
+    if (age < MIN_AGE) return { error: 'too_young' };
+    return { date, age };
+}
+
+async function migrateUsers() {
+    const list = await User.find({ $or: [{ username: { $exists: false } }, { username: null }, { username: '' }] }).select('email').lean();
+    for (const u of list) {
+        const base = String(u.email || 'user').split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 14) || 'user';
+        for (let i = 0; i < 12; i++) {
+            const name = base + Math.floor(1000 + Math.random() * 9000);
+            try {
+                await User.updateOne({ _id: u._id }, { username: name });
+                break;
+            } catch (e) { }
+        }
+    }
+}
+
 async function auth(req, res, next) {
     req.user = null;
     const token = readCookie(req, 'vero_sid');
@@ -298,63 +382,99 @@ app.use('/api', auth);
 const requireUser = (req, res, next) => (req.user ? next() : res.status(401).json({ error: 'login' }));
 const requireAdmin = (req, res, next) => (isAdmin(req.user) ? next() : res.status(403).json({ error: 'forbidden' }));
 
+function avatarUrlOf(u) {
+    if (u.avatarId) return '/media/' + u.avatarId;
+    if (u.avatarPreset && AVATAR_PRESETS.includes(u.avatarPreset)) return '/assets/avatars/' + u.avatarPreset + '.webp';
+    return null;
+}
+
 function publicUser(u) {
     return {
         id: String(u._id),
         email: u.email,
+        username: u.username || '',
         firstName: u.firstName,
         lastName: u.lastName,
-        age: u.age,
-        nationality: u.nationality,
-        residence: u.residence,
-        avatarUrl: u.avatarId ? '/media/' + u.avatarId : null,
+        bio: u.bio || '',
+        avatarUrl: avatarUrlOf(u),
         verified: !!u.verified,
-        isAdmin: isAdmin(u)
+        isAdmin: isAdmin(u),
+        isMinor: isMinorUser(u),
+        canWrite: !isMinorUser(u)
     };
 }
 
-app.post('/api/auth/register', limiter(6, 60 * 60 * 1000), async (req, res) => {
+app.get('/api/auth/username', limiter(60, 60 * 1000), async (req, res) => {
+    const name = cut(req.query.u, 30).toLowerCase();
+    if (!USERNAME_RE.test(name) || RESERVED_NAMES.has(name)) return res.json({ available: false, valid: false });
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
+    try {
+        const taken = await User.exists({ username: name });
+        res.json({ available: !taken, valid: true });
+    } catch (e) {
+        res.status(500).json({ error: 'check' });
+    }
+});
+
+app.post('/api/auth/register', limiter(8, 60 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
     if (b.website) return res.status(200).json({ success: true });
     if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
-    const age = parseInt(b.age, 10);
     const email = cut(b.email, 120).toLowerCase();
+    const username = cut(b.username, 30).toLowerCase();
     const password = String(b.password || '');
-    const user = {
-        firstName: cut(b.firstName, 60),
-        lastName: cut(b.lastName, 60),
-        nationality: cut(b.nationality, 80),
-        residence: cut(b.residence, 80),
-        age,
-        email
-    };
-    if (!Number.isInteger(age) || age < 18 || age > 110) return res.status(400).json({ error: 'age' });
-    if (!user.firstName || !user.lastName || !user.nationality || !user.residence) return res.status(400).json({ error: 'identity' });
+    const firstName = cut(b.firstName, 60);
+    const lastName = cut(b.lastName, 60);
+    if (!USERNAME_RE.test(username) || RESERVED_NAMES.has(username)) return res.status(400).json({ error: 'username' });
+    if (!firstName || !lastName) return res.status(400).json({ error: 'identity' });
+    const birth = parseBirth(b.birth);
+    if (birth.error) return res.status(400).json({ error: birth.error });
     if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'email' });
     if (password.length < 8 || password.length > 128) return res.status(400).json({ error: 'password' });
     if (b.consent !== true) return res.status(400).json({ error: 'consent' });
-    const img = decodeImage(b.avatar);
-    if (!img) return res.status(400).json({ error: 'avatar' });
+    let img = null;
+    if (b.avatar) {
+        img = decodeImage(b.avatar);
+        if (!img) return res.status(400).json({ error: 'avatar' });
+    }
+    const preset = AVATAR_PRESETS.includes(b.avatarPreset) ? b.avatarPreset : AVATAR_PRESETS[Math.floor(Math.random() * AVATAR_PRESETS.length)];
     try {
         if (await User.findOne({ email }).lean()) return res.status(409).json({ error: 'exists' });
-        const created = await User.create({ ...user, passHash: await hashPw(password) });
-        const media = await Media.create({ owner: created._id, kind: 'avatar', contentType: img.type, data: img.buf });
-        const avatarId = String(media._id);
-        await User.updateOne({ _id: created._id }, { avatarId });
+        if (await User.findOne({ username }).lean()) return res.status(409).json({ error: 'username_taken' });
+        const created = await User.create({
+            email,
+            username,
+            firstName,
+            lastName,
+            birthDate: birth.date,
+            age: birth.age,
+            avatarPreset: img ? undefined : preset,
+            passHash: await hashPw(password)
+        });
+        let doc = created.toObject();
+        if (img) {
+            const media = await Media.create({ owner: created._id, kind: 'avatar', contentType: img.type, data: img.buf });
+            const avatarId = String(media._id);
+            await User.updateOne({ _id: created._id }, { avatarId });
+            doc = { ...doc, avatarId };
+        }
         await startSession(req, res, created._id);
-        res.json({ user: publicUser({ ...created.toObject(), avatarId }) });
+        res.json({ user: publicUser(doc) });
     } catch (e) {
         console.error('register failed:', e && e.message);
+        if (e && e.code === 11000) return res.status(409).json({ error: /username/.test(String(e.message)) ? 'username_taken' : 'exists' });
         res.status(500).json({ error: 'save' });
     }
 });
 
-app.post('/api/auth/login', limiter(12, 10 * 60 * 1000), async (req, res) => {
+app.post('/api/auth/login', limiter(15, 10 * 60 * 1000), async (req, res) => {
     if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
-    const email = cut(req.body && req.body.email, 120).toLowerCase();
-    const password = String((req.body && req.body.password) || '');
+    const b = req.body || {};
+    const ident = cut(b.login || b.email, 120).toLowerCase().replace(/^@/, '');
+    const password = String(b.password || '');
+    if (!ident || !password) return res.status(401).json({ error: 'credentials' });
     try {
-        const u = await User.findOne({ email }).lean();
+        const u = await User.findOne(ident.includes('@') ? { email: ident } : { username: ident }).lean();
         const ok = u ? await checkPw(password, u.passHash) : false;
         if (!ok) return res.status(401).json({ error: 'credentials' });
         if (u.banned) return res.status(403).json({ error: 'banned' });
@@ -424,8 +544,13 @@ app.patch('/api/me', requireUser, async (req, res) => {
             if (req.user.avatarId && req.user.avatarId !== b.avatarId) await Media.deleteOne({ _id: req.user.avatarId, owner: req.user._id }).catch(() => { });
             set.avatarId = b.avatarId;
         }
-        if (b.nationality) set.nationality = cut(b.nationality, 80);
-        if (b.residence) set.residence = cut(b.residence, 80);
+        if (b.avatarPreset) {
+            if (!AVATAR_PRESETS.includes(b.avatarPreset)) return res.status(400).json({ error: 'media' });
+            if (req.user.avatarId) await Media.deleteOne({ _id: req.user.avatarId, owner: req.user._id }).catch(() => { });
+            set.avatarPreset = b.avatarPreset;
+            set.avatarId = '';
+        }
+        if (typeof b.bio === 'string') set.bio = cut(b.bio, 160);
         const u = await User.findByIdAndUpdate(req.user._id, set, { new: true }).lean();
         res.json({ user: publicUser(u) });
     } catch (e) {
@@ -435,7 +560,19 @@ app.patch('/api/me', requireUser, async (req, res) => {
 
 async function purgeArticle(a) {
     if (a.coverId && isHexId(a.coverId)) await Media.deleteOne({ _id: a.coverId }).catch(() => { });
+    await Comment.deleteMany({ articleId: a._id });
+    await Reaction.deleteMany({ articleId: a._id });
     await Article.deleteOne({ _id: a._id });
+}
+
+async function unwindEngagement(userId) {
+    const comments = await Comment.aggregate([{ $match: { userId } }, { $group: { _id: '$articleId', n: { $sum: 1 } } }]);
+    for (const c of comments) await Article.updateOne({ _id: c._id }, { $inc: { commentCount: -c.n } });
+    const reactions = await Reaction.find({ userId }).lean();
+    for (const r of reactions) await Article.updateOne({ _id: r.articleId }, { $inc: r.value === 1 ? { likeCount: -1 } : { dislikeCount: -1 } });
+    await Comment.deleteMany({ userId });
+    await Reaction.deleteMany({ userId });
+    await Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] });
 }
 
 app.delete('/api/me', requireUser, limiter(5, 60 * 60 * 1000), async (req, res) => {
@@ -444,6 +581,7 @@ app.delete('/api/me', requireUser, limiter(5, 60 * 60 * 1000), async (req, res) 
     try {
         const arts = await Article.find({ userId: req.user._id }).lean();
         for (const a of arts) await purgeArticle(a);
+        await unwindEngagement(req.user._id);
         await Media.deleteMany({ owner: req.user._id });
         await Session.deleteMany({ userId: req.user._id });
         await User.deleteOne({ _id: req.user._id });
@@ -457,9 +595,10 @@ app.delete('/api/me', requireUser, limiter(5, 60 * 60 * 1000), async (req, res) 
 function authorOf(a) {
     const u = a.userId && a.userId.firstName ? a.userId : null;
     return {
+        authorId: u ? String(u._id) : '',
         authorName: u ? u.firstName + ' ' + String(u.lastName || '').charAt(0).toUpperCase() + '.' : 'VERO',
-        nationality: u ? u.nationality : '',
-        avatarUrl: u && u.avatarId ? '/media/' + u.avatarId : null,
+        username: u ? u.username || '' : '',
+        avatarUrl: u ? avatarUrlOf(u) : null,
         verified: !!(u && u.verified)
     };
 }
@@ -475,13 +614,16 @@ function publicArticle(a, full) {
         readMinutes: a.readMinutes,
         coverUrl: a.coverId ? '/media/' + a.coverId : null,
         publishedAt: a.publishedAt,
+        likeCount: a.likeCount || 0,
+        dislikeCount: a.dislikeCount || 0,
+        commentCount: a.commentCount || 0,
         ...authorOf(a)
     };
     if (full) out.body = a.body;
     return out;
 }
 
-const AUTHOR_FIELDS = 'firstName lastName nationality avatarId verified';
+const AUTHOR_FIELDS = 'firstName lastName username avatarId avatarPreset verified banned';
 
 function chunkParagraph(p, max = 1200) {
     if (p.length <= max) return [p];
@@ -572,6 +714,7 @@ app.get('/api/health/db', async (req, res) => {
         connected: dbReady(),
         reason: dbReason(),
         mail: process.env.RESEND_API_KEY ? 'resend' : process.env.BREVO_API_KEY ? 'brevo' : 'not configured',
+        mailTo: process.env.MAIL_TO || 'veropol@proton.me',
         admins: ADMIN_EMAILS.size
     };
     if (dbReady()) {
@@ -709,7 +852,7 @@ async function sendMail({ subject, text, replyTo }) {
     return false;
 }
 
-app.post('/api/feedback', limiter(5, 10 * 60 * 1000), async (req, res) => {
+app.post('/api/feedback', limiter(6, 10 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
     if (b.website) return res.status(200).json({ success: true });
     const rawTopic = cut(b.topic, 20);
@@ -721,20 +864,20 @@ app.post('/api/feedback', limiter(5, 10 * 60 * 1000), async (req, res) => {
     const page = cut(b.page, 200);
     if (message.length < 10) return res.status(400).json({ error: 'message' });
     const validEmail = email && EMAIL_RE.test(email) ? email : '';
+    const lines = ['Topic: ' + topic + (otherTopic ? ' (' + otherTopic + ')' : ''), 'Name: ' + (name || '-'), 'Email: ' + (validEmail || '-'), 'Page: ' + (page || '-'), 'Time: ' + new Date().toISOString(), '', message];
+    const mailed = await sendMail({ subject: '[VERO feedback] ' + topic + (otherTopic ? ': ' + otherTopic : ''), text: lines.join('\n'), replyTo: validEmail });
     let saved = false;
     if (dbReady()) {
         try {
-            await new Feedback({ topic, otherTopic, name, email: validEmail, message, page }).save();
+            await new Feedback({ topic, otherTopic, name, email: validEmail, message, page, mailed }).save();
             saved = true;
         } catch (e) {
             console.error('Feedback save failed:', e && e.message);
         }
     }
-    const lines = ['Topic: ' + topic + (otherTopic ? ' (' + otherTopic + ')' : ''), 'Name: ' + (name || '-'), 'Email: ' + (validEmail || '-'), 'Page: ' + (page || '-'), 'Time: ' + new Date().toISOString(), '', message];
-    const mailed = await sendMail({ subject: '[VERO feedback] ' + topic + (otherTopic ? ': ' + otherTopic : ''), text: lines.join('\n'), replyTo: validEmail });
     if (!saved && !mailed) {
         console.error('FEEDBACK NOT DELIVERED:', JSON.stringify({ topic, otherTopic, name, email: validEmail, page, message }));
-        return res.status(503).json({ error: 'unavailable', code: dbCode() });
+        return res.status(503).json({ error: 'unavailable', code: dbCode() === 'db_write' ? 'mail_not_configured' : dbCode() });
     }
     res.status(200).json({ success: true });
 });
@@ -756,7 +899,7 @@ app.get('/api/articles', limiter(60, 60 * 1000), async (req, res) => {
     try {
         const total = await Article.countDocuments(filter);
         const docs = await Article.find(filter).sort({ publishedAt: -1 }).skip((page - 1) * size).limit(size).populate('userId', AUTHOR_FIELDS).lean();
-        let articles = docs.map(d => publicArticle(d, false));
+        let articles = docs.filter(d => !(d.userId && d.userId.banned)).map(d => publicArticle(d, false));
         if (lang) articles = await Promise.all(articles.map(a => localizeArticle(a, lang)));
         res.json({ articles, page, totalPages: Math.max(1, Math.ceil(total / size)), total });
     } catch (e) {
@@ -771,6 +914,10 @@ app.get('/api/articles/:slug', limiter(60, 60 * 1000), async (req, res) => {
         if (!doc) return res.status(404).json({ error: 'not_found' });
         const lang = SUPPORTED_LANGS[req.query.lang] ? req.query.lang : null;
         let item = publicArticle(doc, true);
+        if (req.user) {
+            const r = await Reaction.findOne({ articleId: doc._id, userId: req.user._id }).lean();
+            item.myReaction = r ? r.value : 0;
+        } else item.myReaction = 0;
         if (lang) item = await localizeArticle(item, lang);
         res.json({ article: item });
     } catch (e) {
@@ -780,12 +927,13 @@ app.get('/api/articles/:slug', limiter(60, 60 * 1000), async (req, res) => {
 
 app.get('/api/me/articles', requireUser, async (req, res) => {
     const docs = await Article.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(100).lean();
-    res.json({ articles: docs.map(d => ({ id: String(d._id), slug: d.slug, title: d.title, status: d.status, createdAt: d.createdAt })) });
+    res.json({ articles: docs.map(d => ({ id: String(d._id), slug: d.slug, title: d.title, status: d.status, createdAt: d.createdAt, likeCount: d.likeCount || 0, commentCount: d.commentCount || 0 })) });
 });
 
 app.post('/api/articles', requireUser, limiter(8, 60 * 60 * 1000), async (req, res) => {
     const b = req.body || {};
     if (b.website) return res.status(200).json({ success: true });
+    if (isMinorUser(req.user)) return res.status(403).json({ error: 'minor' });
     const x = b.article || {};
     if (b.consent !== true) return res.status(400).json({ error: 'consent' });
     const title = cut(x.title, 140);
@@ -826,6 +974,141 @@ app.post('/api/articles', requireUser, limiter(8, 60 * 60 * 1000), async (req, r
     }
 });
 
+app.post('/api/articles/:id/react', requireUser, limiter(60, 10 * 60 * 1000), async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    const value = parseInt(req.body && req.body.value, 10);
+    if (![1, -1, 0].includes(value)) return res.status(400).json({ error: 'value' });
+    try {
+        const art = await Article.findOne({ _id: req.params.id, status: 'approved' }).lean();
+        if (!art) return res.status(404).json({ error: 'not_found' });
+        const prev = await Reaction.findOne({ articleId: art._id, userId: req.user._id }).lean();
+        const was = prev ? prev.value : 0;
+        if (was !== value) {
+            const inc = {};
+            if (was === 1) inc.likeCount = -1;
+            if (was === -1) inc.dislikeCount = -1;
+            if (value === 1) inc.likeCount = (inc.likeCount || 0) + 1;
+            if (value === -1) inc.dislikeCount = (inc.dislikeCount || 0) + 1;
+            if (value === 0) await Reaction.deleteOne({ _id: prev._id });
+            else await Reaction.updateOne({ articleId: art._id, userId: req.user._id }, { value, createdAt: new Date() }, { upsert: true });
+            await Article.updateOne({ _id: art._id }, { $inc: inc });
+        }
+        const fresh = await Article.findById(art._id).select('likeCount dislikeCount').lean();
+        res.json({ likeCount: Math.max(0, fresh.likeCount || 0), dislikeCount: Math.max(0, fresh.dislikeCount || 0), myReaction: value });
+    } catch (e) {
+        res.status(500).json({ error: 'react' });
+    }
+});
+
+function publicComment(c, viewer) {
+    const u = c.userId && c.userId.firstName ? c.userId : null;
+    return {
+        id: String(c._id),
+        body: c.body,
+        createdAt: c.createdAt,
+        username: u ? u.username || '' : '',
+        name: u ? u.firstName + ' ' + String(u.lastName || '').charAt(0).toUpperCase() + '.' : 'VERO',
+        avatarUrl: u ? avatarUrlOf(u) : null,
+        verified: !!(u && u.verified),
+        canDelete: !!viewer && (isAdmin(viewer) || (u && String(u._id) === String(viewer._id)))
+    };
+}
+
+app.get('/api/articles/:id/comments', limiter(90, 60 * 1000), async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const size = 20;
+    try {
+        const total = await Comment.countDocuments({ articleId: req.params.id });
+        const docs = await Comment.find({ articleId: req.params.id }).sort({ createdAt: -1 }).skip((page - 1) * size).limit(size).populate('userId', AUTHOR_FIELDS).lean();
+        res.json({ comments: docs.filter(d => !(d.userId && d.userId.banned)).map(d => publicComment(d, req.user)), page, totalPages: Math.max(1, Math.ceil(total / size)), total });
+    } catch (e) {
+        res.status(500).json({ error: 'comments' });
+    }
+});
+
+app.post('/api/articles/:id/comments', requireUser, limiter(20, 10 * 60 * 1000), async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    const body = String((req.body && req.body.body) || '').replace(/\r/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, 1000);
+    if (body.length < 2) return res.status(400).json({ error: 'comment' });
+    try {
+        const art = await Article.findOne({ _id: req.params.id, status: 'approved' }).lean();
+        if (!art) return res.status(404).json({ error: 'not_found' });
+        const c = await Comment.create({ articleId: art._id, userId: req.user._id, body });
+        await Article.updateOne({ _id: art._id }, { $inc: { commentCount: 1 } });
+        const populated = await Comment.findById(c._id).populate('userId', AUTHOR_FIELDS).lean();
+        res.json({ comment: publicComment(populated, req.user) });
+    } catch (e) {
+        res.status(500).json({ error: 'comment' });
+    }
+});
+
+app.delete('/api/comments/:id', requireUser, async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    try {
+        const c = await Comment.findById(req.params.id).lean();
+        if (!c) return res.status(404).json({ error: 'not_found' });
+        if (String(c.userId) !== String(req.user._id) && !isAdmin(req.user)) return res.status(403).json({ error: 'forbidden' });
+        await Comment.deleteOne({ _id: c._id });
+        await Article.updateOne({ _id: c.articleId }, { $inc: { commentCount: -1 } });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'delete' });
+    }
+});
+
+app.get('/api/users/:username', limiter(90, 60 * 1000), async (req, res) => {
+    if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
+    const name = cut(req.params.username, 30).toLowerCase().replace(/^@/, '');
+    if (!USERNAME_RE.test(name)) return res.status(404).json({ error: 'not_found' });
+    try {
+        const u = await User.findOne({ username: name }).lean();
+        if (!u || u.banned) return res.status(404).json({ error: 'not_found' });
+        const [followers, following, docs, rel] = await Promise.all([
+            Follow.countDocuments({ following: u._id }),
+            Follow.countDocuments({ follower: u._id }),
+            Article.find({ userId: u._id, status: 'approved' }).sort({ publishedAt: -1 }).limit(60).populate('userId', AUTHOR_FIELDS).lean(),
+            req.user ? Follow.exists({ follower: req.user._id, following: u._id }) : null
+        ]);
+        res.json({
+            profile: {
+                id: String(u._id),
+                username: u.username,
+                name: u.firstName + ' ' + String(u.lastName || '').charAt(0).toUpperCase() + '.',
+                bio: u.bio || '',
+                avatarUrl: avatarUrlOf(u),
+                verified: !!u.verified,
+                joinedAt: u.createdAt,
+                followers,
+                following,
+                articleCount: docs.length,
+                isFollowing: !!rel,
+                isSelf: !!req.user && String(req.user._id) === String(u._id)
+            },
+            articles: docs.map(d => publicArticle(d, false))
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'profile' });
+    }
+});
+
+app.post('/api/users/:username/follow', requireUser, limiter(60, 10 * 60 * 1000), async (req, res) => {
+    const name = cut(req.params.username, 30).toLowerCase().replace(/^@/, '');
+    const on = !(req.body && req.body.follow === false);
+    try {
+        const u = await User.findOne({ username: name }).lean();
+        if (!u || u.banned) return res.status(404).json({ error: 'not_found' });
+        if (String(u._id) === String(req.user._id)) return res.status(400).json({ error: 'self' });
+        if (on) await Follow.updateOne({ follower: req.user._id, following: u._id }, { $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+        else await Follow.deleteOne({ follower: req.user._id, following: u._id });
+        const followers = await Follow.countDocuments({ following: u._id });
+        res.json({ isFollowing: on, followers });
+    } catch (e) {
+        res.status(500).json({ error: 'follow' });
+    }
+});
+
 app.delete('/api/articles/:id', requireUser, async (req, res) => {
     if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
     try {
@@ -854,16 +1137,18 @@ app.get('/api/admin/articles', requireAdmin, async (req, res) => {
             coverUrl: d.coverId ? '/media/' + d.coverId : null,
             status: d.status,
             createdAt: d.createdAt,
+            likeCount: d.likeCount || 0,
+            dislikeCount: d.dislikeCount || 0,
+            commentCount: d.commentCount || 0,
             author: d.userId ? {
                 id: String(d.userId._id),
                 name: d.userId.firstName + ' ' + d.userId.lastName,
+                username: d.userId.username || '',
                 email: d.userId.email,
-                age: d.userId.age,
-                nationality: d.userId.nationality,
-                residence: d.userId.residence,
+                age: ageOf(d.userId.birthDate) !== null ? ageOf(d.userId.birthDate) : d.userId.age,
                 verified: !!d.userId.verified,
                 banned: !!d.userId.banned,
-                avatarUrl: d.userId.avatarId ? '/media/' + d.userId.avatarId : null
+                avatarUrl: avatarUrlOf(d.userId)
             } : null
         }))
     });
@@ -882,9 +1167,9 @@ app.post('/api/admin/articles/:id/status', requireAdmin, async (req, res) => {
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
     const q = cut(req.query.q, 80);
     const re = q ? new RegExp(escapeRe(q), 'i') : null;
-    const filter = re ? { $or: [{ email: re }, { lastName: re }, { firstName: re }] } : {};
+    const filter = re ? { $or: [{ email: re }, { username: re }, { lastName: re }, { firstName: re }] } : {};
     const docs = await User.find(filter).sort({ createdAt: -1 }).limit(100).lean();
-    res.json({ users: docs.map(u => ({ ...publicUser(u), banned: !!u.banned, createdAt: u.createdAt })) });
+    res.json({ users: docs.map(u => ({ ...publicUser(u), age: ageOf(u.birthDate) !== null ? ageOf(u.birthDate) : u.age, banned: !!u.banned, createdAt: u.createdAt })) });
 });
 
 app.post('/api/admin/users/:id', requireAdmin, async (req, res) => {
@@ -901,17 +1186,36 @@ app.post('/api/admin/users/:id', requireAdmin, async (req, res) => {
     res.json({ success: true });
 });
 
+app.get('/api/admin/feedback', requireAdmin, async (req, res) => {
+    const filter = req.query.unread === '1' ? { read: false } : {};
+    const docs = await Feedback.find(filter).sort({ date: -1 }).limit(150).lean();
+    res.json({ items: docs.map(d => ({ id: String(d._id), topic: d.topic, otherTopic: d.otherTopic, name: d.name, email: d.email, message: d.message, page: d.page, mailed: !!d.mailed, read: !!d.read, date: d.date })) });
+});
+
+app.post('/api/admin/feedback/:id', requireAdmin, async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    await Feedback.updateOne({ _id: req.params.id }, { read: !!(req.body && req.body.read) });
+    res.json({ success: true });
+});
+
+app.delete('/api/admin/feedback/:id', requireAdmin, async (req, res) => {
+    if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
+    await Feedback.deleteOne({ _id: req.params.id });
+    res.json({ success: true });
+});
+
 const articlesTemplate = fs.readFileSync(path.join(ROOT, 'articles.html'), 'utf8');
 
 function jsonForScript(value) {
     return JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 
-function renderArticlesPage(article) {
-    const url = article ? SITE + '/articles/' + encodeURIComponent(article.slug) : SITE + '/articles';
-    const title = article ? article.title + ' | VERO' : 'Articles & Analysis | VERO';
-    const desc = article ? article.summary : 'Signed analysis and reporting from independent contributors on diplomacy, security and the global economy, published on VERO.';
-    const image = article && article.coverUrl ? SITE + article.coverUrl : SITE + '/assets/BANNER.png';
+function renderArticlesPage(article, override) {
+    const o = override || {};
+    const url = o.url || (article ? SITE + '/articles/' + encodeURIComponent(article.slug) : SITE + '/articles');
+    const title = o.title || (article ? article.title + ' | VERO' : 'Articles & Analysis | VERO');
+    const desc = o.desc || (article ? article.summary : 'Signed analysis and reporting from independent contributors on diplomacy, security and the global economy, published on VERO.');
+    const image = o.image || (article && article.coverUrl ? SITE + article.coverUrl : SITE + '/assets/BANNER.png');
     const parts = [
         '<title>' + escapeHtml(title) + '</title>',
         '<meta name="description" content="' + escapeHtml(desc) + '">',
@@ -934,7 +1238,7 @@ function renderArticlesPage(article) {
             inLanguage: article.language,
             datePublished: article.publishedAt,
             image: [image],
-            author: { '@type': 'Person', name: article.authorName },
+            author: { '@type': 'Person', name: article.authorName, url: article.username ? SITE + '/u/' + article.username : undefined },
             publisher: { '@type': 'Organization', name: 'VERO', url: SITE + '/' },
             mainEntityOfPage: url
         }) + '</script>');
@@ -958,6 +1262,24 @@ app.get('/articles/:slug', async (req, res) => {
         const doc = await Article.findOne({ slug: req.params.slug, status: 'approved' }).populate('userId', AUTHOR_FIELDS).lean();
         if (!doc) return res.status(404).type('html').send(renderArticlesPage(null));
         res.type('html').send(renderArticlesPage(publicArticle(doc, true)));
+    } catch (e) {
+        res.type('html').send(renderArticlesPage(null));
+    }
+});
+
+app.get('/u/:username', async (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    const name = cut(req.params.username, 30).toLowerCase().replace(/^@/, '');
+    if (!dbReady() || !USERNAME_RE.test(name)) return res.type('html').send(renderArticlesPage(null));
+    try {
+        const u = await User.findOne({ username: name }).lean();
+        if (!u || u.banned) return res.status(404).type('html').send(renderArticlesPage(null));
+        res.type('html').send(renderArticlesPage(null, {
+            title: '@' + u.username + ' | VERO',
+            desc: u.bio || ('Articles by @' + u.username + ' on VERO.'),
+            url: SITE + '/u/' + u.username,
+            image: avatarUrlOf(u) ? SITE + avatarUrlOf(u) : undefined
+        }));
     } catch (e) {
         res.type('html').send(renderArticlesPage(null));
     }
