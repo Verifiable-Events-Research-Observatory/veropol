@@ -35,8 +35,8 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=14">
-    <link rel="stylesheet" href="/css/articles.css?v=14">
+    <link rel="stylesheet" href="/css/style.css?v=15">
+    <link rel="stylesheet" href="/css/articles.css?v=15">
 </head>
 
 <body class="articles-body">
@@ -119,6 +119,7 @@
                 <button type="button" class="filter-btn" data-cat="regional" data-tr>Regional</button>
                 <button type="button" class="filter-btn" data-cat="analysis" data-tr>Analysis</button>
                 <button type="button" class="filter-btn" data-cat="opinion" data-tr>Opinion</button>
+                <button type="button" class="filter-btn" data-cat="announcement" data-tr>Announcement</button>
             </div>
             <div class="flex-grid" id="articlesGrid" aria-live="polite"></div>
             <nav class="pagination" id="artPagination" data-tr-aria aria-label="Pagination" hidden></nav>
@@ -137,8 +138,7 @@
                         <a class="byline-user" id="rdUserLink" href="/articles">
                             <img class="avatar-img" id="rdAvatar" alt="" width="48" height="48">
                             <div>
-                                <strong><span id="rdAuthor"></span> <i class="ph-fill ph-seal-check verified-icon"
-                                        id="rdVerified" hidden></i></strong>
+                                <strong><span id="rdAuthor"></span> <span id="rdBadges"></span></strong>
                                 <span class="handle" id="rdHandle"></span>
                                 <span id="rdMeta"></span>
                             </div>
@@ -195,8 +195,7 @@
                 <div class="profile-main">
                     <h1 id="pfName"></h1>
                     <span class="handle" id="pfHandle"></span>
-                    <span class="verified-pill" id="pfVerified" hidden><i class="ph-fill ph-seal-check"></i> <span
-                            data-tr>Verified author</span></span>
+                    <span class="pf-badges" id="pfBadges"></span>
                     <p class="profile-bio" id="pfBio" dir="auto"></p>
                     <ul class="profile-stats">
                         <li><b id="pfArticles">0</b> <span data-tr>Articles</span></li>
@@ -264,15 +263,9 @@
                         <label for="rUsername" data-tr>Username</label>
                     </div>
                     <p class="field-status" id="rUserStatus" hidden></p>
-                    <div class="form-row">
-                        <div class="input-group">
-                            <input type="text" id="rFirst" maxlength="60" placeholder=" " autocomplete="given-name">
-                            <label for="rFirst" data-tr>First name</label>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="rLast" maxlength="60" placeholder=" " autocomplete="family-name">
-                            <label for="rLast" data-tr>Last name</label>
-                        </div>
+                    <div class="input-group">
+                        <input type="text" id="rFirst" maxlength="40" placeholder=" " autocomplete="name">
+                        <label for="rFirst" data-tr>Name</label>
                     </div>
                     <div class="input-group">
                         <input type="text" id="rBirth" inputmode="numeric" maxlength="10" placeholder=" "
@@ -306,21 +299,18 @@
             <div class="account-card">
                 <div class="account-head">
                     <img class="avatar-img big" id="acAvatar" alt="" width="96" height="96">
-                    <div>
-                        <h1 id="acName"></h1>
+                    <div class="account-id">
+                        <h1><span id="acName"></span> <span id="acBadges"></span></h1>
                         <p id="acMeta"></p>
-                        <span class="verified-pill" id="acVerified" hidden><i class="ph-fill ph-seal-check"></i> <span
-                                data-tr>Verified author</span></span>
                     </div>
                 </div>
                 <div class="account-actions">
                     <a href="/articles" class="btn-ghost small" id="acProfile"><i class="ph ph-identification-card"></i>
                         <span data-tr>View my profile</span></a>
+                    <a href="/articles#settings" class="btn-ghost small" id="acEdit"><i
+                            class="ph ph-pencil-simple"></i> <span data-tr>Edit profile</span></a>
                     <a href="#write" class="btn-primary small" id="acWrite"><i class="ph ph-pen-nib"></i> <span
                             data-tr>Write an article</span></a>
-                    <label class="btn-ghost small" for="acPhoto"><i class="ph ph-camera"></i> <span data-tr>Change
-                            photo</span></label>
-                    <input type="file" id="acPhoto" accept="image/*" hidden>
                     <a href="/admin" class="btn-ghost small" id="acAdmin" hidden><i class="ph ph-shield-star"></i> <span
                             data-tr>Admin panel</span></a>
                     <button type="button" class="btn-ghost small" id="acLogout"><i class="ph ph-sign-out"></i> <span
@@ -328,34 +318,109 @@
                 </div>
                 <p class="field-help" id="acMinorNote" hidden data-tr>Accounts under 18 can read, react, comment and
                     follow. Writing articles opens at 18.</p>
-                <form class="bio-form" id="bioForm" novalidate>
-                    <div class="input-group">
-                        <textarea id="acBio" rows="2" maxlength="160" placeholder=" "></textarea>
-                        <label for="acBio" data-tr>Short bio (optional)</label>
-                        <span class="counter" id="bioCount">0 / 160</span>
-                    </div>
-                    <button type="submit" class="btn-ghost small" id="bioSave"><i class="ph ph-floppy-disk"></i> <span
-                            data-tr>Save bio</span></button>
-                </form>
-                <details class="avatar-panel">
-                    <summary data-tr>Choose an avatar</summary>
-                    <div class="preset-grid" id="acPresets"></div>
-                </details>
                 <h2 class="account-sub" data-tr>My articles</h2>
                 <ul class="my-articles" id="acArticles"></ul>
-                <details class="danger-zone">
-                    <summary data-tr>Delete my account</summary>
-                    <p data-tr>This permanently deletes your account, photo, comments and every article you wrote. It
-                        cannot be undone.</p>
-                    <div class="input-group">
-                        <input type="password" id="acDelPw" maxlength="128" placeholder=" "
-                            autocomplete="current-password">
-                        <label for="acDelPw" data-tr>Confirm with your password</label>
+            </div>
+        </section>
+
+        <section id="view-settings" hidden>
+            <a href="/articles#account" class="back-link" data-back-account><i class="ph ph-arrow-left"></i> <span
+                    data-tr>Back to my account</span></a>
+            <div class="settings-shell">
+                <nav class="settings-tabs" id="settingsTabs" aria-label="Settings">
+                    <button type="button" class="active" data-stab="profile"><i class="ph ph-user-circle"></i> <span
+                            data-tr>Profile</span></button>
+                    <button type="button" data-stab="badges"><i class="ph ph-medal"></i> <span
+                            data-tr>Badges</span></button>
+                    <button type="button" data-stab="notifications"><i class="ph ph-bell-ringing"></i> <span
+                            data-tr>Notifications</span></button>
+                    <button type="button" data-stab="account"><i class="ph ph-shield-check"></i> <span
+                            data-tr>Account</span></button>
+                </nav>
+                <div class="settings-body">
+                    <div class="spane" data-spane="profile">
+                        <h2 data-tr>Edit profile</h2>
+                        <div class="set-card">
+                            <div class="set-avatar">
+                                <img class="avatar-img huge" id="stAvatar" alt="" width="128" height="128">
+                                <div class="set-avatar-actions">
+                                    <label class="btn-primary small" for="stPhoto"><i class="ph ph-camera"></i> <span
+                                            data-tr>Upload photo</span></label>
+                                    <input type="file" id="stPhoto" accept="image/*" hidden>
+                                    <small class="field-help" data-tr>Square images work best (at least 512 × 512).</small>
+                                </div>
+                            </div>
+                            <p class="set-label" data-tr>Or choose a VERO avatar</p>
+                            <div class="preset-grid" id="stPresets"></div>
+                        </div>
+                        <form class="set-card" id="profileForm" novalidate>
+                            <div class="input-group">
+                                <input type="text" id="stName" maxlength="40" placeholder=" " autocomplete="name">
+                                <label for="stName" data-tr>Name</label>
+                            </div>
+                            <div class="input-group has-prefix locked">
+                                <span class="prefix">@</span>
+                                <input type="text" id="stUsername" placeholder=" " readonly tabindex="-1">
+                                <label for="stUsername" data-tr>Username</label>
+                            </div>
+                            <div class="input-group bio-group">
+                                <textarea id="stBio" rows="3" maxlength="160" placeholder=" "></textarea>
+                                <label for="stBio" data-tr>Short bio (optional)</label>
+                            </div>
+                            <div class="bio-meta"><span class="counter" id="stBioCount">0 / 160</span></div>
+                            <p class="form-error" id="stError" role="alert" hidden></p>
+                            <div class="set-actions">
+                                <button type="submit" class="btn-primary small" id="stSave"><i
+                                        class="ph ph-floppy-disk"></i> <span data-tr>Save changes</span></button>
+                                <a href="/articles" class="btn-ghost small" id="stView"><i class="ph ph-eye"></i> <span
+                                        data-tr>View profile</span></a>
+                            </div>
+                        </form>
                     </div>
-                    <p class="form-error" id="acError" role="alert" hidden></p>
-                    <button type="button" class="btn-danger" id="acDelete"><i class="ph ph-warning"></i> <span
-                            data-tr>Delete everything</span></button>
-                </details>
+                    <div class="spane" data-spane="badges" hidden>
+                        <h2 data-tr>Badges</h2>
+                        <p class="set-intro" data-tr>Badges recognise trust and contribution on VERO. Hover or tap a badge
+                            to see how it is earned.</p>
+                        <div class="badge-grid" id="badgeGrid"></div>
+                    </div>
+                    <div class="spane" data-spane="notifications" hidden>
+                        <h2 data-tr>Notifications</h2>
+                        <p class="set-intro" data-tr>Choose which updates appear in the bell menu. Turning everything off
+                            stops all notifications.</p>
+                        <div class="set-card toggles" id="notifyToggles"></div>
+                        <div class="set-card" id="browserBox">
+                            <div class="toggle-row">
+                                <span class="toggle-text"><b data-tr>Browser alerts</b><small data-tr>Show a system
+                                        notification while VERO is open in a tab.</small></span>
+                                <button type="button" class="switch" id="browserSwitch" role="switch"
+                                    aria-checked="false"><span></span></button>
+                            </div>
+                            <p class="field-help" id="browserHelp" hidden></p>
+                        </div>
+                    </div>
+                    <div class="spane" data-spane="account" hidden>
+                        <h2 data-tr>Account</h2>
+                        <div class="set-card">
+                            <p class="set-label" data-tr>Email</p>
+                            <p class="set-value" id="stEmail" dir="ltr"></p>
+                            <button type="button" class="btn-ghost small" id="stLogout"><i class="ph ph-sign-out"></i>
+                                <span data-tr>Sign out</span></button>
+                        </div>
+                        <details class="danger-zone">
+                            <summary data-tr>Delete my account</summary>
+                            <p data-tr>This permanently deletes your account, photo, comments and every article you wrote.
+                                It cannot be undone.</p>
+                            <div class="input-group">
+                                <input type="password" id="acDelPw" maxlength="128" placeholder=" "
+                                    autocomplete="current-password">
+                                <label for="acDelPw" data-tr>Confirm with your password</label>
+                            </div>
+                            <p class="form-error" id="acError" role="alert" hidden></p>
+                            <button type="button" class="btn-danger" id="acDelete"><i class="ph ph-warning"></i> <span
+                                    data-tr>Delete everything</span></button>
+                        </details>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -402,6 +467,7 @@
                                     <option value="economy" data-tr>Economy</option>
                                     <option value="regional" data-tr>Regional</option>
                                     <option value="opinion" data-tr>Opinion</option>
+                                    <option value="announcement" id="optAnnouncement" data-tr hidden disabled>Announcement</option>
                                 </select>
                                 <label for="wCategory" data-tr>Category</label>
                             </div>
@@ -566,8 +632,8 @@
         </div>
     </div>
 
-    <script defer src="/javascript/common.js?v=14"></script>
-    <script defer src="/javascript/articles.js?v=14"></script>
+    <script defer src="/javascript/common.js?v=15"></script>
+    <script defer src="/javascript/articles.js?v=15"></script>
 </body>
 
 </html>
