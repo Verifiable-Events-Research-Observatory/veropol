@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Page not found | VERO</title>
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('vero_theme');
+                if (t) document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+    </script>
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="/css/style.css?v=15">
+    <style>
+        .nf-page {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 130px 20px 60px;
+            text-align: center;
+        }
+
+        .nf-card {
+            width: min(640px, 100%);
+            display: grid;
+            justify-items: center;
+            gap: 18px;
+        }
+
+        .nf-code {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 18px);
+            font-family: 'Unbounded', 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: clamp(4.4rem, 20vw, 9rem);
+            line-height: 1;
+            letter-spacing: -0.04em;
+        }
+
+        .nf-code img {
+            width: clamp(64px, 18vw, 128px);
+            height: clamp(64px, 18vw, 128px);
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 0 2px var(--accent), 0 0 60px var(--accent-soft);
+        }
+
+        .nf-card h1 {
+            margin: 0;
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
+        }
+
+        .nf-card p {
+            margin: 0;
+            max-width: 460px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .nf-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .nf-path {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav-container" id="navbar">
+        <a href="/" class="brand" aria-label="VERO">
+            <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36"
+                height="36" alt="VERO" class="brand-logo"
+                onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
+            <span>VERO</span>
+        </a>
+        <div class="nav-links" id="navLinks">
+            <a href="/articles" data-tr>Articles</a>
+            <a href="/articles#account" id="accountBtn" class="icon-btn" aria-label="Account"></a>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Toggle theme"><i
+                    class="ph ph-moon" id="themeIcon"></i></button>
+        </div>
+    </nav>
+    <main class="nf-page">
+        <div class="nf-card">
+            <div class="nf-code"><span>4</span><img src="/assets/logo-192.webp" alt=""
+                    onerror="this.onerror=null;this.src='/assets/icon-192.png'"><span>4</span></div>
+            <h1 data-tr>This page could not be found</h1>
+            <p data-tr>The address may be mistyped, or the page may have been moved or removed. Use one of the links
+                below to continue.</p>
+            <span class="nf-path" id="nfPath" dir="ltr"></span>
+            <div class="nf-actions">
+                <a href="/" class="btn-primary"><i class="ph ph-house"></i> <span data-tr>Back to home</span></a>
+                <a href="/articles" class="btn-ghost"><i class="ph ph-newspaper"></i> <span data-tr>Browse
+                        articles</span></a>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.getElementById('nfPath').textContent = location.pathname.slice(0, 120);
+    </script>
+    <script defer src="/javascript/common.js?v=15"></script>
+</body>
+
+</html>
