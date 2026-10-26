@@ -186,3 +186,62 @@
 .admin-body {
     min-height: 0;
 }
+
+.badge-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-actions .badge-toggle.on {
+    border-color: var(--bc, var(--accent));
+    color: var(--bc, var(--accent));
+    background: color-mix(in srgb, var(--bc, var(--accent)) 14%, transparent);
+}
+
+.admin-tool {
+    display: grid;
+    gap: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.admin-tool h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.admin-tool-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-tool input,
+.admin-tool select,
+.admin-tool textarea {
+    flex: 1 1 180px;
+    min-width: 0;
+    padding: 11px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.admin-tool textarea {
+    flex-basis: 100%;
+    resize: vertical;
+}
+
+.admin-note {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--muted);
+}
