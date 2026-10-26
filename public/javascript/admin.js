@@ -65,6 +65,22 @@
         load();
     }
 
+    function badgeToggles(userId, owned) {
+        const wrap = node('div', 'badge-toggles');
+        ['verified', 'expert', 'editor'].forEach(id => {
+            const meta2 = VT.BADGES.find(b => b.id === id);
+            const has = (owned || []).includes(id);
+            const b = button((has ? 'Remove ' : 'Give ') + meta2.label, 'badge-toggle' + (has ? ' on' : ''), () => userFlag(userId, { badge: id, on: !has }));
+            b.style.setProperty('--bc', meta2.color);
+            wrap.appendChild(b);
+        });
+        return wrap;
+    }
+
+    function ageText(age) {
+        return age === null || age === undefined ? '' : ' · age ' + age;
+    }
+
     function articleCard(a) {
         const card = node('article', 'admin-card');
         card.appendChild(node('h3', '', a.title));
@@ -94,8 +110,8 @@
             av.alt = '';
             box.appendChild(av);
             const info = node('div');
-            info.appendChild(node('b', '', au.name + ' (@' + au.username + ')' + (au.verified ? ' (verified)' : '') + (au.banned ? ' (banned)' : '')));
-            info.appendChild(document.createTextNode(au.email + ' · age ' + au.age));
+            info.appendChild(node('b', '', au.name + ' (@' + au.username + ')' + ((au.badges || []).length ? ' [' + au.badges.join(', ') + ']' : '') + (au.banned ? ' (banned)' : '')));
+            info.appendChild(document.createTextNode(au.email + ageText(au.age)));
             box.appendChild(info);
             card.appendChild(box);
         }
@@ -115,8 +131,12 @@
             load();
         }));
         if (au) {
-            actions.appendChild(button(au.verified ? 'Remove verified badge' : 'Mark author verified', '', () => userFlag(au.id, { verified: !au.verified })));
-            actions.appendChild(button(au.banned ? 'Unban author' : 'Ban author and reject their articles', 'danger', () => userFlag(au.id, { banned: !au.banned }, au.banned ? '' : 'Ban this author and reject all of their articles?')));
+            if (!au.isAdmin) {
+                actions.appendChild(button(au.banned ? 'Unban author' : 'Ban author and reject their articles', 'danger', () => userFlag(au.id, { banned: !au.banned }, au.banned ? '' : 'Ban this author and reject all of their articles?')));
+                card.appendChild(actions);
+                card.appendChild(badgeToggles(au.id, au.badges));
+                return card;
+            }
         }
         card.appendChild(actions);
         return card;
@@ -130,15 +150,15 @@
         av.alt = '';
         row.appendChild(av);
         const info = node('div');
-        info.appendChild(node('b', '', u.firstName + ' ' + u.lastName + ' (@' + u.username + ')' + (u.verified ? ' (verified)' : '') + (u.banned ? ' (banned)' : '') + (u.isAdmin ? ' (admin)' : '')));
-        info.appendChild(document.createTextNode(u.email + ' · age ' + u.age + (u.isMinor ? ' · minor' : '')));
+        info.appendChild(node('b', '', u.name + ' (@' + u.username + ')' + ((u.badges || []).length ? ' [' + u.badges.join(', ') + ']' : '') + (u.banned ? ' (banned)' : '') + (u.isAdmin ? ' (admin)' : '')));
+        info.appendChild(document.createTextNode(u.email + ageText(u.age) + (u.isMinor ? ' · minor' : '')));
         row.appendChild(info);
         card.appendChild(row);
         if (!u.isAdmin) {
             const actions = node('div', 'admin-actions');
-            actions.appendChild(button(u.verified ? 'Remove verified badge' : 'Mark verified', '', () => userFlag(u.id, { verified: !u.verified })));
             actions.appendChild(button(u.banned ? 'Unban' : 'Ban and reject their articles', 'danger', () => userFlag(u.id, { banned: !u.banned }, u.banned ? '' : 'Ban this user and reject all of their articles?')));
             card.appendChild(actions);
+            card.appendChild(badgeToggles(u.id, u.badges));
         }
         return card;
     }
@@ -180,8 +200,84 @@
         return card;
     }
 
+    function grantTool() {
+        const box = node('div', 'admin-tool');
+        box.appendChild(node('h3', '', 'Give or remove a badge by username'));
+        const row = node('div', 'admin-tool-row');
+        const input = node('input');
+        input.type = 'text';
+        input.placeholder = '@username';
+        input.autocapitalize = 'none';
+        const select = node('select');
+        ['verified', 'expert', 'editor'].forEach(id => {
+            const o = node('option', '', VT.BADGES.find(b => b.id === id).label);
+            o.value = id;
+            select.appendChild(o);
+        });
+        const out = node('p', 'admin-note', '');
+        const run = on => async () => {
+            const name = input.value.trim().replace(/^@/, '').toLowerCase();
+            if (!name) return;
+            const r = await api('/api/admin/badges', 'POST', { username: name, badge: select.value, on });
+            out.textContent = r.ok ? (on ? 'Badge given to @' : 'Badge removed from @') + name : r.status === 404 ? 'No user with that username.' : 'Could not update the badge.';
+            if (r.ok) load();
+        };
+        row.appendChild(input);
+        row.appendChild(select);
+        row.appendChild(button('Give', 'good', run(true)));
+        row.appendChild(button('Remove', 'danger', run(false)));
+        box.appendChild(row);
+        box.appendChild(out);
+        return box;
+    }
+
+    function broadcastTool() {
+        const box = node('div', 'admin-tool');
+        box.appendChild(node('h3', '', 'Send a notification to every user'));
+        box.appendChild(node('p', 'admin-note', 'Use it for breaking updates and official announcements. Users who turned announcements off will not receive it.'));
+        const row = node('div', 'admin-tool-row');
+        const title = node('input');
+        title.type = 'text';
+        title.maxLength = 120;
+        title.placeholder = 'Title (required)';
+        const link = node('input');
+        link.type = 'text';
+        link.maxLength = 300;
+        link.placeholder = 'Link (optional, e.g. /articles)';
+        const text = node('textarea');
+        text.rows = 3;
+        text.maxLength = 280;
+        text.placeholder = 'Short message (optional)';
+        const out = node('p', 'admin-note', '');
+        row.appendChild(title);
+        row.appendChild(link);
+        row.appendChild(text);
+        row.appendChild(button('Send to everyone', 'good', async () => {
+            if (title.value.trim().length < 3) {
+                out.textContent = 'The title needs at least 3 characters.';
+                return;
+            }
+            if (!window.confirm('Send this notification to all users?')) return;
+            const r = await api('/api/admin/broadcast', 'POST', { title: title.value, text: text.value, link: link.value });
+            out.textContent = r.ok ? 'Sent to ' + r.data.sent + ' users.' : r.status === 429 ? 'Too many broadcasts. Try again later.' : 'Could not send the notification.';
+            if (r.ok) {
+                title.value = '';
+                text.value = '';
+                link.value = '';
+            }
+        }));
+        box.appendChild(row);
+        box.appendChild(out);
+        return box;
+    }
+
     async function load() {
         message('Loading...');
+        if (state.tab === 'broadcast') {
+            root.innerHTML = '';
+            root.appendChild(broadcastTool());
+            return;
+        }
         if (state.tab === 'feedback') {
             const r = await api('/api/admin/feedback');
             if (!r.ok) return message('Could not load feedback.');
@@ -206,6 +302,7 @@
                     load();
                 }
             });
+            root.appendChild(grantTool());
             root.appendChild(search);
             const list = node('div', 'admin-list');
             r.data.users.forEach(u => list.appendChild(userCard(u)));
@@ -233,7 +330,7 @@
     VT.ready.then(() => VT.meReady).then(() => {
         const u = VT.me.user;
         if (!u) return message('Please sign in first.', { href: '/articles#account', label: 'Go to sign in' });
-        if (!u.isAdmin) return message('This account is not an administrator.', { href: '/articles', label: 'Back to articles' });
+        if (!u.isAdmin) return message('Not found.', { href: '/', label: 'Back to home' });
         document.getElementById('adminWho').textContent = u.email;
         load();
     });
