@@ -42,15 +42,22 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
+function send404(req, res) {
+    res.set('Cache-Control', 'no-store');
+    if (/^\/api\//.test(req.originalUrl)) return res.status(404).json({ error: 'not_found' });
+    if (/\.(js|css|webp|png|ico|svg|json|txt|map)$/i.test(req.path)) return res.status(404).type('text/plain').send('Not Found');
+    res.status(404).sendFile(path.join(ROOT, '404.html'));
+}
+
 app.use(['/admin', '/javascript/admin.js', '/css/admin.css'], (req, res, next) => {
     res.set('Cache-Control', 'no-store');
     res.set('X-Robots-Tag', 'noindex, nofollow');
     auth(req, res, () => {
         if (isAdmin(req.user)) return next();
-        res.status(404).type('text/plain').send('Not Found');
+        send404(req, res);
     });
 });
-app.use('/javascript', (req, res, next) => (/^\/server/.test(req.path) ? res.status(404).type('text/plain').send('Not Found') : next()));
+app.use('/javascript', (req, res, next) => (/^\/server/.test(req.path) ? send404(req, res) : next()));
 app.use('/assets', express.static(path.join(ROOT, 'assets'), { maxAge: '7d' }));
 app.use('/css', express.static(path.join(ROOT, 'css'), { maxAge: '7d' }));
 app.use('/javascript', express.static(path.join(ROOT, 'javascript'), { maxAge: '7d' }));
@@ -145,6 +152,8 @@ const User = mongoose.models.User || mongoose.model('User', new Schema({
     birthDate: Date,
     age: Number,
     bio: { type: String, default: '' },
+    badges: { type: [String], default: [] },
+    notify: { type: Schema.Types.Mixed, default: {} },
     avatarId: String,
     avatarPreset: String,
     verified: { type: Boolean, default: false },
@@ -207,6 +216,21 @@ const followSchema = new Schema({
 });
 followSchema.index({ follower: 1, following: 1 }, { unique: true });
 const Follow = mongoose.models.Follow || mongoose.model('Follow', followSchema);
+
+const notificationSchema = new Schema({
+    userId: { type: ObjectId, index: true },
+    type: String,
+    actorName: String,
+    actorUsername: String,
+    actorAvatar: String,
+    title: String,
+    text: String,
+    link: String,
+    read: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now, expires: 60 * 60 * 24 * 60 }
+});
+notificationSchema.index({ userId: 1, createdAt: -1 });
+const Notification = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
 
 const translator = require('./server-translate')({ TransCache, dbReady });
 const { SUPPORTED_LANGS } = translator;
@@ -310,6 +334,33 @@ async function startSession(req, res, userId) {
 
 const isAdmin = u => !!u && ADMIN_EMAILS.has(String(u.email).toLowerCase());
 
+const OFFICIAL_EMAILS = new Set((process.env.OFFICIAL_EMAILS || 'veropol@proton.me').split(',').map(x => x.trim().toLowerCase()).filter(Boolean));
+const isOfficial = u => !!u && OFFICIAL_EMAILS.has(String(u.email || '').toLowerCase());
+const ALL_BADGES = ['official', 'verified', 'expert', 'editor', 'early', 'author'];
+const GRANTABLE_BADGES = ['verified', 'expert', 'editor'];
+const NOTIFY_DEFAULTS = { all: true, follow: true, article: true, comment: true, like: true, announce: true, browser: false };
+const prefsOf = u => ({ ...NOTIFY_DEFAULTS, ...((u && u.notify) || {}) });
+const nameOf = u => [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || 'VERO';
+
+function badgesOf(u) {
+    const set = new Set((u.badges || []).filter(b => ALL_BADGES.includes(b)));
+    if (u.verified) set.add('verified');
+    if (isOfficial(u)) set.add('official');
+    return ALL_BADGES.filter(b => set.has(b));
+}
+
+function hasCheck(u) {
+    const b = badgesOf(u);
+    return b.includes('verified') || b.includes('official');
+}
+
+async function setBadge(userId, badge, on) {
+    if (!GRANTABLE_BADGES.includes(badge)) return false;
+    const upd = on ? { $addToSet: { badges: badge } } : { $pull: { badges: badge } };
+    if (badge === 'verified') upd.$set = { verified: on };
+    return !!(await User.findByIdAndUpdate(userId, upd).lean());
+}
+
 const AVATAR_PRESETS = Array.from({ length: 12 }, (_, i) => 'nature-' + String(i + 1).padStart(2, '0'));
 const RESERVED_NAMES = new Set(['admin', 'administrator', 'vero', 'veropol', 'support', 'staff', 'moderator', 'mod', 'root', 'system', 'official', 'editor', 'editors', 'help', 'press', 'security', 'null', 'undefined', 'api', 'www']);
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
@@ -389,18 +440,23 @@ function avatarUrlOf(u) {
 }
 
 function publicUser(u) {
+    const badges = badgesOf(u);
     return {
         id: String(u._id),
         email: u.email,
         username: u.username || '',
         firstName: u.firstName,
-        lastName: u.lastName,
+        lastName: u.lastName || '',
+        name: nameOf(u),
         bio: u.bio || '',
         avatarUrl: avatarUrlOf(u),
-        verified: !!u.verified,
+        verified: badges.includes('verified') || badges.includes('official'),
+        badges,
         isAdmin: isAdmin(u),
+        isOfficial: isOfficial(u),
         isMinor: isMinorUser(u),
-        canWrite: !isMinorUser(u)
+        canWrite: !isMinorUser(u),
+        notify: prefsOf(u)
     };
 }
 
@@ -423,10 +479,9 @@ app.post('/api/auth/register', limiter(8, 60 * 60 * 1000), async (req, res) => {
     const email = cut(b.email, 120).toLowerCase();
     const username = cut(b.username, 30).toLowerCase();
     const password = String(b.password || '');
-    const firstName = cut(b.firstName, 60);
-    const lastName = cut(b.lastName, 60);
+    const firstName = cut(b.name || b.firstName, 40);
     if (!USERNAME_RE.test(username) || RESERVED_NAMES.has(username)) return res.status(400).json({ error: 'username' });
-    if (!firstName || !lastName) return res.status(400).json({ error: 'identity' });
+    if (firstName.length < 2) return res.status(400).json({ error: 'identity' });
     const birth = parseBirth(b.birth);
     if (birth.error) return res.status(400).json({ error: birth.error });
     if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'email' });
@@ -441,11 +496,13 @@ app.post('/api/auth/register', limiter(8, 60 * 60 * 1000), async (req, res) => {
     try {
         if (await User.findOne({ email }).lean()) return res.status(409).json({ error: 'exists' });
         if (await User.findOne({ username }).lean()) return res.status(409).json({ error: 'username_taken' });
+        const early = (await User.estimatedDocumentCount()) < 100;
         const created = await User.create({
             email,
             username,
             firstName,
-            lastName,
+            lastName: '',
+            badges: early ? ['early'] : [],
             birthDate: birth.date,
             age: birth.age,
             avatarPreset: img ? undefined : preset,
@@ -551,6 +608,19 @@ app.patch('/api/me', requireUser, async (req, res) => {
             set.avatarId = '';
         }
         if (typeof b.bio === 'string') set.bio = cut(b.bio, 160);
+        if (typeof b.name === 'string') {
+            const n = cut(b.name, 40);
+            if (n.length < 2) return res.status(400).json({ error: 'name' });
+            set.firstName = n;
+            set.lastName = '';
+        }
+        if (b.notify && typeof b.notify === 'object') {
+            const cur = prefsOf(req.user);
+            Object.keys(NOTIFY_DEFAULTS).forEach(k => {
+                if (typeof b.notify[k] === 'boolean') cur[k] = b.notify[k];
+            });
+            set.notify = cur;
+        }
         const u = await User.findByIdAndUpdate(req.user._id, set, { new: true }).lean();
         res.json({ user: publicUser(u) });
     } catch (e) {
@@ -596,10 +666,10 @@ function authorOf(a) {
     const u = a.userId && a.userId.firstName ? a.userId : null;
     return {
         authorId: u ? String(u._id) : '',
-        authorName: u ? u.firstName + ' ' + String(u.lastName || '').charAt(0).toUpperCase() + '.' : 'VERO',
+        authorName: u ? nameOf(u) : 'VERO',
         username: u ? u.username || '' : '',
         avatarUrl: u ? avatarUrlOf(u) : null,
-        verified: !!(u && u.verified)
+        verified: !!(u && hasCheck(u)), badges: u ? badgesOf(u) : []
     };
 }
 
@@ -623,7 +693,7 @@ function publicArticle(a, full) {
     return out;
 }
 
-const AUTHOR_FIELDS = 'firstName lastName username avatarId avatarPreset verified banned';
+const AUTHOR_FIELDS = 'firstName lastName username avatarId avatarPreset verified banned email badges';
 
 function chunkParagraph(p, max = 1200) {
     if (p.length <= max) return [p];
@@ -882,7 +952,7 @@ app.post('/api/feedback', limiter(6, 10 * 60 * 1000), async (req, res) => {
     res.status(200).json({ success: true });
 });
 
-const ARTICLE_CATEGORIES = ['diplomacy', 'military', 'economy', 'regional', 'analysis', 'opinion'];
+const ARTICLE_CATEGORIES = ['diplomacy', 'military', 'economy', 'regional', 'analysis', 'opinion', 'announcement'];
 
 function slugify(title) {
     const base = title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60);
@@ -941,6 +1011,7 @@ app.post('/api/articles', requireUser, limiter(8, 60 * 60 * 1000), async (req, r
     const body = String(x.body || '').replace(/\r/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim();
     const language = SUPPORTED_LANGS[x.language] ? x.language : 'en';
     const category = ARTICLE_CATEGORIES.includes(x.category) ? x.category : 'analysis';
+    if (category === 'announcement' && !isOfficial(req.user)) return res.status(403).json({ error: 'category' });
     if (title.length < 10 || summary.length < 40 || body.length < 600 || body.length > 20000) return res.status(400).json({ error: 'content' });
     if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
     try {
@@ -955,7 +1026,7 @@ app.post('/api/articles', requireUser, limiter(8, 60 * 60 * 1000), async (req, r
         if (!admin && (await Article.countDocuments({ userId: req.user._id, status: 'pending' })) >= 5) return res.status(429).json({ error: 'pending' });
         const words = body.split(/\s+/).length;
         const cjk = (body.match(/[\u4E00-\u9FFF]/g) || []).length;
-        await Article.create({
+        const created = await Article.create({
             slug: slugify(title),
             title,
             summary,
@@ -968,6 +1039,7 @@ app.post('/api/articles', requireUser, limiter(8, 60 * 60 * 1000), async (req, r
             status: admin ? 'approved' : 'pending',
             publishedAt: admin ? new Date() : undefined
         });
+        if (admin) onPublished(created.toObject()).catch(() => { });
         res.json({ success: true, status: admin ? 'approved' : 'pending' });
     } catch (e) {
         res.status(500).json({ error: 'save' });
@@ -993,6 +1065,11 @@ app.post('/api/articles/:id/react', requireUser, limiter(60, 10 * 60 * 1000), as
             else await Reaction.updateOne({ articleId: art._id, userId: req.user._id }, { value, createdAt: new Date() }, { upsert: true });
             await Article.updateOne({ _id: art._id }, { $inc: inc });
         }
+        if (value === 1 && was !== 1 && String(art.userId) !== String(req.user._id)) {
+            const link = '/articles/' + encodeURIComponent(art.slug);
+            const dup = await Notification.exists({ userId: art.userId, type: 'like', actorUsername: req.user.username, link });
+            if (!dup) pushNotify(art.userId, 'like', { ...actorInfo(req.user), title: art.title, link });
+        }
         const fresh = await Article.findById(art._id).select('likeCount dislikeCount').lean();
         res.json({ likeCount: Math.max(0, fresh.likeCount || 0), dislikeCount: Math.max(0, fresh.dislikeCount || 0), myReaction: value });
     } catch (e) {
@@ -1007,9 +1084,9 @@ function publicComment(c, viewer) {
         body: c.body,
         createdAt: c.createdAt,
         username: u ? u.username || '' : '',
-        name: u ? u.firstName + ' ' + String(u.lastName || '').charAt(0).toUpperCase() + '.' : 'VERO',
+        name: u ? nameOf(u) : 'VERO',
         avatarUrl: u ? avatarUrlOf(u) : null,
-        verified: !!(u && u.verified),
+        verified: !!(u && hasCheck(u)), badges: u ? badgesOf(u) : [],
         canDelete: !!viewer && (isAdmin(viewer) || (u && String(u._id) === String(viewer._id)))
     };
 }
@@ -1037,6 +1114,9 @@ app.post('/api/articles/:id/comments', requireUser, limiter(20, 10 * 60 * 1000),
         if (!art) return res.status(404).json({ error: 'not_found' });
         const c = await Comment.create({ articleId: art._id, userId: req.user._id, body });
         await Article.updateOne({ _id: art._id }, { $inc: { commentCount: 1 } });
+        if (String(art.userId) !== String(req.user._id)) {
+            pushNotify(art.userId, 'comment', { ...actorInfo(req.user), title: art.title, text: body.slice(0, 140), link: '/articles/' + encodeURIComponent(art.slug) });
+        }
         const populated = await Comment.findById(c._id).populate('userId', AUTHOR_FIELDS).lean();
         res.json({ comment: publicComment(populated, req.user) });
     } catch (e) {
@@ -1058,6 +1138,96 @@ app.delete('/api/comments/:id', requireUser, async (req, res) => {
     }
 });
 
+function actorInfo(u) {
+    return { actorName: nameOf(u), actorUsername: u.username || '', actorAvatar: avatarUrlOf(u) || '' };
+}
+
+async function pushNotify(userId, type, data) {
+    try {
+        const u = await User.findById(userId).select('notify banned').lean();
+        if (!u || u.banned) return;
+        const p = prefsOf(u);
+        if (!p.all || p[type] === false) return;
+        await Notification.create({ userId: u._id, type, ...data });
+    } catch (e) { }
+}
+
+async function fanout(users, type, data) {
+    const rows = [];
+    for (const u of users) {
+        const p = prefsOf(u);
+        if (u.banned || !p.all || p[type] === false) continue;
+        rows.push({ userId: u._id, type, ...data, createdAt: new Date() });
+    }
+    for (let i = 0; i < rows.length; i += 500) await Notification.insertMany(rows.slice(i, i + 500), { ordered: false }).catch(() => { });
+    return rows.length;
+}
+
+async function broadcast(type, data, exceptId) {
+    let total = 0;
+    let batch = [];
+    const cursor = User.find({ banned: { $ne: true } }).select('notify banned').lean().cursor();
+    for await (const u of cursor) {
+        if (exceptId && String(u._id) === String(exceptId)) continue;
+        batch.push(u);
+        if (batch.length >= 500) {
+            total += await fanout(batch, type, data);
+            batch = [];
+        }
+    }
+    if (batch.length) total += await fanout(batch, type, data);
+    return total;
+}
+
+async function onPublished(doc) {
+    const author = await User.findById(doc.userId).lean();
+    if (!author) return;
+    if (!(author.badges || []).includes('author')) await User.updateOne({ _id: author._id }, { $addToSet: { badges: 'author' } });
+    const link = '/articles/' + encodeURIComponent(doc.slug);
+    if (doc.category === 'announcement') {
+        await broadcast('announce', { ...actorInfo(author), title: doc.title, text: doc.summary, link }, author._id);
+        return;
+    }
+    const follows = await Follow.find({ following: author._id }).select('follower').lean();
+    if (!follows.length) return;
+    const users = await User.find({ _id: { $in: follows.map(f => f.follower) } }).select('notify banned').lean();
+    await fanout(users, 'article', { ...actorInfo(author), title: doc.title, link });
+}
+
+function publicNotification(n) {
+    return { id: String(n._id), type: n.type, actorName: n.actorName || '', actorUsername: n.actorUsername || '', actorAvatar: n.actorAvatar || '', title: n.title || '', text: n.text || '', link: n.link || '', read: !!n.read, createdAt: n.createdAt };
+}
+
+app.get('/api/notifications', requireUser, limiter(150, 60 * 1000), async (req, res) => {
+    try {
+        const unread = await Notification.countDocuments({ userId: req.user._id, read: false });
+        if (req.query.count === '1') {
+            const latest = await Notification.findOne({ userId: req.user._id, read: false }).sort({ createdAt: -1 }).lean();
+            return res.json({ unread, latest: latest ? publicNotification(latest) : null });
+        }
+        const docs = await Notification.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(40).lean();
+        res.json({ unread, items: docs.map(publicNotification) });
+    } catch (e) {
+        res.status(500).json({ error: 'notifications' });
+    }
+});
+
+app.post('/api/notifications/read', requireUser, limiter(60, 60 * 1000), async (req, res) => {
+    const id = req.body && req.body.id;
+    const filter = { userId: req.user._id, read: false };
+    if (id) {
+        if (!isHexId(id)) return res.status(400).json({ error: 'id' });
+        filter._id = id;
+    }
+    await Notification.updateMany(filter, { read: true });
+    res.json({ success: true });
+});
+
+app.delete('/api/notifications', requireUser, limiter(20, 60 * 1000), async (req, res) => {
+    await Notification.deleteMany({ userId: req.user._id });
+    res.json({ success: true });
+});
+
 app.get('/api/users/:username', limiter(90, 60 * 1000), async (req, res) => {
     if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
     const name = cut(req.params.username, 30).toLowerCase().replace(/^@/, '');
@@ -1075,10 +1245,12 @@ app.get('/api/users/:username', limiter(90, 60 * 1000), async (req, res) => {
             profile: {
                 id: String(u._id),
                 username: u.username,
-                name: u.firstName + ' ' + String(u.lastName || '').charAt(0).toUpperCase() + '.',
+                name: nameOf(u),
                 bio: u.bio || '',
                 avatarUrl: avatarUrlOf(u),
-                verified: !!u.verified,
+                verified: hasCheck(u),
+                badges: badgesOf(u),
+                official: isOfficial(u),
                 joinedAt: u.createdAt,
                 followers,
                 following,
@@ -1100,7 +1272,10 @@ app.post('/api/users/:username/follow', requireUser, limiter(60, 10 * 60 * 1000)
         const u = await User.findOne({ username: name }).lean();
         if (!u || u.banned) return res.status(404).json({ error: 'not_found' });
         if (String(u._id) === String(req.user._id)) return res.status(400).json({ error: 'self' });
-        if (on) await Follow.updateOne({ follower: req.user._id, following: u._id }, { $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+        if (on) {
+            const made = await Follow.updateOne({ follower: req.user._id, following: u._id }, { $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+            if (made.upsertedCount) pushNotify(u._id, 'follow', { ...actorInfo(req.user), link: '/u/' + req.user.username });
+        }
         else await Follow.deleteOne({ follower: req.user._id, following: u._id });
         const followers = await Follow.countDocuments({ following: u._id });
         res.json({ isFollowing: on, followers });
@@ -1142,11 +1317,13 @@ app.get('/api/admin/articles', requireAdmin, async (req, res) => {
             commentCount: d.commentCount || 0,
             author: d.userId ? {
                 id: String(d.userId._id),
-                name: d.userId.firstName + ' ' + d.userId.lastName,
+                name: nameOf(d.userId),
                 username: d.userId.username || '',
                 email: d.userId.email,
-                age: ageOf(d.userId.birthDate) !== null ? ageOf(d.userId.birthDate) : d.userId.age,
-                verified: !!d.userId.verified,
+                age: isOfficial(d.userId) ? null : (ageOf(d.userId.birthDate) !== null ? ageOf(d.userId.birthDate) : d.userId.age),
+                verified: hasCheck(d.userId),
+                badges: badgesOf(d.userId),
+                isAdmin: isAdmin(d.userId),
                 banned: !!d.userId.banned,
                 avatarUrl: avatarUrlOf(d.userId)
             } : null
@@ -1157,33 +1334,61 @@ app.get('/api/admin/articles', requireAdmin, async (req, res) => {
 app.post('/api/admin/articles/:id/status', requireAdmin, async (req, res) => {
     const status = req.body && req.body.status;
     if (!isHexId(req.params.id) || !['approved', 'rejected', 'pending'].includes(status)) return res.status(400).json({ error: 'status' });
+    const prev = await Article.findById(req.params.id).select('status').lean();
     const update = { status };
     if (status === 'approved') update.publishedAt = new Date();
     const doc = await Article.findByIdAndUpdate(req.params.id, update, { new: true }).lean();
     if (!doc) return res.status(404).json({ error: 'not_found' });
+    if (status === 'approved' && prev && prev.status !== 'approved') onPublished(doc).catch(() => { });
     res.json({ success: true });
 });
 
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
     const q = cut(req.query.q, 80);
-    const re = q ? new RegExp(escapeRe(q), 'i') : null;
+    const re = q ? new RegExp(escapeRe(q.replace(/^@/, '')), 'i') : null;
     const filter = re ? { $or: [{ email: re }, { username: re }, { lastName: re }, { firstName: re }] } : {};
     const docs = await User.find(filter).sort({ createdAt: -1 }).limit(100).lean();
-    res.json({ users: docs.map(u => ({ ...publicUser(u), age: ageOf(u.birthDate) !== null ? ageOf(u.birthDate) : u.age, banned: !!u.banned, createdAt: u.createdAt })) });
+    res.json({ users: docs.map(u => ({ ...publicUser(u), age: isOfficial(u) ? null : (ageOf(u.birthDate) !== null ? ageOf(u.birthDate) : u.age), banned: !!u.banned, createdAt: u.createdAt })) });
 });
 
 app.post('/api/admin/users/:id', requireAdmin, async (req, res) => {
     if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
     const set = {};
     if (typeof req.body.banned === 'boolean') set.banned = req.body.banned;
-    if (typeof req.body.verified === 'boolean') set.verified = req.body.verified;
-    const u = await User.findByIdAndUpdate(req.params.id, set, { new: true }).lean();
+    if (typeof req.body.verified === 'boolean') {
+        if (!(await setBadge(req.params.id, 'verified', req.body.verified))) return res.status(404).json({ error: 'not_found' });
+    }
+    if (req.body.badge) {
+        if (!(await setBadge(req.params.id, String(req.body.badge), !!req.body.on))) return res.status(400).json({ error: 'badge' });
+    }
+    const u = Object.keys(set).length ? await User.findByIdAndUpdate(req.params.id, set, { new: true }).lean() : await User.findById(req.params.id).lean();
     if (!u) return res.status(404).json({ error: 'not_found' });
     if (set.banned) {
         await Article.updateMany({ userId: u._id, status: { $ne: 'rejected' } }, { status: 'rejected' });
         await Session.deleteMany({ userId: u._id });
     }
     res.json({ success: true });
+});
+
+app.post('/api/admin/badges', requireAdmin, async (req, res) => {
+    const name = cut(req.body && req.body.username, 30).toLowerCase().replace(/^@/, '');
+    const badge = String((req.body && req.body.badge) || '');
+    if (!USERNAME_RE.test(name) || !GRANTABLE_BADGES.includes(badge)) return res.status(400).json({ error: 'badge' });
+    const u = await User.findOne({ username: name }).select('_id').lean();
+    if (!u) return res.status(404).json({ error: 'not_found' });
+    await setBadge(u._id, badge, !!(req.body && req.body.on));
+    res.json({ success: true });
+});
+
+app.post('/api/admin/broadcast', requireAdmin, limiter(10, 60 * 60 * 1000), async (req, res) => {
+    const b = req.body || {};
+    const title = cut(b.title, 120);
+    const text = cut(b.text, 280);
+    let link = cut(b.link, 300);
+    if (link && !/^(\/[^/\\]|https:\/\/)/.test(link)) link = '';
+    if (title.length < 3) return res.status(400).json({ error: 'title' });
+    const sent = await broadcast('announce', { ...actorInfo(req.user), title, text, link }, req.user._id);
+    res.json({ success: true, sent });
 });
 
 app.get('/api/admin/feedback', requireAdmin, async (req, res) => {
@@ -1328,7 +1533,7 @@ app.use((err, req, res, next) => {
 });
 
 app.use((req, res) => {
-    res.status(404).type('text/plain').send('Not Found');
+    send404(req, res);
 });
 
 app.listen(PORT, () => {
