@@ -490,27 +490,262 @@
 
     const USER_SVG = '<svg class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7"/><path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2"/></svg>';
     const AVATAR_PRESETS = Array.from({ length: 12 }, (_, i) => 'nature-' + String(i + 1).padStart(2, '0'));
+    const BADGES = [
+        { id: 'official', label: 'VERO Official', icon: 'ph-fill ph-seal-check', color: '#ff8a4c', how: 'Reserved for the official VERO account. It cannot be requested or earned.' },
+        { id: 'verified', label: 'Verified Author', icon: 'ph-fill ph-seal-check', color: '#38bdf8', how: 'Granted by the VERO editorial team after an identity and quality review of an author. It cannot be purchased.' },
+        { id: 'expert', label: 'Subject Expert', icon: 'ph-fill ph-graduation-cap', color: '#a78bfa', how: 'Awarded by the editorial team to contributors with proven expertise in a region or field.' },
+        { id: 'editor', label: 'Editors Pick', icon: 'ph-fill ph-star', color: '#fbbf24', how: 'Awarded by the editorial team to authors whose articles are regularly featured for their quality.' },
+        { id: 'early', label: 'Early Member', icon: 'ph-fill ph-rocket-launch', color: '#34d399', how: 'Granted automatically to the first 100 accounts created on VERO.' },
+        { id: 'author', label: 'Published Author', icon: 'ph-fill ph-pen-nib', color: '#f472b6', how: 'Granted automatically when your first article is approved and published.' }
+    ];
+    const BADGE_MAP = {};
+    BADGES.forEach(b => { BADGE_MAP[b.id] = b; });
+
+    function badgeEl(id, big) {
+        const b = BADGE_MAP[id];
+        if (!b) return null;
+        const el = document.createElement('span');
+        el.className = 'badge-ico' + (big ? ' big' : '') + (id === 'official' ? ' official' : '');
+        el.style.setProperty('--bc', b.color);
+        el.title = s(b.label);
+        if (id === 'official') {
+            const im = document.createElement('img');
+            im.src = '/assets/logo-96.webp';
+            im.alt = '';
+            im.width = big ? 28 : 16;
+            im.height = big ? 28 : 16;
+            el.appendChild(im);
+        } else {
+            const i = document.createElement('i');
+            i.className = b.icon;
+            el.appendChild(i);
+        }
+        return el;
+    }
+
+    function badgeRow(ids, big) {
+        const row = document.createElement('span');
+        row.className = 'badge-row';
+        (ids || []).filter(x => x === 'official' || x === 'verified' || x === 'expert' || x === 'editor').forEach(x => {
+            const e = badgeEl(x, big);
+            if (e) row.appendChild(e);
+        });
+        return row;
+    }
+
     const me = { user: null };
 
     function paintAccount() {
         document.querySelectorAll('#accountBtn').forEach(btn => {
             btn.innerHTML = '';
-            const img = document.createElement('img');
-            img.className = 'nav-avatar';
-            img.alt = '';
-            img.width = 28;
-            img.height = 28;
-            img.src = me.user && me.user.avatarUrl ? me.user.avatarUrl : DEFAULT_AVATAR;
             if (me.user) {
+                const img = document.createElement('img');
+                img.className = 'nav-avatar';
+                img.alt = '';
+                img.width = 40;
+                img.height = 40;
+                img.decoding = 'async';
+                img.src = me.user.avatarUrl || DEFAULT_AVATAR;
+                img.addEventListener('error', () => { img.src = DEFAULT_AVATAR; });
                 btn.appendChild(img);
                 btn.classList.add('signed');
-                btn.title = '@' + (me.user.username || me.user.firstName);
+                btn.title = '@' + (me.user.username || me.user.name);
             } else {
                 btn.insertAdjacentHTML('beforeend', USER_SVG);
                 btn.classList.remove('signed');
                 btn.removeAttribute('title');
             }
         });
+        paintBell();
+    }
+
+    const bell = { timer: 0, open: false, items: [], unread: 0, lastSeen: '' };
+    const NOTE_TXT = {
+        follow: '{n} started following you',
+        article: '{n} published a new article',
+        comment: '{n} commented on your article',
+        like: '{n} liked your article',
+        announce: 'VERO announcement',
+        empty: 'No notifications yet.',
+        markAll: 'Mark all as read',
+        settings: 'Notification settings',
+        title: 'Notifications',
+        clear: 'Clear all'
+    };
+
+    function noteText(n) {
+        if (n.type === 'announce') return n.title || s(NOTE_TXT.announce);
+        return s(NOTE_TXT[n.type] || NOTE_TXT.announce).replace('{n}', n.actorName || 'VERO');
+    }
+
+    function noteIcon(type) {
+        return { follow: 'ph-user-plus', article: 'ph-newspaper', comment: 'ph-chat-circle-text', like: 'ph-thumbs-up', announce: 'ph-megaphone' }[type] || 'ph-bell';
+    }
+
+    function bellCount(n) {
+        bell.unread = n;
+        const b = document.getElementById('notifBadge');
+        if (!b) return;
+        b.textContent = n > 99 ? '99+' : String(n);
+        b.hidden = !n;
+    }
+
+    function paintBell() {
+        const nav = document.getElementById('navLinks');
+        const acc = document.getElementById('accountBtn');
+        let btn = document.getElementById('notifBtn');
+        if (!me.user || !nav || !acc) {
+            if (btn) btn.remove();
+            const panel = document.getElementById('notifPanel');
+            if (panel) panel.remove();
+            clearInterval(bell.timer);
+            bell.timer = 0;
+            return;
+        }
+        if (btn) return;
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'notifBtn';
+        btn.className = 'icon-btn notif-btn';
+        btn.setAttribute('aria-label', 'Notifications');
+        btn.innerHTML = '<i class="ph ph-bell"></i><span class="notif-badge" id="notifBadge" hidden>0</span>';
+        acc.parentNode.insertBefore(btn, acc);
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            toggleBell();
+        });
+        document.addEventListener('click', e => {
+            const panel = document.getElementById('notifPanel');
+            if (panel && !panel.hidden && !panel.contains(e.target) && !e.target.closest('#notifBtn')) closeBell();
+        });
+        pollBell(true);
+        bell.timer = setInterval(() => { if (!document.hidden) pollBell(false); }, 45000);
+    }
+
+    async function pollBell(first) {
+        if (!me.user) return;
+        try {
+            const r = await fetch('/api/notifications?count=1', { credentials: 'same-origin' });
+            if (!r.ok) return;
+            const d = await r.json();
+            bellCount(d.unread || 0);
+            const latest = d.latest;
+            if (latest && latest.id !== bell.lastSeen) {
+                const fresh = bell.lastSeen !== '' && !first;
+                bell.lastSeen = latest.id;
+                if (fresh && me.user.notify && me.user.notify.browser && 'Notification' in window && Notification.permission === 'granted') {
+                    try {
+                        const n = new Notification('VERO', { body: noteText(latest), icon: '/assets/icon-192.png', tag: latest.id });
+                        n.onclick = () => {
+                            window.focus();
+                            if (latest.link) location.href = latest.link;
+                        };
+                    } catch (e) { }
+                }
+                if (bell.open) loadBell();
+            } else if (!latest) bell.lastSeen = bell.lastSeen || '-';
+        } catch (e) { }
+    }
+
+    function closeBell() {
+        const panel = document.getElementById('notifPanel');
+        if (panel) panel.hidden = true;
+        bell.open = false;
+    }
+
+    async function toggleBell() {
+        let panel = document.getElementById('notifPanel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'notifPanel';
+            panel.className = 'notif-panel';
+            document.body.appendChild(panel);
+        }
+        if (!panel.hidden && bell.open) return closeBell();
+        panel.hidden = false;
+        bell.open = true;
+        await load(Object.values(NOTE_TXT));
+        loadBell();
+    }
+
+    async function loadBell() {
+        const panel = document.getElementById('notifPanel');
+        if (!panel) return;
+        let d = { items: [], unread: 0 };
+        try {
+            const r = await fetch('/api/notifications', { credentials: 'same-origin' });
+            if (r.ok) d = await r.json();
+        } catch (e) { }
+        bell.items = d.items || [];
+        bellCount(d.unread || 0);
+        panel.innerHTML = '';
+        const head = document.createElement('div');
+        head.className = 'notif-head';
+        const h = document.createElement('strong');
+        h.textContent = s(NOTE_TXT.title);
+        head.appendChild(h);
+        const actions = document.createElement('div');
+        actions.className = 'notif-actions';
+        const mark = document.createElement('button');
+        mark.type = 'button';
+        mark.textContent = s(NOTE_TXT.markAll);
+        mark.addEventListener('click', async () => {
+            await fetch('/api/notifications/read', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            loadBell();
+        });
+        actions.appendChild(mark);
+        const set = document.createElement('a');
+        set.href = '/articles#settings';
+        set.setAttribute('aria-label', s(NOTE_TXT.settings));
+        set.title = s(NOTE_TXT.settings);
+        set.innerHTML = '<i class="ph ph-gear-six"></i>';
+        actions.appendChild(set);
+        head.appendChild(actions);
+        panel.appendChild(head);
+        const list = document.createElement('div');
+        list.className = 'notif-list';
+        if (!bell.items.length) {
+            const e = document.createElement('p');
+            e.className = 'notif-empty';
+            e.textContent = s(NOTE_TXT.empty);
+            list.appendChild(e);
+        }
+        bell.items.forEach(n => {
+            const row = document.createElement(n.link ? 'a' : 'div');
+            row.className = 'notif-item' + (n.read ? '' : ' unread');
+            if (n.link) row.href = n.link;
+            const ico = document.createElement('span');
+            ico.className = 'notif-ico';
+            if (n.actorAvatar && n.type !== 'announce') {
+                const im = document.createElement('img');
+                im.src = n.actorAvatar;
+                im.alt = '';
+                im.width = 40;
+                im.height = 40;
+                ico.appendChild(im);
+            } else ico.innerHTML = '<i class="ph-fill ' + noteIcon(n.type) + '"></i>';
+            row.appendChild(ico);
+            const body = document.createElement('span');
+            body.className = 'notif-body';
+            const t = document.createElement('b');
+            t.textContent = noteText(n);
+            body.appendChild(t);
+            const sub = n.type === 'announce' ? n.text : (n.title || n.text);
+            if (sub) {
+                const sp = document.createElement('small');
+                sp.textContent = sub;
+                body.appendChild(sp);
+            }
+            const when = document.createElement('em');
+            when.textContent = ago(n.createdAt);
+            body.appendChild(when);
+            row.appendChild(body);
+            row.addEventListener('click', () => {
+                if (!n.read) fetch('/api/notifications/read', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: n.id }) });
+            });
+            list.appendChild(row);
+        });
+        panel.appendChild(list);
     }
 
     async function refreshMe() {
@@ -550,6 +785,9 @@
         LANGS,
         DEFAULT_AVATAR,
         AVATAR_PRESETS,
+        BADGES,
+        badgeEl,
+        badgeRow,
         me,
         get lang() { return lang; },
         load,
