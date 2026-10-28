@@ -877,15 +877,16 @@ app.get('/api/theaters', limiter(60, 60 * 1000), async (req, res) => {
         const out = { ...data, theaters: { ...data.theaters } };
         await Promise.all(Object.keys(out.theaters).map(async id => {
             const t = out.theaters[id];
-            if (!t || !t.lead || t.tag !== 'breaking') return;
-            const og = await Promise.race([search.og(t.lead.url), new Promise(r => setTimeout(() => r(null), 4200))]);
+            if (!t || !t.lead) return;
+            const ogJob = search.og(t.lead.url);
+            const og = await Promise.race([ogJob, new Promise(r => setTimeout(() => r(null), 2500))]);
             if (og) {
                 out.theaters[id] = { ...t, cover: { url: '/img?u=' + encodeURIComponent(og), page: t.lead.url, label: t.lead.source || '' } };
                 return;
             }
-            const found0 = await Promise.race([coverFinder.resolve(id, t.lead.title), new Promise(r => setTimeout(() => r(null), 3500))]);
-            const found = found0 ? { url: found0.url, page: found0.page, label: [found0.credit, found0.license, 'Wikimedia Commons'].filter(Boolean).join(' · ') } : null;
-            if (found) out.theaters[id] = { ...t, cover: found };
+            if (t.tag !== 'breaking') return;
+            const found0 = await Promise.race([coverFinder.resolve(id, t.lead.title), new Promise(r => setTimeout(() => r(null), 1500))]);
+            if (found0) out.theaters[id] = { ...t, cover: { url: found0.url, page: found0.page, label: [found0.credit, found0.license, 'Wikimedia Commons'].filter(Boolean).join(' · ') } };
         }));
         res.json(out);
     } catch (e) {
