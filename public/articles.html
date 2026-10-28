@@ -8,9 +8,8 @@
         (function () {
             try {
                 var t = localStorage.getItem('vero_theme');
-                if (!t) {
-                    var hr = new Date().getHours();
-                    t = (hr >= 19 || hr < 6) ? 'dark' : 'light';
+                if (t !== 'light' && t !== 'dark') {
+                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
                 }
                 document.documentElement.setAttribute('data-theme', t);
             } catch (e) { }
@@ -35,25 +34,25 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=15">
-    <link rel="stylesheet" href="/css/articles.css?v=15">
+    <link rel="stylesheet" href="/css/style.css?v=17">
+    <link rel="stylesheet" href="/css/nav.css?v=17">
+    <link rel="stylesheet" href="/css/articles.css?v=17">
 </head>
 
 <body class="articles-body">
     <div class="toast-box" id="toastBox" role="status"></div>
     <nav class="nav-container" id="navbar">
         <a href="/" class="brand" aria-label="VERO">
-            <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36"
-                alt="VERO" class="brand-logo" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
+            <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36" alt="VERO" class="brand-logo" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
             <span>VERO</span>
         </a>
-        <button class="nav-burger" id="navBurger" type="button" aria-expanded="false" aria-controls="navLinks"
-            data-tr-aria aria-label="Menu"><i class="ph ph-list"></i></button>
-        <div class="nav-links" id="navLinks">
-            <a href="/#theaters" data-tr>Strategic Theaters</a>
-            <a href="/#intelligence" data-tr>Feed</a>
-            <a href="/articles" data-tr>Articles</a>
-            <a href="#modal-methodology" data-modal="methodology" data-tr>Methodology</a>
+        <div class="nav-menu" id="navMenu">
+            <div class="nav-center" id="navLinks">
+                <a href="/live" class="nav-link" data-nav="/live"><span data-tr>Live</span></a>
+                <a href="/explore" class="nav-link" data-nav="/explore"><span data-tr>Explore</span></a>
+                <a href="/articles" class="nav-link" data-nav="/articles"><span data-tr>Articles</span></a>
+            </div>
+            <div class="nav-tools" id="navTools">
             <div class="lang-dropdown">
                 <button class="lang-btn" id="langToggle" type="button" aria-haspopup="true" aria-expanded="false"
                     data-tr-aria aria-label="Change language">
@@ -87,20 +86,15 @@
                 </div>
             </div>
             <a href="/#feedback" class="btn-nav" data-tr>Feedback</a>
-            <a href="/articles#account" class="icon-btn" id="accountBtn" data-tr-aria aria-label="Account"><svg
-                    class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-                    stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="8.2" r="3.7" />
-                    <path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2" />
-                </svg></a>
-            <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme">
-                <i class="ph ph-moon" id="themeIcon"></i>
-            </button>
+            <a href="/articles#account" class="icon-btn" id="accountBtn" data-tr-aria aria-label="Account"><svg class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7" /><path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2" /></svg></a>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme"><i class="ph ph-moon" id="themeIcon"></i></button>
+            </div>
         </div>
+        <button class="nav-toggle" id="navBurger" type="button" aria-expanded="false" aria-controls="navMenu" data-tr-aria aria-label="Menu"><i class="ph ph-list"></i></button>
     </nav>
 
     <main class="container art-page">
-        <section id="view-list">
+        <section id="view-list" hidden>
             <header class="art-hero">
                 <span class="kicker" data-tr>Open desk</span>
                 <h1 data-tr>Articles & Analysis</h1>
@@ -253,8 +247,6 @@
                                 <small class="field-help" data-tr>Optional. Square images work best (at least 512 × 512).</small>
                             </div>
                         </div>
-                        <p class="field-help" data-tr>Or choose one of the VERO avatars:</p>
-                        <div class="preset-grid" id="regPresets"></div>
                     </div>
                     <div class="input-group has-prefix">
                         <span class="prefix">@</span>
@@ -350,8 +342,6 @@
                                     <small class="field-help" data-tr>Square images work best (at least 512 × 512).</small>
                                 </div>
                             </div>
-                            <p class="set-label" data-tr>Or choose a VERO avatar</p>
-                            <div class="preset-grid" id="stPresets"></div>
                         </div>
                         <form class="set-card" id="profileForm" novalidate>
                             <div class="input-group">
@@ -563,8 +553,9 @@
 
     <footer class="site-footer">
         <div class="banner-wrap">
-            <img src="/assets/BANNER.png" width="1584" height="672" loading="lazy" decoding="async" alt="VERO Banner"
-                class="banner-img" onerror="this.parentElement.style.display='none'">
+            <img src="https://veropol.onrender.com/assets/BANNER.png" width="1584" height="672" loading="lazy"
+                decoding="async" alt="VERO Banner" class="banner-img"
+                onerror="if(!this.dataset.f){this.dataset.f=1;this.src='/assets/BANNER.png'}else{this.parentElement.style.display='none'}">
         </div>
         <div class="footer-grid">
             <div class="footer-brand">
@@ -577,18 +568,19 @@
             </div>
             <div class="footer-col">
                 <h4 data-tr>Explore</h4>
-                <a href="/#theaters"><i class="ph ph-globe-hemisphere-west"></i> <span data-tr>Strategic
-                        Theaters</span></a>
-                <a href="/#intelligence"><i class="ph ph-broadcast"></i> <span data-tr>Feed</span></a>
+                <a href="/live"><i class="ph ph-broadcast"></i> <span data-tr>Live</span></a>
+                <a href="/explore"><i class="ph ph-compass"></i> <span data-tr>Explore</span></a>
                 <a href="/articles"><i class="ph ph-newspaper"></i> <span data-tr>Articles</span></a>
                 <a href="/articles#write"><i class="ph ph-pen-nib"></i> <span data-tr>Write for VERO</span></a>
             </div>
             <div class="footer-col">
                 <h4 data-tr>Transparency</h4>
-                <a href="#modal-methodology" data-modal="methodology"><i class="ph ph-book-open-text"></i> <span
+                <a href="/#modal-methodology"><i class="ph ph-book-open-text"></i> <span
                         data-tr>Sources & Methodology</span></a>
-                <a href="/#modal-privacy"><i class="ph ph-shield-check"></i> <span data-tr>Privacy Policy</span></a>
-                <a href="/#modal-terms"><i class="ph ph-file-text"></i> <span data-tr>Terms of Service</span></a>
+                <a href="/#modal-privacy"><i class="ph ph-shield-check"></i> <span data-tr>Privacy
+                        Policy</span></a>
+                <a href="/#modal-terms"><i class="ph ph-file-text"></i> <span data-tr>Terms of
+                        Service</span></a>
                 <a href="/#feedback"><i class="ph ph-chat-circle-dots"></i> <span data-tr>Feedback</span></a>
             </div>
             <div class="footer-col">
@@ -632,8 +624,8 @@
         </div>
     </div>
 
-    <script defer src="/javascript/common.js?v=15"></script>
-    <script defer src="/javascript/articles.js?v=15"></script>
+    <script defer src="/javascript/common.js?v=17"></script>
+    <script defer src="/javascript/articles.js?v=17"></script>
 </body>
 
 </html>
