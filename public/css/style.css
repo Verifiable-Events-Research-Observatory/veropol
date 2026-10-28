@@ -2089,3 +2089,209 @@ img {
 :root[lang="ar"] .svc-text small {
     line-height: 1.9;
 }
+
+
+.filters,
+.range-filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.filter-btn,
+.range-btn {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--muted);
+    transition: 0.2s;
+}
+
+.filter-btn:hover,
+.range-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.filter-btn.active,
+.range-btn.active {
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--bg);
+}
+
+.ac-box {
+    position: absolute;
+    inset-inline: 0;
+    top: calc(100% + 8px);
+    z-index: 80;
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+    border-radius: 22px;
+    border: 1px solid var(--line);
+    background: var(--surface-2, var(--surface));
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+    text-align: start;
+}
+
+.ac-head {
+    padding: 8px 12px 4px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.ac-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.94rem;
+}
+
+.ac-item i {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+.ac-item span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ac-item small {
+    flex: none;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.ac-item:hover,
+.ac-item.on {
+    background: var(--accent-soft);
+}
+
+
+.search-bar {
+    position: relative;
+}
+
+.card {
+    border-radius: 28px;
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="light"] .card {
+    box-shadow: 0 10px 30px rgba(20, 20, 30, 0.07);
+}
+
+[data-theme="light"] .card:hover {
+    box-shadow: 0 22px 50px rgba(20, 20, 30, 0.14);
+}
+
+.card-banner {
+    border-radius: 0;
+}
+
+.filter-groups {
+    display: grid;
+    gap: 14px;
+    max-width: 1100px;
+    margin: 26px auto 0;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.filter-label {
+    flex: none;
+    width: 78px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: end;
+}
+
+.filter-row .filters,
+.filter-row .range-filters {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+    margin: 0;
+    gap: 8px;
+}
+
+@media (max-width: 760px) {
+    .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .filter-label {
+        width: auto;
+        text-align: start;
+        padding-inline: 4px;
+    }
+
+    .filter-row .filters,
+    .filter-row .range-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        scrollbar-width: none;
+        -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent);
+        mask-image: linear-gradient(90deg, #000 88%, transparent);
+    }
+
+    .filter-row .filters::-webkit-scrollbar,
+    .filter-row .range-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-btn,
+    .range-btn {
+        flex: none;
+    }
+}
