@@ -228,27 +228,13 @@ CONCEPTS.forEach(c => {
     if (!c.ctx) c.ctx = c.vars.filter(v => /^[A-Za-z ]+$/.test(v)).slice(1).map(v => norm(v));
 });
 const EXTRA_KEYS = {
-    'Ahmed al-Sharaa': ['ahmed al sharaa', 'ahmed alsharaa', 'ahmad al sharaa', 'ahmed al shaara', 'ahmed al shara', 'al shaara', 'shaara', 'ahmet sara', 'ahmed el sara', 'احمد الشرع', 'الرئيس الشرع', 'ahmed al-sharaa', 'الشرع'],
+    'Ahmed al-Sharaa': ['ahmed al sharaa', 'ahmed alsharaa', 'ahmad al sharaa', 'ahmed al shaara', 'ahmed al shara', 'al shaara', 'shaara', 'ahmet sara', 'ahmed el sara', 'احمد الشرع', 'الرئيس الشرع', 'ahmed al-sharaa'],
     Sisi: ['abdel fattah el sisi', 'abdel fattah al sisi', 'abdelfattah elsisi', 'abdulfettah sisi', 'abdulfattah sisi', 'abdul fattah al sisi', 'abd al fattah al sisi', 'sissi', 'عبد الفتاح السيسي', 'عبدالفتاح السيسي', 'سيسي'],
     Erdogan: ['recep tayyip erdogan', 'tayyip erdogan', 'rajab tayyib erdogan', 'رجب طيب اردوغان', 'recep tayyip erdoğan'],
-    Netanyahu: ['benjamin netanyahu', 'binyamin netanyahu', 'bibi netanyahu', 'بنيامين نتنياهو', 'בנימין נתניהו','bibi', 'netenyahu', 'netanyahou', 'netanyau', 'natanyahu', 'nethanyahu'],
+    Netanyahu: ['benjamin netanyahu', 'binyamin netanyahu', 'bibi netanyahu', 'بنيامين نتنياهو'],
     Zelensky: ['volodymyr zelensky', 'volodymyr zelenskyy', 'vladimir zelensky', 'فولوديمير زيلينسكي'],
     Khamenei: ['ali khamenei', 'ayatollah khamenei', 'علي خامنئي'],
-    'Bashar al-Assad': ['bashar assad', 'bashar al assad', 'بشار الأسد', 'الأسد', 'bashar al-assad', 'bashar alassad', 'bashar asad', 'al assad', 'alassad', 'asad', 'al asad', 'esad', 'esed'],
-    'Mohammed bin Salman': ['mohammed bin salman', 'mohammad bin salman', 'mbs', 'bin salman', 'muhammed bin selman', 'محمد بن سلمان', 'ولي العهد السعودي'],
-    'Narendra Modi': ['narendra modi', 'modi', 'ناريندرا مودي'],
-    'Donald Trump': ['donald trump', 'trump', 'دونالد ترامب'],
-    'Vladimir Putin': ['vladimir putin', 'putin', 'فلاديمير بوتين'],
-    'Xi Jinping': ['xi jinping', 'xi', 'شي جين بينغ'],
-    'Emmanuel Macron': ['emmanuel macron', 'macron', 'ايمانويل ماكرون'],
-    'Kim Jong Un': ['kim jong un', 'kim jong-un', 'kim jong', 'kim cong un', 'كيم جونغ أون'],
-    'Keir Starmer': ['keir starmer', 'starmer', 'كير ستارمر'],
-    'Friedrich Merz': ['friedrich merz', 'merz', 'فريدريش ميرتس'],
-    'Lula da Silva': ['lula da silva', 'lula', 'لولا دا سيلفا'],
-    'Sergey Lavrov': ['sergey lavrov', 'lavrov', 'سيرغي لافروف'],
-    'Marco Rubio': ['marco rubio', 'rubio', 'ماركو روبيو'],
-    'Giorgia Meloni': ['giorgia meloni', 'meloni', 'جورجيا ميلوني'],
-    'Javier Milei': ['javier milei', 'milei', 'خافيير ميلي']
+    'Bashar al-Assad': ['bashar assad', 'bashar al assad', 'بشار الأسد']
 };
 ['Bashar al-Assad', 'Ahmed al-Sharaa', 'Zelensky', 'Netanyahu', 'Erdogan', 'Khamenei', 'Sisi'].forEach(n => { const c = CONCEPTS.find(x => x.en === n); if (c) c.person = true; });
 CONCEPTS.forEach(c => { (EXTRA_KEYS[c.en] || []).forEach(k => { const n = norm(k); if (!c.keys.includes(n)) c.keys.push(n); }); });
@@ -545,7 +531,7 @@ module.exports = function createSearch({ translator, matchSource }) {
         if (hit && hit.exp > Date.now()) return hit.v;
         let v = null;
         try {
-            const r = await fetch(u, { headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' }, redirect: 'follow', signal: AbortSignal.timeout(6500) });
+            const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 VEROBot/1.0', Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.9' }, redirect: 'follow', signal: AbortSignal.timeout(6500) });
             if (r.ok) {
                 const html = (await r.text()).slice(0, 400000);
                 const metas = html.match(/<meta\s[^>]*>/gi) || [];
