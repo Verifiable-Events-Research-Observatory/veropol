@@ -778,6 +778,7 @@
     let theaterData = null;
     let theaterLoadedAt = 0;
     let theaterTitles = [];
+    let coverRetries = 0;
 
     function applyBreakingCover(cover, c) {
         if (!cover) return;
@@ -817,7 +818,8 @@
             cover.appendChild(credit);
         }
         credit.href = c.page || 'https://commons.wikimedia.org';
-        credit.textContent = [c.credit, c.license, 'Wikimedia Commons'].filter(Boolean).join(' · ');
+        credit.textContent = c.label || '';
+        credit.hidden = !c.label;
     }
 
     function renderTheaters() {
@@ -826,7 +828,7 @@
         document.querySelectorAll('.theater-card[data-theater]').forEach(card => {
             const d = theaterData.theaters[card.dataset.theater];
             const box = card.querySelector('.theater-live');
-            applyBreakingCover(card.querySelector('.theater-cover'), d && d.tag === 'breaking' ? d.cover : null);
+            applyBreakingCover(card.querySelector('.theater-cover'), d ? d.cover : null);
             if (!box) return;
             if (!d || !d.lead) {
                 box.hidden = true;
@@ -914,6 +916,11 @@
             renderTheaters();
             renderPreview();
             translateTheaters();
+            const missing = Object.keys(theaterData.theaters || {}).some(k => theaterData.theaters[k] && theaterData.theaters[k].lead && !theaterData.theaters[k].cover);
+            if (missing && coverRetries < 3 && document.querySelector('.theater-cover')) {
+                coverRetries++;
+                setTimeout(loadTheaters, 6000);
+            }
         } catch (e) { }
     }
 
