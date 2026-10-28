@@ -1,0 +1,203 @@
+.nav-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    width: min(1240px, calc(100% - 28px));
+    padding: 9px 14px 9px 20px;
+    border-radius: 999px;
+}
+
+.nav-menu {
+    display: contents;
+}
+
+.nav-container .brand {
+    justify-self: start;
+    min-width: 0;
+}
+
+.nav-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    justify-self: center;
+}
+
+.nav-link {
+    position: relative;
+    padding: 10px 20px;
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: color 0.2s, background 0.2s;
+}
+
+.nav-link:hover {
+    color: var(--text);
+    background: var(--accent-soft);
+}
+
+.nav-link.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    inset-inline: 22px;
+    bottom: 4px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+}
+
+.nav-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    justify-self: end;
+}
+
+.nav-tools .btn-nav {
+    white-space: nowrap;
+}
+
+.nav-tools>.icon-btn,
+.nav-tools>.theme-toggle-btn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    flex: none;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    line-height: 0;
+    cursor: pointer;
+}
+
+.nav-tools>.theme-toggle-btn {
+    font-size: 1.1rem;
+}
+
+.nav-tools>.notif-btn {
+    overflow: visible;
+    font-size: 1.2rem;
+}
+
+.nav-tools>.icon-btn.signed {
+    border: 2px solid var(--accent);
+}
+
+.nav-tools>.icon-btn:hover,
+.nav-tools>.theme-toggle-btn:hover {
+    border-color: var(--accent);
+}
+
+.nav-toggle {
+    display: none;
+    justify-self: end;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+@media (max-width: 1020px) {
+    .nav-container {
+        grid-template-columns: minmax(0, 1fr) auto;
+        border-radius: 28px;
+    }
+
+    .nav-toggle {
+        display: grid;
+    }
+
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 10px);
+        inset-inline: 0;
+        flex-direction: column;
+        gap: 14px;
+        padding: 16px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: var(--surface-2, var(--surface));
+        box-shadow: var(--shadow-lg);
+        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(18px);
+    }
+
+    .nav-menu.open {
+        display: flex;
+    }
+
+    .nav-center {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .nav-link {
+        padding: 14px;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    .nav-link.active::after {
+        inset-inline: 40%;
+    }
+
+    .nav-tools {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+    }
+
+    .nav-tools>.icon-btn,
+    .nav-tools>.theme-toggle-btn {
+        width: 46px;
+        height: 46px;
+        min-width: 46px;
+    }
+
+    .nav-tools .lang-menu {
+        inset-inline-end: auto;
+        inset-inline-start: 50%;
+        transform: translateX(-50%) translateY(-6px);
+    }
+
+    .nav-tools .lang-menu.show {
+        transform: translateX(-50%);
+    }
+}
+
+@media (max-width: 420px) {
+    .nav-container {
+        padding: 8px 10px 8px 14px;
+    }
+
+    .nav-container .brand span {
+        font-size: 1.05rem;
+    }
+}
