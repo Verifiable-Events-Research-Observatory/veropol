@@ -10,10 +10,10 @@
     };
     const TARGETS = { zh: 'zh-CN' };
     const FONT_URLS = {
-        ar: 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap',
+        ar: 'https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;700;800;900&family=Tajawal:wght@500;700;800;900&display=swap',
         zh: 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap'
     };
-    const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23262630'/><circle cx='32' cy='25' r='11' fill='%238D8984'/><path d='M10 64c2-14 12-22 22-22s20 8 22 22z' fill='%238D8984'/></svg>";
+    const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2339393f'/><stop offset='1' stop-color='%2318181c'/></linearGradient></defs><rect width='128' height='128' fill='url(%23g)'/><circle cx='64' cy='50' r='21' fill='%23a09b94'/><path d='M20 128c3-27 22-42 44-42s41 15 44 42z' fill='%23a09b94'/><circle cx='64' cy='64' r='62' fill='none' stroke='%23ff8a4c' stroke-opacity='.35' stroke-width='2'/></svg>";
     const NOI18N = document.documentElement.hasAttribute('data-noi18n');
     const LANG_KEY = 'vero_lang';
     const CACHE_KEY = 'vero_tc5';
@@ -262,17 +262,48 @@
         }, 3600);
     }
 
+    function systemTheme() {
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+
+    function storedTheme() {
+        try { return localStorage.getItem('vero_theme'); } catch (e) { return null; }
+    }
+
     function initTheme() {
         const icon = document.getElementById('themeIcon');
         const btn = document.getElementById('themeToggle');
-        const paint = theme => {
+        const paint = (theme, persist) => {
             document.documentElement.setAttribute('data-theme', theme);
             auroraRGB = theme === 'dark' ? '255,138,76' : '196,64,24';
-            try { localStorage.setItem('vero_theme', theme); } catch (e) { }
+            if (persist) {
+                try { localStorage.setItem('vero_theme', theme); } catch (e) { }
+            }
             if (icon) icon.className = theme === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
         };
-        paint(document.documentElement.getAttribute('data-theme') || 'dark');
-        if (btn) btn.addEventListener('click', () => paint(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+        const saved = storedTheme();
+        paint(saved === 'light' || saved === 'dark' ? saved : systemTheme(), false);
+        if (btn) btn.addEventListener('click', () => paint(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark', true));
+        if (window.matchMedia) {
+            const mq = window.matchMedia('(prefers-color-scheme: light)');
+            const follow = () => {
+                const st = storedTheme();
+                if (st !== 'light' && st !== 'dark') paint(systemTheme(), false);
+            };
+            if (mq.addEventListener) mq.addEventListener('change', follow);
+            else if (mq.addListener) mq.addListener(follow);
+        }
+    }
+
+    function markActiveNav() {
+        const path = location.pathname.replace(/\/+$/, '') || '/';
+        document.querySelectorAll('#navLinks > a[data-nav]').forEach(a => {
+            const t = a.getAttribute('data-nav');
+            const on = (t === '/' && path === '/') || (t !== '/' && (path === t || path.indexOf(t + '/') === 0));
+            a.classList.toggle('active', on);
+            if (on) a.setAttribute('aria-current', 'page');
+            else a.removeAttribute('aria-current');
+        });
     }
 
     function initLangMenu() {
@@ -311,7 +342,7 @@
     function initNav() {
         const nav = document.getElementById('navbar');
         const burger = document.getElementById('navBurger');
-        const links = document.getElementById('navLinks');
+        const links = document.getElementById('navMenu');
         let ticking = false;
         const onScroll = () => {
             if (ticking) return;
@@ -489,7 +520,6 @@
     }
 
     const USER_SVG = '<svg class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7"/><path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2"/></svg>';
-    const AVATAR_PRESETS = Array.from({ length: 12 }, (_, i) => 'nature-' + String(i + 1).padStart(2, '0'));
     const BADGES = [
         { id: 'official', label: 'VERO Official', icon: 'ph-fill ph-seal-check', color: '#ff8a4c', how: 'Reserved for the official VERO account. It cannot be requested or earned.' },
         { id: 'verified', label: 'Verified Author', icon: 'ph-fill ph-seal-check', color: '#38bdf8', how: 'Granted by the VERO editorial team after an identity and quality review of an author. It cannot be purchased.' },
@@ -564,6 +594,8 @@
         follow: '{n} started following you',
         article: '{n} published a new article',
         comment: '{n} commented on your article',
+        reply: '{n} replied to your comment',
+        mention: '{n} mentioned you in a comment',
         like: '{n} liked your article',
         announce: 'VERO announcement',
         empty: 'No notifications yet.',
@@ -579,7 +611,7 @@
     }
 
     function noteIcon(type) {
-        return { follow: 'ph-user-plus', article: 'ph-newspaper', comment: 'ph-chat-circle-text', like: 'ph-thumbs-up', announce: 'ph-megaphone' }[type] || 'ph-bell';
+        return { follow: 'ph-user-plus', article: 'ph-newspaper', comment: 'ph-chat-circle-text', reply: 'ph-arrow-bend-down-right', mention: 'ph-at', like: 'ph-thumbs-up', announce: 'ph-megaphone' }[type] || 'ph-bell';
     }
 
     function bellCount(n) {
@@ -591,7 +623,7 @@
     }
 
     function paintBell() {
-        const nav = document.getElementById('navLinks');
+        const nav = document.getElementById('navTools');
         const acc = document.getElementById('accountBtn');
         let btn = document.getElementById('notifBtn');
         if (!me.user || !nav || !acc) {
@@ -763,6 +795,7 @@
 
     function boot() {
         initTheme();
+        markActiveNav();
         initLogos();
         initLangMenu();
         initNav();
@@ -784,7 +817,6 @@
     window.VT = {
         LANGS,
         DEFAULT_AVATAR,
-        AVATAR_PRESETS,
         BADGES,
         badgeEl,
         badgeRow,
