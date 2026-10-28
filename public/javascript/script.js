@@ -1,5 +1,15 @@
 (function () {
     const TXT = {
+        acPerson: 'Person',
+        acPlace: 'Place',
+        acTopic: 'Topic',
+        acTrending: 'Trending',
+        acHead: 'Trending now',
+        relatedLabel: 'Related',
+        focusExact: 'Focused on {name}',
+        focusBroad: 'Showing {name} and closely related coverage',
+        focusRelated: 'Limited direct coverage of {name}. Showing related reports',
+        broadened: 'Search broadened to include partial matches',
         loading: 'Scanning verified sources...',
         empty: 'No verified reports found for this search. Try another term or timeframe.',
         error: 'The connection to the intelligence feed failed. Please try again.',
@@ -76,6 +86,7 @@
     const filterBtns = document.querySelectorAll('.filter-btn');
     const rangeBtns = document.querySelectorAll('.range-btn');
 
+    const hasTheaters = () => !!document.querySelector('.theater-card[data-theater]') || !!document.getElementById('previewList');
     const T = key => VT.s(TXT[key]);
     const preload = () => VT.load(Object.values(TXT).concat(SUGGESTIONS.map(s => s.label)));
 
@@ -185,40 +196,72 @@
         }
     }
 
-    function attachCover(banner, sources, index) {
+    const ogCache = new Map();
+
+    function fetchOg(url) {
+        if (!url || url.indexOf('http') !== 0) return Promise.resolve(null);
+        if (!ogCache.has(url)) {
+            ogCache.set(url, fetch('/api/og?u=' + encodeURIComponent(url)).then(r => (r.ok ? r.json() : null)).then(d => (d && d.url) || null).catch(() => null));
+        }
+        return ogCache.get(url);
+    }
+
+    function attachCover(banner, item, index, first) {
         const img = new Image();
         img.alt = T('coverAlt');
         img.decoding = 'async';
         img.referrerPolicy = 'no-referrer';
-        if (!sources.length) {
-            giveUpCover(banner, null);
-            return;
-        }
         img.loading = index < 6 ? 'eager' : 'lazy';
-        let step = 0;
-        let timer;
-        const advance = () => {
+        const queue = first.slice();
+        let usedOg = false;
+        let settled = false;
+        let timer = 0;
+        const arm = () => {
             clearTimeout(timer);
-            step++;
-            if (step < sources.length) load();
-            else giveUpCover(banner, img);
+            timer = setTimeout(() => { if (!settled) advance(); }, 9000);
         };
-        const load = () => {
-            img.src = sources[step];
-            if (step < sources.length - 1) timer = setTimeout(advance, 9000);
+        const advance = async () => {
+            clearTimeout(timer);
+            if (queue.length) {
+                img.src = queue.shift();
+                arm();
+                return;
+            }
+            if (!usedOg) {
+                usedOg = true;
+                const u = await fetchOg(item.url);
+                if (u) {
+                    img.src = u;
+                    arm();
+                    return;
+                }
+            }
+            settled = true;
+            giveUpCover(banner, img);
+        };
+        const upgrade = async () => {
+            if (usedOg) return;
+            usedOg = true;
+            const u = await fetchOg(item.url);
+            if (!u) return;
+            const probe = new Image();
+            probe.referrerPolicy = 'no-referrer';
+            probe.onload = () => { if (probe.naturalWidth > img.naturalWidth) img.src = u; };
+            probe.src = u;
         };
         img.onload = () => {
             clearTimeout(timer);
-            if (img.naturalWidth && img.naturalWidth < 360) {
-                giveUpCover(banner, img);
-                return;
-            }
+            settled = true;
             img.classList.add('ready');
             banner.classList.remove('loading');
+            if (img.naturalWidth && img.naturalWidth < 400) upgrade();
         };
-        img.onerror = advance;
+        img.onerror = () => {
+            if (settled) return;
+            advance();
+        };
         banner.appendChild(img);
-        load();
+        advance();
     }
 
     function showMessage(mode) {
@@ -297,7 +340,7 @@
             }
             const img = item.image;
             const invalid = !img || !img.startsWith('http') || ['generic', 'business', 'placeholder', 'logo', 'avatar', 'default', 'icon', 'stock'].some(k => img.toLowerCase().includes(k));
-            const sources = invalid ? [] : [proxiedImage(img), img];
+            const first = invalid ? [] : [proxiedImage(img), img];
             const desc = item.description ? shortDesc(item) + (item.description.length > 150 ? '...' : '') : T('fallbackDesc');
 
             const banner = el('div', 'card-banner loading');
@@ -330,7 +373,7 @@
             card.appendChild(banner);
             card.appendChild(content);
             newsGrid.appendChild(card);
-            attachCover(banner, sources, index);
+            attachCover(banner, item, index, first);
         });
     }
 
@@ -403,7 +446,7 @@
     async function fetchNews(opts) {
         const o = opts || {};
         const page = o.page || 1;
-        const detect = !!o.detect;
+        const detect = false;
         const id = ++requestId;
         if (o.q !== undefined) {
             state.activeQuery = o.q;
@@ -411,7 +454,10 @@
         }
         showMessage('loading');
         if (pagination) pagination.hidden = true;
-        if (o.scroll) document.getElementById('intelligence')?.scrollIntoView({ behavior: 'smooth' });
+        if (o.scroll && newsGrid) {
+            const top = document.getElementById('intelligence');
+            if (top) window.scrollTo({ top: top.getBoundingClientRect().top + window.scrollY - 96, behavior: 'smooth' });
+        }
         try {
             let data = await requestNews(page, detect);
             if (id !== requestId) return;
@@ -424,14 +470,6 @@
                     if (id !== requestId) return;
                 }
             }
-            if (detect && data.lang && data.lang !== VT.lang) {
-                state.switching = true;
-                const name = VT.LANGS[data.lang].name;
-                await VT.setLang(data.lang);
-                state.switching = false;
-                if (id !== requestId) return;
-                VT.t('Language switched to ' + name + ' to match your search').then(msg => VT.toast(msg));
-            }
             await preload();
             state.page = data.page || 1;
             currentData = data.articles || [];
@@ -439,6 +477,7 @@
             renderPagination(state.page, data.totalPages || 1);
             lastMeta = data.total ? { page: state.page, total: data.total } : null;
             renderMeta();
+            renderInsights(data);
             translateCards();
         } catch (e) {
             state.switching = false;
@@ -448,6 +487,121 @@
             renderMeta();
             showMessage('error');
         }
+    }
+
+    async function renderInsights(data) {
+        const fn = document.getElementById('focusNote');
+        const rb = document.getElementById('relatedBox');
+        if (fn) {
+            let key = '';
+            let name = '';
+            if (data.focus) {
+                key = data.focus.tier === 'exact' ? 'focusExact' : data.focus.tier === 'broad' ? 'focusBroad' : 'focusRelated';
+                name = data.focus.name;
+            } else if (data.broadened) key = 'broadened';
+            if (!key) fn.hidden = true;
+            else {
+                let text = T(key).replace('{name}', name);
+                if (name && T(key).indexOf('{name}') === -1) text += ' · ' + name;
+                fn.innerHTML = '';
+                fn.appendChild(el('i', 'ph ph-crosshair-simple'));
+                fn.appendChild(document.createTextNode(' ' + text));
+                fn.hidden = false;
+            }
+        }
+        if (rb) {
+            const list = (data.related || []).slice(0, 8);
+            rb.innerHTML = '';
+            if (!list.length || !state.activeQuery) {
+                rb.hidden = true;
+                return;
+            }
+            rb.appendChild(el('span', 'rel-label', T('relatedLabel')));
+            list.forEach(term => {
+                const b = el('button', '', term);
+                b.type = 'button';
+                b.addEventListener('click', () => quickFetch(term));
+                rb.appendChild(b);
+            });
+            rb.hidden = false;
+        }
+    }
+
+    const AC_ICON = { person: 'ph-user-circle', place: 'ph-map-pin', entity: 'ph-hash', topic: 'ph-hash', trending: 'ph-trend-up' };
+    const AC_KEY = { person: 'acPerson', place: 'acPlace', entity: 'acTopic', topic: 'acTopic', trending: 'acTrending' };
+
+    function attachAutocomplete(input, box, onPick) {
+        if (!input || !box) return;
+        let items = [];
+        let active = -1;
+        let timer = 0;
+        let seq = 0;
+        const close = () => {
+            box.hidden = true;
+            input.setAttribute('aria-expanded', 'false');
+            active = -1;
+        };
+        const mark = () => {
+            box.querySelectorAll('.ac-item').forEach((n, i) => n.classList.toggle('on', i === active));
+        };
+        const pick = it => {
+            close();
+            onPick(it.text);
+        };
+        const paint = (list, trending) => {
+            items = list;
+            box.innerHTML = '';
+            if (!list.length) return close();
+            if (trending) box.appendChild(el('li', 'ac-head', T('acHead')));
+            list.forEach((it, i) => {
+                const li = el('li', 'ac-item');
+                li.setAttribute('role', 'option');
+                li.appendChild(el('i', 'ph ' + (AC_ICON[it.type] || 'ph-hash')));
+                li.appendChild(el('span', '', it.text));
+                li.appendChild(el('small', '', T(AC_KEY[it.type] || 'acTopic')));
+                li.addEventListener('mousedown', e => e.preventDefault());
+                li.addEventListener('click', () => pick(it));
+                li.addEventListener('mouseenter', () => { active = i; mark(); });
+                box.appendChild(li);
+            });
+            active = -1;
+            box.hidden = false;
+            input.setAttribute('aria-expanded', 'true');
+        };
+        const load = async () => {
+            const q = input.value.trim();
+            const id = ++seq;
+            try {
+                await preload();
+                const r = await fetch('/api/suggest?q=' + encodeURIComponent(q));
+                if (!r.ok || id !== seq) return;
+                const d = await r.json();
+                if (id !== seq || document.activeElement !== input) return;
+                paint(d.suggestions || [], !q);
+            } catch (e) { }
+        };
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(load, 150);
+        });
+        input.addEventListener('focus', load);
+        input.addEventListener('blur', () => setTimeout(close, 160));
+        input.addEventListener('keydown', e => {
+            if (box.hidden || !items.length) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                active = (active + 1) % items.length;
+                mark();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                active = (active - 1 + items.length) % items.length;
+                mark();
+            } else if (e.key === 'Enter' && active >= 0) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                pick(items[active]);
+            } else if (e.key === 'Escape') close();
+        }, true);
     }
 
     function currentCategory() {
@@ -491,7 +645,35 @@
         fetchNews({ q, scroll: true, detect: true });
     }
 
+    const homeForm = document.getElementById('homeSearchForm');
+    if (homeForm) {
+        const homeInput = document.getElementById('homeInput');
+        const go = q => { location.href = '/explore?q=' + encodeURIComponent(q); };
+        const submit = () => {
+            const q = homeInput.value.trim();
+            if (!q) {
+                const bar = homeForm.querySelector('.search-bar');
+                bar.classList.remove('shake');
+                void bar.offsetWidth;
+                bar.classList.add('shake');
+                homeInput.focus();
+                return;
+            }
+            go(q);
+        };
+        homeForm.addEventListener('submit', e => {
+            e.preventDefault();
+            submit();
+        });
+        document.getElementById('homeTrigger').addEventListener('click', submit);
+        attachAutocomplete(homeInput, document.getElementById('homeAc'), go);
+    }
+
     if (searchInput) {
+        attachAutocomplete(searchInput, document.getElementById('searchAc'), q => {
+            searchInput.value = q;
+            runSearch();
+        });
         searchInput.addEventListener('input', hidePopup);
         searchInput.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
@@ -537,15 +719,22 @@
     if (trigger) trigger.addEventListener('click', runSearch);
 
     document.querySelectorAll('[data-quick]').forEach(btn => {
-        btn.addEventListener('click', () => quickFetch(btn.dataset.quick));
+        btn.addEventListener('click', () => {
+            if (newsGrid) quickFetch(btn.dataset.quick);
+            else location.href = '/explore?q=' + encodeURIComponent(btn.dataset.quick);
+        });
     });
 
     document.addEventListener('keydown', e => {
         if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
         e.preventDefault();
+        if (!searchInput) {
+            location.href = '/explore';
+            return;
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (searchInput) searchInput.focus();
+        searchInput.focus();
     });
 
     filterBtns.forEach(btn => {
@@ -590,12 +779,54 @@
     let theaterLoadedAt = 0;
     let theaterTitles = [];
 
+    function applyBreakingCover(cover, c) {
+        if (!cover) return;
+        let img = cover.querySelector('.cover-live');
+        let credit = cover.querySelector('.cover-credit');
+        if (!c || !c.url) {
+            if (img) img.remove();
+            if (credit) credit.remove();
+            cover.classList.remove('has-photo');
+            return;
+        }
+        if (!img || img.dataset.src !== c.url) {
+            const old = img;
+            const fresh = new Image();
+            fresh.className = 'cover-live';
+            fresh.alt = '';
+            fresh.decoding = 'async';
+            fresh.referrerPolicy = 'no-referrer';
+            fresh.dataset.src = c.url;
+            fresh.onload = () => {
+                fresh.classList.add('ready');
+                cover.classList.add('has-photo');
+                if (old) setTimeout(() => old.remove(), 700);
+            };
+            fresh.onerror = () => {
+                fresh.remove();
+                if (!cover.querySelector('.cover-live')) cover.classList.remove('has-photo');
+            };
+            cover.insertBefore(fresh, cover.firstChild);
+            fresh.src = c.url;
+        }
+        if (!credit) {
+            credit = document.createElement('a');
+            credit.className = 'cover-credit';
+            credit.target = '_blank';
+            credit.rel = 'noopener noreferrer';
+            cover.appendChild(credit);
+        }
+        credit.href = c.page || 'https://commons.wikimedia.org';
+        credit.textContent = [c.credit, c.license, 'Wikimedia Commons'].filter(Boolean).join(' · ');
+    }
+
     function renderTheaters() {
         if (!theaterData) return;
         theaterTitles = [];
         document.querySelectorAll('.theater-card[data-theater]').forEach(card => {
             const d = theaterData.theaters[card.dataset.theater];
             const box = card.querySelector('.theater-live');
+            applyBreakingCover(card.querySelector('.theater-cover'), d && d.tag === 'breaking' ? d.cover : null);
             if (!box) return;
             if (!d || !d.lead) {
                 box.hidden = true;
@@ -634,6 +865,36 @@
         });
     }
 
+    const THEATER_NAMES = { ukraine: 'Ukraine', mideast: 'Middle East', yemen: 'Yemen & Red Sea', taiwan: 'Taiwan Strait', brics: 'BRICS', korea: 'Korean Peninsula', sahel: 'Sahel' };
+
+    function renderPreview() {
+        const list = document.getElementById('previewList');
+        if (!list || !theaterData) return;
+        const rows = Object.keys(theaterData.theaters || {})
+            .map(id => ({ id, t: theaterData.theaters[id] }))
+            .filter(r => r.t && r.t.lead)
+            .sort((a, b) => new Date(b.t.lead.publishedAt || 0) - new Date(a.t.lead.publishedAt || 0))
+            .slice(0, 4);
+        if (!rows.length) return;
+        list.innerHTML = '';
+        theaterTitles = theaterTitles.filter(x => x.node.isConnected);
+        rows.forEach(({ id, t }) => {
+            const li = document.createElement('li');
+            const a = el('a', 'pv-item');
+            a.href = t.lead.url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.appendChild(el('span', 'pv-tag', THEATER_NAMES[id] || id));
+            const title = el('b', 'pv-title', t.lead.title);
+            title.setAttribute('dir', 'auto');
+            a.appendChild(title);
+            a.appendChild(el('span', 'pv-meta', (t.lead.source || '') + ' · ' + VT.ago(t.lead.publishedAt)));
+            li.appendChild(a);
+            list.appendChild(li);
+            if (t.lead.lang && t.lead.lang !== VT.lang) theaterTitles.push({ node: title, text: t.lead.title });
+        });
+    }
+
     async function translateTheaters() {
         const jobs = theaterTitles.slice();
         if (!jobs.length) return;
@@ -651,6 +912,7 @@
             theaterLoadedAt = Date.now();
             await preload();
             renderTheaters();
+            renderPreview();
             translateTheaters();
         } catch (e) { }
     }
@@ -660,11 +922,11 @@
     }
 
     setInterval(() => {
-        if (!document.hidden) loadTheaters();
+        if (!document.hidden && hasTheaters()) loadTheaters();
     }, THEATER_REFRESH);
     setInterval(tickTheaterTimes, 60000);
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && Date.now() - theaterLoadedAt > THEATER_REFRESH) loadTheaters();
+        if (!document.hidden && hasTheaters() && Date.now() - theaterLoadedAt > THEATER_REFRESH) loadTheaters();
     });
 
     const form = document.getElementById('feedbackForm');
@@ -741,9 +1003,10 @@
         loadSuggestions();
         renderRecent();
         renderTheaters();
+        renderPreview();
         translateTheaters();
         if (lastPagination) renderPagination(lastPagination.page, lastPagination.totalPages);
-        fetchNews({ page: state.page });
+        if (newsGrid) fetchNews({ page: state.page });
     });
 
     VT.ready.then(async () => {
@@ -753,7 +1016,15 @@
         renderRecent();
         setInterval(setGreeting, 60000);
         state.booted = true;
-        loadTheaters();
-        fetchNews({ q: '' });
+        if (hasTheaters()) loadTheaters();
+        if (newsGrid) {
+            const initial = (new URLSearchParams(location.search).get('q') || '').trim().slice(0, 120);
+            if (initial) {
+                if (searchInput) searchInput.value = initial;
+                if (dockInput) dockInput.value = initial;
+                saveRecent(initial);
+            }
+            fetchNews({ q: initial });
+        }
     });
 })();
