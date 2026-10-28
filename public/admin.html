@@ -10,7 +10,10 @@
         (function () {
             try {
                 var t = localStorage.getItem('vero_theme');
-                if (t) document.documentElement.setAttribute('data-theme', t);
+                if (t !== 'light' && t !== 'dark') {
+                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                }
+                document.documentElement.setAttribute('data-theme', t);
             } catch (e) { }
         })();
     </script>
@@ -18,9 +21,10 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=15">
-    <link rel="stylesheet" href="/css/articles.css?v=15">
-    <link rel="stylesheet" href="/css/admin.css?v=15">
+    <link rel="stylesheet" href="/css/style.css?v=17">
+    <link rel="stylesheet" href="/css/nav.css?v=17">
+    <link rel="stylesheet" href="/css/articles.css?v=17">
+    <link rel="stylesheet" href="/css/admin.css?v=17">
 </head>
 
 <body>
@@ -29,18 +33,18 @@
             <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36" alt="VERO" class="brand-logo" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
             <span>VERO</span>
         </a>
-        <button class="nav-burger" id="navBurger" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Menu"><i class="ph ph-list"></i></button>
-        <div class="nav-links" id="navLinks">
-            <a href="/articles">Articles</a>
-            <a href="/articles#account" id="accountBtn" class="icon-btn"><svg class="user-svg" viewBox="0 0 24 24"
-                    width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
-                    stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="8.2" r="3.7" />
-                    <path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2" />
-                </svg></a>
-            <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Toggle theme"><i
-                    class="ph ph-moon" id="themeIcon"></i></button>
+        <div class="nav-menu" id="navMenu">
+            <div class="nav-center" id="navLinks">
+                <a href="/live" class="nav-link" data-nav="/live"><span data-tr>Live</span></a>
+                <a href="/explore" class="nav-link" data-nav="/explore"><span data-tr>Explore</span></a>
+                <a href="/articles" class="nav-link" data-nav="/articles"><span data-tr>Articles</span></a>
+            </div>
+            <div class="nav-tools" id="navTools">
+            <a href="/articles#account" class="icon-btn" id="accountBtn" data-tr-aria aria-label="Account"><svg class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7" /><path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2" /></svg></a>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme"><i class="ph ph-moon" id="themeIcon"></i></button>
+            </div>
         </div>
+        <button class="nav-toggle" id="navBurger" type="button" aria-expanded="false" aria-controls="navMenu" data-tr-aria aria-label="Menu"><i class="ph ph-list"></i></button>
     </nav>
     <main class="admin-page">
         <div class="admin-head">
@@ -57,8 +61,8 @@
         </div>
         <div id="adminRoot"></div>
     </main>
-    <script defer src="/javascript/common.js?v=15"></script>
-    <script defer src="/javascript/admin.js?v=15"></script>
+    <script defer src="/javascript/common.js?v=17"></script>
+    <script defer src="/javascript/admin.js?v=17"></script>
 </body>
 
 </html>
