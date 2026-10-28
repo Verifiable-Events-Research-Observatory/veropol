@@ -47,9 +47,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=17">
-    <link rel="stylesheet" href="/css/nav.css?v=17">
-    <link rel="stylesheet" href="/css/explore.css?v=17">
+    <link rel="stylesheet" href="/css/style.css?v=18">
+    <link rel="stylesheet" href="/css/nav.css?v=18">
+    <link rel="stylesheet" href="/css/explore.css?v=18">
 </head>
 
 <body class="page-explore">
@@ -145,47 +145,52 @@
             <div class="search-suggestions recent-searches" id="recentSearches"></div>
         </div>
         <section class="controls-section" id="intelligence">
-            <div class="filters" id="filterContainer">
-                <button type="button" class="filter-btn active" data-filter="all"><i
+            <div class="filter-groups">
+                <div class="filter-row">
+                    <span class="filter-label" data-tr>Topic</span>
+                    <div class="filters" id="filterContainer">
+                        <button type="button" class="filter-btn active" data-filter="all"><i
                         class="ph ph-globe-hemisphere-west"></i><span data-tr>Global Overview</span></button>
-                <button type="button" class="filter-btn" data-filter="diplomacy"><i class="ph ph-handshake"></i><span
+                        <button type="button" class="filter-btn" data-filter="diplomacy"><i class="ph ph-handshake"></i><span
                         data-tr>Diplomacy</span></button>
-                <button type="button" class="filter-btn" data-filter="military"><i class="ph ph-crosshair"></i><span
+                        <button type="button" class="filter-btn" data-filter="military"><i class="ph ph-crosshair"></i><span
                         data-tr>Military</span></button>
-                <button type="button" class="filter-btn" data-filter="economy"><i class="ph ph-chart-line-up"></i><span
+                        <button type="button" class="filter-btn" data-filter="economy"><i class="ph ph-chart-line-up"></i><span
                         data-tr>Economy</span></button>
-                <button type="button" class="filter-btn" data-filter="energy"><i class="ph ph-gas-pump"></i><span
+                        <button type="button" class="filter-btn" data-filter="energy"><i class="ph ph-gas-pump"></i><span
                         data-tr>Energy</span></button>
-                <button type="button" class="filter-btn" data-filter="humanitarian"><i
+                        <button type="button" class="filter-btn" data-filter="humanitarian"><i
                         class="ph ph-first-aid-kit"></i><span data-tr>Humanitarian</span></button>
-                <button type="button" class="filter-btn" data-filter="security"><i
+                        <button type="button" class="filter-btn" data-filter="security"><i
                         class="ph ph-shield-warning"></i><span data-tr>Security</span></button>
-                <button type="button" class="filter-btn" data-filter="cyber"><i class="ph ph-cpu"></i><span
+                        <button type="button" class="filter-btn" data-filter="cyber"><i class="ph ph-cpu"></i><span
                         data-tr>Cyber &amp; Tech</span></button>
-                <button type="button" class="filter-btn" data-filter="middleeast"><i class="ph ph-mosque"></i><span
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <span class="filter-label" data-tr>Region</span>
+                    <div class="filters" id="regionContainer">
+                        <button type="button" class="filter-btn" data-filter="middleeast"><i class="ph ph-mosque"></i><span
                         data-tr>Middle East</span></button>
-                <button type="button" class="filter-btn" data-filter="europe"><i class="ph ph-castle-turret"></i><span
+                        <button type="button" class="filter-btn" data-filter="europe"><i class="ph ph-castle-turret"></i><span
                         data-tr>Europe</span></button>
-                <button type="button" class="filter-btn" data-filter="asia"><i class="ph ph-buildings"></i><span
+                        <button type="button" class="filter-btn" data-filter="asia"><i class="ph ph-buildings"></i><span
                         data-tr>Asia-Pacific</span></button>
-                <button type="button" class="filter-btn" data-filter="africa"><i class="ph ph-compass"></i><span
+                        <button type="button" class="filter-btn" data-filter="africa"><i class="ph ph-compass"></i><span
                         data-tr>Africa</span></button>
-                <button type="button" class="filter-btn" data-filter="americas"><i class="ph ph-flag"></i><span
+                        <button type="button" class="filter-btn" data-filter="americas"><i class="ph ph-flag"></i><span
                         data-tr>Americas</span></button>
-            </div>
-            <div class="range-filters" id="rangeContainer">
-                <span class="range-label"><i class="ph ph-clock"></i> <span data-tr>Timeframe</span></span>
-                <button type="button" class="range-btn active" data-range="all" data-tr>Any time</button>
-                <button type="button" class="range-btn" data-range="24h" data-tr>24h</button>
-                <button type="button" class="range-btn" data-range="7d" data-tr>7 days</button>
-                <button type="button" class="range-btn" data-range="30d" data-tr>30 days</button>
-            </div>
-            <div class="range-filters" id="rangeContainer">
-                <span class="range-label"><i class="ph ph-clock"></i> <span data-tr>Timeframe</span></span>
-                <button type="button" class="range-btn active" data-range="all" data-tr>Any time</button>
-                <button type="button" class="range-btn" data-range="24h" data-tr>24h</button>
-                <button type="button" class="range-btn" data-range="7d" data-tr>7 days</button>
-                <button type="button" class="range-btn" data-range="30d" data-tr>30 days</button>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <span class="filter-label" data-tr>Time</span>
+                    <div class="range-filters" id="rangeContainer">
+                        <button type="button" class="range-btn active" data-range="all" data-tr>Any time</button>
+                        <button type="button" class="range-btn" data-range="24h" data-tr>24h</button>
+                        <button type="button" class="range-btn" data-range="7d" data-tr>7 days</button>
+                        <button type="button" class="range-btn" data-range="30d" data-tr>30 days</button>
+                    </div>
+                </div>
             </div>
             <p class="focus-note" id="focusNote" hidden></p>
             <p class="results-meta" id="resultsMeta"></p>
@@ -247,8 +252,8 @@
                 language.</span>
         </div>
     </footer>
-    <script defer src="/javascript/common.js?v=17"></script>
-    <script defer src="/javascript/script.js?v=17"></script>
+    <script defer src="/javascript/common.js?v=18"></script>
+    <script defer src="/javascript/script.js?v=18"></script>
 </body>
 
 </html>
