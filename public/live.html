@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark" data-tr-title>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('vero_theme');
+                if (t !== 'light' && t !== 'dark') {
+                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PJW06HEYF5"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-PJW06HEYF5');
+    </script>
+    <title>Live Theaters | VERO</title>
+    <meta name="description" content="Seven active theaters monitored live: Ukraine, Middle East, Yemen and the Red Sea, Taiwan Strait, BRICS, Korean Peninsula and the Sahel.">
+    <meta name="author" content="VERO">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0A0A0C">
+    <link rel="canonical" href="https://veropol.onrender.com/">
+    <link rel="icon" href="https://veropol.onrender.com/favicon.ico" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="48x48" href="https://veropol.onrender.com/assets/icon-48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://veropol.onrender.com/assets/icon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://veropol.onrender.com/assets/icon-16.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://veropol.onrender.com/assets/icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://veropol.onrender.com/assets/icon-180.png">
+    <link rel="canonical" href="https://veropol.onrender.com/live">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="VERO">
+    <meta property="og:title" content="Live Theaters | VERO">
+    <meta property="og:description" content="Seven active theaters monitored live: Ukraine, Middle East, Yemen and the Red Sea, Taiwan Strait, BRICS, Korean Peninsula and the Sahel.">
+    <meta property="og:url" content="https://veropol.onrender.com/live">
+    <meta property="og:image" content="https://veropol.onrender.com/assets/BANNER.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="/css/style.css?v=17">
+    <link rel="stylesheet" href="/css/nav.css?v=17">
+    <link rel="stylesheet" href="/css/live.css?v=17">
+</head>
+
+<body class="page-live">
+    <div class="toast-box" id="toastBox" role="status"></div>
+    <nav class="nav-container" id="navbar">
+        <a href="/" class="brand" aria-label="VERO">
+            <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36" alt="VERO" class="brand-logo" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
+            <span>VERO</span>
+        </a>
+        <div class="nav-menu" id="navMenu">
+            <div class="nav-center" id="navLinks">
+                <a href="/live" class="nav-link" data-nav="/live"><span data-tr>Live</span></a>
+                <a href="/explore" class="nav-link" data-nav="/explore"><span data-tr>Explore</span></a>
+                <a href="/articles" class="nav-link" data-nav="/articles"><span data-tr>Articles</span></a>
+            </div>
+            <div class="nav-tools" id="navTools">
+            <div class="lang-dropdown">
+                <button class="lang-btn" id="langToggle" type="button" aria-haspopup="true" aria-expanded="false"
+                    data-tr-aria aria-label="Change language">
+                    <img class="flag-icon" id="langFlag" src="https://hatscripts.github.io/circle-flags/flags/gb.svg"
+                        alt="" width="20" height="20">
+                    <span id="langCode">EN</span>
+                    <i class="ph ph-caret-down"></i>
+                </button>
+                <div class="lang-menu" id="langMenu">
+                    <button type="button" class="lang-item" data-lang="en"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/gb.svg" alt="" width="22"
+                            height="22"><span>English</span></button>
+                    <button type="button" class="lang-item" data-lang="fr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/fr.svg" alt="" width="22"
+                            height="22"><span>Français</span></button>
+                    <button type="button" class="lang-item" data-lang="es"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/es.svg" alt="" width="22"
+                            height="22"><span>Español</span></button>
+                    <button type="button" class="lang-item" data-lang="ru"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/ru.svg" alt="" width="22"
+                            height="22"><span>Русский</span></button>
+                    <button type="button" class="lang-item" data-lang="ar"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/sa.svg" alt="" width="22"
+                            height="22"><span>العربية</span></button>
+                    <button type="button" class="lang-item" data-lang="zh"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/cn.svg" alt="" width="22"
+                            height="22"><span>中文</span></button>
+                    <button type="button" class="lang-item" data-lang="tr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/tr.svg" alt="" width="22"
+                            height="22"><span>Türkçe</span></button>
+                </div>
+            </div>
+            <a href="/#feedback" class="btn-nav" data-tr>Feedback</a>
+            <a href="/articles#account" class="icon-btn" id="accountBtn" data-tr-aria aria-label="Account"><svg class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7" /><path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2" /></svg></a>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme"><i class="ph ph-moon" id="themeIcon"></i></button>
+            </div>
+        </div>
+        <button class="nav-toggle" id="navBurger" type="button" aria-expanded="false" aria-controls="navMenu" data-tr-aria aria-label="Menu"><i class="ph ph-list"></i></button>
+    </nav>
+
+    <main class="container live-main">
+        <header class="page-head">
+            <h1 data-tr>Live Theaters</h1>
+            <p class="live-status"><span class="dot"></span><span data-tr>Updated every 5 minutes.</span></p>
+        </header>
+        <div class="flex-grid theaters-grid" id="theatersGrid">
+                <article class="theater-card reveal" data-theater="ukraine">
+                    <div class="theater-cover cv-ukraine">
+                        <div class="theater-badge danger"><i class="ph ph-warning-diamond"></i> <span data-tr>Active
+                                War Zone</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Russo-Ukrainian Conflict</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>Frontline monitoring, territory changes, and tactical
+                            air/artillery activity.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box"><span class="stat-label" data-tr>Artillery Posture</span><span
+                                    class="stat-val alert" data-tr>Heavy</span></div>
+                            <div class="stat-box"><span class="stat-label" data-tr>Air Defense</span><span
+                                    class="stat-val" data-tr>Active</span></div>
+                        </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action" data-quick="Ukraine war Russia conflict"><i
+                                    class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
+                            <a href="https://liveuamap.com/" target="_blank" rel="noopener noreferrer"
+                                class="theater-link"><span data-tr>Live Map</span> <i
+                                    class="ph ph-arrow-square-out"></i></a>
+                        </div>
+                    </div>
+                </article>
+                <article class="theater-card reveal" data-theater="mideast">
+                    <div class="theater-cover cv-mideast">
+                        <div class="theater-badge danger"><i class="ph ph-crosshair"></i> <span data-tr>Escalation
+                                Index</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Middle East Conflict</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>US-Israeli military stance, Lebanese front, Iranian proxy
+                            strikes, and naval security.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box"><span class="stat-label" data-tr>Interceptions</span><span
+                                    class="stat-val alert" data-tr>Active</span></div>
+                            <div class="stat-box"><span class="stat-label" data-tr>Naval Posture</span><span
+                                    class="stat-val" data-tr>CSG Deployed</span></div>
+                        </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action"
+                                data-quick="Israel Lebanon Iran Middle East"><i class="ph ph-arrows-clockwise"></i>
+                                <span data-tr>Load Intelligence</span></button>
+                        </div>
+                    </div>
+                </article>
+                <article class="theater-card reveal" data-theater="yemen">
+                    <div class="theater-cover cv-yemen">
+                        <div class="theater-badge danger"><i class="ph ph-anchor"></i> <span data-tr>Chokepoint
+                                Crisis</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Yemeni Civil War & Red Sea</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>Houthi anti-ship ballistic missile strikes, naval coalition
+                            defenses, and maritime trade disruption.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box"><span class="stat-label" data-tr>Shipping Risk</span><span
+                                    class="stat-val alert" data-tr>Critical</span></div>
+                            <div class="stat-box"><span class="stat-label" data-tr>Naval Escort</span><span
+                                    class="stat-val" data-tr>Active</span></div>
+                        </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action"
+                                data-quick="Yemen Houthi Red Sea military"><i class="ph ph-arrows-clockwise"></i> <span
+                                    data-tr>Load Intelligence</span></button>
+                            <a href="https://yemen.liveuamap.com/" target="_blank" rel="noopener noreferrer"
+                                class="theater-link"><span data-tr>Live Map</span> <i
+                                    class="ph ph-arrow-square-out"></i></a>
+                        </div>
+                    </div>
+                </article>
+                <article class="theater-card reveal" data-theater="taiwan">
+                    <div class="theater-cover cv-taiwan">
+                        <div class="theater-badge warning"><i class="ph ph-eye"></i> <span data-tr>Indo-Pacific
+                                Watch</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>China - Taiwan Strait</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>PLA naval encirclement exercises, ADIZ incursions, and US
+                            deterrence shifts.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box"><span class="stat-label" data-tr>ADIZ Incursions</span><span
+                                    class="stat-val warning" data-tr>Elevated</span></div>
+                            <div class="stat-box"><span class="stat-label" data-tr>Chokepoint</span><span
+                                    class="stat-val" data-tr>Monitored</span></div>
+                        </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action" data-quick="China Taiwan US military"><i
+                                    class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
+                        </div>
+                    </div>
+                </article>
+                <article class="theater-card reveal" data-theater="brics">
+                    <div class="theater-cover cv-brics">
+                        <div class="theater-badge info"><i class="ph ph-currency-dollar-simple"></i> <span
+                                data-tr>Geo-Economics</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>BRICS & Multipolarity</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>De-dollarization initiatives, alternative payment routing, and
+                            resource corridors.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box"><span class="stat-label" data-tr>Trade Currency</span><span
+                                    class="stat-val" data-tr>Local Pivot</span></div>
+                            <div class="stat-box"><span class="stat-label" data-tr>Sanctions</span><span
+                                    class="stat-val" data-tr>Systemic</span></div>
+                        </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action"
+                                data-quick="BRICS economy sanctions trade"><i class="ph ph-arrows-clockwise"></i> <span
+                                    data-tr>Load Intelligence</span></button>
+                        </div>
+                    </div>
+                </article>
+                <article class="theater-card reveal" data-theater="korea">
+                    <div class="theater-cover cv-korea">
+                        <div class="theater-badge warning"><i class="ph ph-warning"></i> <span data-tr>East Asia
+                                Watch</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Korean Peninsula</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>Ballistic missile tests, demilitarized zone tensions, and
+                            trilateral defense pacts.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box"><span class="stat-label" data-tr>Missile Tests</span><span
+                                    class="stat-val alert" data-tr>Frequent</span></div>
+                            <div class="stat-box"><span class="stat-label" data-tr>Border Status</span><span
+                                    class="stat-val" data-tr>Tense</span></div>
+                        </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action"
+                                data-quick="North Korea South Korea military"><i class="ph ph-arrows-clockwise"></i>
+                                <span data-tr>Load Intelligence</span></button>
+                        </div>
+                    </div>
+                </article>
+                <article class="theater-card reveal" data-theater="sahel">
+                    <div class="theater-cover cv-sahel">
+                        <div class="theater-badge danger"><i class="ph ph-fire"></i> <span data-tr>High
+                                Instability</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Sahel Region Crisis</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>Military juntas, insurgent expansions, and shifts in foreign
+                            military influence.</p>
+                        <div class="theater-stats">
+                            <div class="stat-box"><span class="stat-label" data-tr>Regime Status</span><span
+                                    class="stat-val alert" data-tr>Transitional</span></div>
+                            <div class="stat-box"><span class="stat-label" data-tr>Insurgency</span><span
+                                    class="stat-val" data-tr>Expanding</span></div>
+                        </div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action" data-quick="Sahel Africa military coup"><i
+                                    class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+    </main>
+
+<footer class="site-footer">
+        <div class="banner-wrap">
+            <img src="https://veropol.onrender.com/assets/BANNER.png" width="1584" height="672" loading="lazy"
+                decoding="async" alt="VERO Banner" class="banner-img"
+                onerror="if(!this.dataset.f){this.dataset.f=1;this.src='/assets/BANNER.png'}else{this.parentElement.style.display='none'}">
+        </div>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="brand-line">
+                    <img src="/assets/logo-192.webp" width="44" height="44" alt="VERO" class="brand-logo"
+                        onerror="this.onerror=null;this.src='/assets/icon-192.png'">
+                    <span>VERO</span>
+                </div>
+                <p data-tr>Independent global intelligence and diplomatic monitoring observatory.</p>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Explore</h4>
+                <a href="/live"><i class="ph ph-broadcast"></i> <span data-tr>Live</span></a>
+                <a href="/explore"><i class="ph ph-compass"></i> <span data-tr>Explore</span></a>
+                <a href="/articles"><i class="ph ph-newspaper"></i> <span data-tr>Articles</span></a>
+                <a href="/articles#write"><i class="ph ph-pen-nib"></i> <span data-tr>Write for VERO</span></a>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Transparency</h4>
+                <a href="/#modal-methodology"><i class="ph ph-book-open-text"></i> <span
+                        data-tr>Sources & Methodology</span></a>
+                <a href="/#modal-privacy"><i class="ph ph-shield-check"></i> <span data-tr>Privacy
+                        Policy</span></a>
+                <a href="/#modal-terms"><i class="ph ph-file-text"></i> <span data-tr>Terms of
+                        Service</span></a>
+                <a href="/#feedback"><i class="ph ph-chat-circle-dots"></i> <span data-tr>Feedback</span></a>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Contact</h4>
+                <a href="mailto:veropol@proton.me"><i class="ph ph-envelope-simple"></i> <span><small data-tr>Secure
+                            Email</small>veropol@proton.me</span></a>
+                <a href="mailto:legateau@proton.me"><i class="ph ph-envelope-simple-open"></i> <span><small
+                            data-tr>Developers Email</small>legateau@proton.me</span></a>
+                <a href="https://github.com/verointels" target="_blank" rel="noopener noreferrer"><i
+                        class="ph ph-github-logo"></i> <span><small data-tr>Organization
+                            Repository</small>github.com/verointels</span></a>
+                <a href="https://github.com/leclavier" target="_blank" rel="noopener noreferrer"><i
+                        class="ph ph-code-simple"></i> <span><small data-tr>Lead
+                            Developer</small>github.com/leclavier</span></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 VERO</span>
+            <span data-tr>Machine translation by Google Cloud Translation. Original reports open in their source
+                language.</span>
+        </div>
+    </footer>
+    <script defer src="/javascript/common.js?v=17"></script>
+    <script defer src="/javascript/script.js?v=17"></script>
+</body>
+
+</html>
