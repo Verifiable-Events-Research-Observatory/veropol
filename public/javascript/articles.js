@@ -81,6 +81,11 @@
         commentsEmpty: 'No comments yet. Start the conversation.',
         needLogin: 'Sign in to continue.',
         bioSaved: 'Profile updated.',
+        reply: 'Reply',
+        cancel: 'Cancel',
+        postReply: 'Post reply',
+        replyTo: 'Reply to @{u}',
+        loadMore: 'Load more comments',
         avatarSaved: 'Profile picture updated.',
         Diplomacy: 'Diplomacy',
         Military: 'Military',
@@ -101,7 +106,7 @@
     const pager = document.getElementById('artPagination');
     const state = { view: 'list', cat: 'all', page: 1, step: 1, booted: false, after: 'write', returnTo: '' };
     const read = { slug: null, original: null, translated: null, showing: 'original', article: null, myReaction: 0, commentPage: 1, commentPages: 1 };
-    const media = { regAvatar: null, regPreset: null, cover: null };
+    const media = { regAvatar: null, cover: null };
     const profileState = { username: '', data: null };
     const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     let listId = 0;
@@ -437,8 +442,144 @@
     $('likeBtn').addEventListener('click', () => react(1));
     $('dislikeBtn').addEventListener('click', () => react(-1));
 
-    function commentItem(c) {
-        const li = node('li', 'comment');
+    function renderBody(target, text) {
+        target.textContent = '';
+        text.split(/(@[a-z0-9_]{3,20})/gi).forEach(part => {
+            if (/^@[a-z0-9_]{3,20}$/i.test(part)) {
+                const a = node('a', 'mention', part);
+                a.href = '/u/' + part.slice(1).toLowerCase();
+                a.setAttribute('data-link', '');
+                target.appendChild(a);
+            } else target.appendChild(document.createTextNode(part));
+        });
+    }
+
+    function attachMention(ta) {
+        const box = node('ul', 'mention-box');
+        box.hidden = true;
+        ta.parentNode.appendChild(box);
+        let seq = 0;
+        let range = null;
+        let items = [];
+        let active = 0;
+        const close = () => {
+            box.hidden = true;
+            range = null;
+        };
+        const mark = () => box.querySelectorAll('li').forEach((n, i) => n.classList.toggle('on', i === active));
+        const pick = u => {
+            if (!range) return;
+            const ins = '@' + u.username + ' ';
+            ta.value = ta.value.slice(0, range.start) + ins + ta.value.slice(range.end);
+            const pos = range.start + ins.length;
+            ta.setSelectionRange(pos, pos);
+            ta.focus();
+            ta.dispatchEvent(new Event('input'));
+            close();
+        };
+        ta.addEventListener('input', async () => {
+            const pos = ta.selectionStart;
+            const m = /(^|\s)@([a-z0-9_]{1,20})$/i.exec(ta.value.slice(0, pos));
+            if (!m) return close();
+            range = { start: pos - m[2].length - 1, end: pos };
+            const id = ++seq;
+            const r = await api('/api/users-suggest?q=' + encodeURIComponent(m[2]));
+            if (id !== seq || !range) return;
+            items = r.ok ? r.data.users || [] : [];
+            if (!items.length) return close();
+            box.innerHTML = '';
+            items.forEach((u, i) => {
+                const li = node('li', 'mention-item');
+                li.appendChild(avatarImg(u.avatarUrl, 'avatar-img', 28));
+                li.appendChild(node('b', '', u.name));
+                li.appendChild(node('small', '', '@' + u.username));
+                li.addEventListener('mousedown', e => e.preventDefault());
+                li.addEventListener('click', () => pick(u));
+                li.addEventListener('mouseenter', () => { active = i; mark(); });
+                box.appendChild(li);
+            });
+            active = 0;
+            mark();
+            box.style.top = ta.offsetTop + ta.offsetHeight + 6 + 'px';
+            box.hidden = false;
+        });
+        ta.addEventListener('keydown', e => {
+            if (box.hidden || !items.length) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                active = (active + 1) % items.length;
+                mark();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                active = (active - 1 + items.length) % items.length;
+                mark();
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                pick(items[active]);
+            } else if (e.key === 'Escape') close();
+        });
+        ta.addEventListener('blur', () => setTimeout(close, 150));
+    }
+
+    function bumpCount(delta) {
+        if (!read.article) return;
+        read.article.commentCount = Math.max(0, (read.article.commentCount || 0) + delta);
+        paintEngage();
+    }
+
+    function emptyNote() {
+        const list = $('commentList');
+        if (!list.children.length) list.appendChild(node('li', 'my-empty', T('commentsEmpty')));
+    }
+
+    function closeReplyForms() {
+        document.querySelectorAll('.reply-form').forEach(f => f.remove());
+    }
+
+    function openReply(li, c, topId, replyList) {
+        closeReplyForms();
+        const form = node('form', 'reply-form');
+        form.noValidate = true;
+        const ta = node('textarea');
+        ta.rows = 2;
+        ta.maxLength = 1000;
+        ta.placeholder = T('replyTo').replace('{u}', c.username || c.name);
+        if (c.username && user() && c.username !== user().username) ta.value = '@' + c.username + ' ';
+        form.appendChild(ta);
+        const row = node('div', 'comment-actions');
+        const cancel = node('button', 'btn-ghost small', T('cancel'));
+        cancel.type = 'button';
+        cancel.addEventListener('click', () => form.remove());
+        const send = node('button', 'btn-primary small');
+        send.type = 'submit';
+        send.appendChild(icon('ph-paper-plane-right'));
+        send.appendChild(document.createTextNode(' ' + T('postReply')));
+        row.appendChild(cancel);
+        row.appendChild(send);
+        form.appendChild(row);
+        const err = node('p', 'form-error');
+        err.hidden = true;
+        form.appendChild(err);
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const text = ta.value.trim();
+            if (text.length < 2) return showError(err, T('commentShort'));
+            send.disabled = true;
+            const r = await api('/api/articles/' + read.article.id + '/comments', 'POST', { body: text, parentId: topId });
+            send.disabled = false;
+            if (!r.ok) return showError(err, r.status === 429 ? T('tooMany') : T('commentFailed'));
+            replyList.appendChild(commentNode(r.data.comment, true, topId, replyList));
+            bumpCount(1);
+            form.remove();
+        });
+        li.querySelector(':scope > .comment-main > .comment-actions-row').after(form);
+        attachMention(ta);
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+
+    function commentNode(c, isReply, topId, topList) {
+        const li = node('li', 'comment' + (isReply ? ' reply' : ''));
         li.dataset.id = c.id;
         const left = c.username ? userLink(c.username, 'comment-avatar') : node('span', 'comment-avatar');
         left.appendChild(avatarImg(c.avatarUrl, 'avatar-img', 40));
@@ -454,25 +595,36 @@
         time.dataset.t = c.createdAt;
         head.appendChild(time);
         body.appendChild(head);
-        const text = node('p', 'comment-body', c.body);
+        const text = node('p', 'comment-body');
         text.setAttribute('dir', 'auto');
+        renderBody(text, c.body);
         body.appendChild(text);
+        const actions = node('div', 'comment-actions-row');
+        let replyList = topList;
+        if (user()) {
+            const rb = node('button', 'link-btn', T('reply'));
+            rb.type = 'button';
+            rb.addEventListener('click', () => openReply(li, c, topId || c.id, replyList));
+            actions.appendChild(rb);
+        }
         if (c.canDelete) {
             const del = node('button', 'link-btn danger', T('remove'));
             del.type = 'button';
             del.addEventListener('click', async () => {
                 if (!window.confirm(T('confirmDeleteComment'))) return;
                 const r = await api('/api/comments/' + c.id, 'DELETE');
-                if (r.ok) {
-                    li.remove();
-                    if (read.article) {
-                        read.article.commentCount = Math.max(0, (read.article.commentCount || 1) - 1);
-                        paintEngage();
-                    }
-                    if (!$('commentList').children.length) $('commentList').appendChild(node('li', 'my-empty', T('commentsEmpty')));
-                }
+                if (!r.ok) return;
+                li.remove();
+                bumpCount(-(r.data.removed || 1));
+                emptyNote();
             });
-            body.appendChild(del);
+            actions.appendChild(del);
+        }
+        body.appendChild(actions);
+        if (!isReply) {
+            replyList = node('ul', 'reply-list');
+            (c.replies || []).forEach(r => replyList.appendChild(commentNode(r, true, c.id, replyList)));
+            body.appendChild(replyList);
         }
         li.appendChild(body);
         return li;
@@ -483,23 +635,31 @@
         const list = $('commentList');
         if (reset) {
             read.commentPage = 1;
+            read.commentPages = 1;
             list.innerHTML = '';
+            $('commentMore').hidden = true;
         }
         const r = await api('/api/articles/' + read.article.id + '/comments?page=' + read.commentPage);
         if (!r.ok) return;
         const items = r.data.comments || [];
         read.commentPages = r.data.totalPages || 1;
-        if (reset && !items.length) list.appendChild(node('li', 'my-empty', T('commentsEmpty')));
-        items.forEach(c => list.appendChild(commentItem(c)));
-        $('commentMore').hidden = read.commentPage >= read.commentPages;
+        const empty = list.querySelector('.my-empty');
+        if (empty) empty.remove();
+        items.forEach(c => list.appendChild(commentNode(c, false, null, null)));
+        if (!list.children.length) emptyNote();
+        $('commentMore').hidden = read.commentPage >= read.commentPages || !items.length;
     }
 
     $('commentMore').addEventListener('click', async () => {
+        const btn = $('commentMore');
+        btn.disabled = true;
         read.commentPage++;
         await loadComments(false);
+        btn.disabled = false;
     });
 
     $('cBody').addEventListener('input', () => { $('cCount').textContent = $('cBody').value.length + ' / 1000'; });
+    attachMention($('cBody'));
 
     $('commentForm').addEventListener('submit', async e => {
         e.preventDefault();
@@ -517,9 +677,8 @@
         const list = $('commentList');
         const empty = list.querySelector('.my-empty');
         if (empty) empty.remove();
-        list.insertBefore(commentItem(r.data.comment), list.firstChild);
-        read.article.commentCount = (read.article.commentCount || 0) + 1;
-        paintEngage();
+        list.insertBefore(commentNode(r.data.comment, false, null, null), list.firstChild);
+        bumpCount(1);
         $('cBody').value = '';
         $('cCount').textContent = '0 / 1000';
     });
@@ -777,51 +936,12 @@
         });
     }
 
-    function presetUrl(id) {
-        return '/assets/avatars/' + id + '.webp';
-    }
-
-    function buildPresets(box, onPick) {
-        box.innerHTML = '';
-        VT.AVATAR_PRESETS.forEach(id => {
-            const b = node('button', 'preset');
-            b.type = 'button';
-            b.dataset.id = id;
-            const im = node('img');
-            im.alt = '';
-            im.width = 64;
-            im.height = 64;
-            im.decoding = 'async';
-            im.src = presetUrl(id);
-            b.appendChild(im);
-            b.addEventListener('click', async () => {
-                box.querySelectorAll('.preset').forEach(p => p.classList.toggle('on', p === b));
-                try {
-                    await onPick(id);
-                } catch (e) {
-                    await preload();
-                    VT.toast(T('badImage'), 'ph-warning');
-                }
-            });
-            box.appendChild(b);
-        });
-    }
-
-    function clearPresetMarks(box) {
-        box.querySelectorAll('.preset').forEach(p => p.classList.remove('on'));
-    }
-
-    function setRegAvatar(data, preset) {
+    function setRegAvatar(data) {
         media.regAvatar = data;
-        media.regPreset = preset;
-        $('regAvatarPreview').src = data || (preset ? presetUrl(preset) : VT.DEFAULT_AVATAR);
+        $('regAvatarPreview').src = data || VT.DEFAULT_AVATAR;
     }
 
-    bindPhotoPicker($('regAvatar'), async data => {
-        clearPresetMarks($('regPresets'));
-        setRegAvatar(data, null);
-    });
-    buildPresets($('regPresets'), async id => setRegAvatar(null, id));
+    bindPhotoPicker($('regAvatar'), async data => setRegAvatar(data));
     $('regAvatarPreview').src = VT.DEFAULT_AVATAR;
 
     function setStatus(el, kind, text) {
@@ -940,7 +1060,6 @@
             website: $('rWebsite').value
         };
         if (media.regAvatar) payload.avatar = media.regAvatar;
-        else if (media.regPreset) payload.avatarPreset = media.regPreset;
         const r = await api('/api/auth/register', 'POST', payload);
         btn.disabled = false;
         if (!r.ok) {
@@ -957,8 +1076,7 @@
             return showError(err, T('failed'));
         }
         $('registerForm').reset();
-        clearPresetMarks($('regPresets'));
-        setRegAvatar(null, null);
+        setRegAvatar(null);
         setStatus($('rUserStatus'), '', '');
         setStatus($('rBirthStatus'), '', '');
         await VT.refreshMe();
@@ -977,7 +1095,7 @@
         $('acAvatar').src = u.avatarUrl || VT.DEFAULT_AVATAR;
         $('acName').textContent = u.name;
         paintBadgesInto($('acBadges'), u.badges, true);
-        $('acMeta').textContent = '@' + u.username + ' · ' + u.email;
+        $('acMeta').textContent = '@' + u.username;
         $('acAdmin').hidden = !u.isAdmin;
         $('acProfile').href = '/u/' + encodeURIComponent(u.username);
         $('acProfile').setAttribute('data-link', '');
@@ -1020,6 +1138,15 @@
             list.appendChild(li);
         });
     }
+
+    $('acLogout').addEventListener('click', async () => {
+        const btn = $('acLogout');
+        btn.disabled = true;
+        await api('/api/auth/logout', 'POST', {});
+        await VT.refreshMe();
+        btn.disabled = false;
+        go('/articles');
+    });
 
     const settings = { tab: 'profile' };
     const NOTIFY_ROWS = [
@@ -1162,8 +1289,6 @@
         $('stView').setAttribute('data-link', '');
         $('stError').hidden = true;
         $('acError').hidden = true;
-        const marked = $('stPresets').querySelectorAll('.preset');
-        marked.forEach(p => p.classList.toggle('on', !!u.avatarUrl && u.avatarUrl.indexOf(p.dataset.id) !== -1));
         autoGrow($('stBio'));
         paintBadgeGrid();
         paintNotify();
@@ -1205,11 +1330,13 @@
         await saveAvatar({ avatarId: up.id });
     });
 
-    buildPresets($('stPresets'), async id => saveAvatar({ avatarPreset: id }));
 
     $('stLogout').addEventListener('click', async () => {
+        const btn = $('stLogout');
+        btn.disabled = true;
         await api('/api/auth/logout', 'POST', {});
         await VT.refreshMe();
+        btn.disabled = false;
         go('/articles');
     });
 
