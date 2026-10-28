@@ -204,7 +204,8 @@ const Reaction = mongoose.models.Reaction || mongoose.model('Reaction', reaction
 
 const Comment = mongoose.models.Comment || mongoose.model('Comment', new Schema({
     articleId: { type: ObjectId, index: true },
-    userId: { type: ObjectId, index: true },
+    userId: { type: ObjectId, ref: 'User', index: true },
+    parentId: { type: ObjectId, index: true, default: null },
     body: String,
     createdAt: { type: Date, default: Date.now }
 }));
@@ -266,6 +267,7 @@ function matchSource(url) {
 }
 
 const search = require('./server-search')({ translator, matchSource });
+const coverFinder = require('./server-cover');
 
 function limiter(max, windowMs) {
     const hits = new Map();
@@ -435,7 +437,6 @@ const requireAdmin = (req, res, next) => (isAdmin(req.user) ? next() : res.statu
 
 function avatarUrlOf(u) {
     if (u.avatarId) return '/media/' + u.avatarId;
-    if (u.avatarPreset && AVATAR_PRESETS.includes(u.avatarPreset)) return '/assets/avatars/' + u.avatarPreset + '.webp';
     return null;
 }
 
@@ -492,7 +493,6 @@ app.post('/api/auth/register', limiter(8, 60 * 60 * 1000), async (req, res) => {
         img = decodeImage(b.avatar);
         if (!img) return res.status(400).json({ error: 'avatar' });
     }
-    const preset = AVATAR_PRESETS.includes(b.avatarPreset) ? b.avatarPreset : AVATAR_PRESETS[Math.floor(Math.random() * AVATAR_PRESETS.length)];
     try {
         if (await User.findOne({ email }).lean()) return res.status(409).json({ error: 'exists' });
         if (await User.findOne({ username }).lean()) return res.status(409).json({ error: 'username_taken' });
@@ -505,7 +505,6 @@ app.post('/api/auth/register', limiter(8, 60 * 60 * 1000), async (req, res) => {
             badges: early ? ['early'] : [],
             birthDate: birth.date,
             age: birth.age,
-            avatarPreset: img ? undefined : preset,
             passHash: await hashPw(password)
         });
         let doc = created.toObject();
@@ -600,12 +599,6 @@ app.patch('/api/me', requireUser, async (req, res) => {
             if (!m) return res.status(400).json({ error: 'media' });
             if (req.user.avatarId && req.user.avatarId !== b.avatarId) await Media.deleteOne({ _id: req.user.avatarId, owner: req.user._id }).catch(() => { });
             set.avatarId = b.avatarId;
-        }
-        if (b.avatarPreset) {
-            if (!AVATAR_PRESETS.includes(b.avatarPreset)) return res.status(400).json({ error: 'media' });
-            if (req.user.avatarId) await Media.deleteOne({ _id: req.user.avatarId, owner: req.user._id }).catch(() => { });
-            set.avatarPreset = b.avatarPreset;
-            set.avatarId = '';
         }
         if (typeof b.bio === 'string') set.bio = cut(b.bio, 160);
         if (typeof b.name === 'string') {
@@ -880,11 +873,45 @@ app.get('/img', limiter(400, 60 * 1000), async (req, res) => {
 
 app.get('/api/theaters', limiter(60, 60 * 1000), async (req, res) => {
     try {
-        res.json(await search.theaters());
+        const data = await search.theaters();
+        const out = { ...data, theaters: { ...data.theaters } };
+        await Promise.all(Object.keys(out.theaters).map(async id => {
+            const t = out.theaters[id];
+            if (!t || !t.lead || t.tag !== 'breaking') return;
+            const og = await Promise.race([search.og(t.lead.url), new Promise(r => setTimeout(() => r(null), 4200))]);
+            if (og) {
+                out.theaters[id] = { ...t, cover: { url: '/img?u=' + encodeURIComponent(og), page: t.lead.url, label: t.lead.source || '' } };
+                return;
+            }
+            const found0 = await Promise.race([coverFinder.resolve(id, t.lead.title), new Promise(r => setTimeout(() => r(null), 3500))]);
+            const found = found0 ? { url: found0.url, page: found0.page, label: [found0.credit, found0.license, 'Wikimedia Commons'].filter(Boolean).join(' · ') } : null;
+            if (found) out.theaters[id] = { ...t, cover: found };
+        }));
+        res.json(out);
     } catch (e) {
         res.status(500).json({ error: 'theaters' });
     }
 });
+app.get('/api/suggest', limiter(120, 60 * 1000), async (req, res) => {
+    try {
+        await search.theaters();
+        res.json({ suggestions: search.suggest(String(req.query.q || '').slice(0, 60)) });
+    } catch (e) {
+        res.json({ suggestions: [] });
+    }
+});
+
+app.get('/api/og', limiter(150, 60 * 1000), async (req, res) => {
+    const u = String(req.query.u || '').slice(0, 1500);
+    try {
+        const found = await search.og(u);
+        if (!found) return res.json({ url: null });
+        res.json({ url: '/img?u=' + encodeURIComponent(found) });
+    } catch (e) {
+        res.json({ url: null });
+    }
+});
+
 app.get('/api/health/feeds', (req, res) => res.json(search.feedHealth()));
 
 const FEEDBACK_TOPICS = ['feature', 'bug', 'data', 'source', 'translation', 'press', 'other'];
@@ -1081,12 +1108,14 @@ function publicComment(c, viewer) {
     const u = c.userId && c.userId.firstName ? c.userId : null;
     return {
         id: String(c._id),
+        parentId: c.parentId ? String(c.parentId) : null,
         body: c.body,
         createdAt: c.createdAt,
         username: u ? u.username || '' : '',
         name: u ? nameOf(u) : 'VERO',
         avatarUrl: u ? avatarUrlOf(u) : null,
-        verified: !!(u && hasCheck(u)), badges: u ? badgesOf(u) : [],
+        verified: !!(u && hasCheck(u)),
+        badges: u ? badgesOf(u) : [],
         canDelete: !!viewer && (isAdmin(viewer) || (u && String(u._id) === String(viewer._id)))
     };
 }
@@ -1095,11 +1124,18 @@ app.get('/api/articles/:id/comments', limiter(90, 60 * 1000), async (req, res) =
     if (!isHexId(req.params.id)) return res.status(400).json({ error: 'id' });
     if (!dbReady()) return res.status(503).json({ error: 'unavailable', code: dbCode() });
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const size = 20;
+    const size = 15;
     try {
-        const total = await Comment.countDocuments({ articleId: req.params.id });
-        const docs = await Comment.find({ articleId: req.params.id }).sort({ createdAt: -1 }).skip((page - 1) * size).limit(size).populate('userId', AUTHOR_FIELDS).lean();
-        res.json({ comments: docs.filter(d => !(d.userId && d.userId.banned)).map(d => publicComment(d, req.user)), page, totalPages: Math.max(1, Math.ceil(total / size)), total });
+        const base = { articleId: req.params.id, parentId: null };
+        const total = await Comment.countDocuments(base);
+        const tops = await Comment.find(base).sort({ createdAt: -1 }).skip((page - 1) * size).limit(size).populate('userId', AUTHOR_FIELDS).lean();
+        const ids = tops.map(t => t._id);
+        const kids = ids.length ? await Comment.find({ parentId: { $in: ids } }).sort({ createdAt: 1 }).limit(300).populate('userId', AUTHOR_FIELDS).lean() : [];
+        const visible = d => !(d.userId && d.userId.banned);
+        const byParent = {};
+        kids.filter(visible).forEach(k => { (byParent[String(k.parentId)] = byParent[String(k.parentId)] || []).push(publicComment(k, req.user)); });
+        const comments = tops.filter(visible).map(t => ({ ...publicComment(t, req.user), replies: byParent[String(t._id)] || [] }));
+        res.json({ comments, page, totalPages: Math.max(1, Math.ceil(total / size)), total });
     } catch (e) {
         res.status(500).json({ error: 'comments' });
     }
@@ -1112,13 +1148,34 @@ app.post('/api/articles/:id/comments', requireUser, limiter(20, 10 * 60 * 1000),
     try {
         const art = await Article.findOne({ _id: req.params.id, status: 'approved' }).lean();
         if (!art) return res.status(404).json({ error: 'not_found' });
-        const c = await Comment.create({ articleId: art._id, userId: req.user._id, body });
-        await Article.updateOne({ _id: art._id }, { $inc: { commentCount: 1 } });
-        if (String(art.userId) !== String(req.user._id)) {
-            pushNotify(art.userId, 'comment', { ...actorInfo(req.user), title: art.title, text: body.slice(0, 140), link: '/articles/' + encodeURIComponent(art.slug) });
+        let parent = null;
+        const pid = req.body && req.body.parentId;
+        if (pid) {
+            if (!isHexId(pid)) return res.status(400).json({ error: 'id' });
+            parent = await Comment.findOne({ _id: pid, articleId: art._id }).lean();
+            if (!parent) return res.status(404).json({ error: 'not_found' });
+            if (parent.parentId) parent = await Comment.findById(parent.parentId).lean();
         }
+        const c = await Comment.create({ articleId: art._id, userId: req.user._id, parentId: parent ? parent._id : null, body });
+        await Article.updateOne({ _id: art._id }, { $inc: { commentCount: 1 } });
+        const link = '/articles/' + encodeURIComponent(art.slug);
+        const notified = new Set([String(req.user._id)]);
+        const names = [...new Set((body.match(/@([a-z0-9_]{3,20})/gi) || []).map(m => m.slice(1).toLowerCase()))].slice(0, 6);
+        if (names.length) {
+            const mentioned = await User.find({ username: { $in: names } }).select('_id').lean();
+            for (const m of mentioned) {
+                if (notified.has(String(m._id))) continue;
+                notified.add(String(m._id));
+                pushNotify(m._id, 'mention', { ...actorInfo(req.user), title: art.title, text: body.slice(0, 140), link });
+            }
+        }
+        if (parent && !notified.has(String(parent.userId))) {
+            notified.add(String(parent.userId));
+            pushNotify(parent.userId, 'reply', { ...actorInfo(req.user), title: art.title, text: body.slice(0, 140), link });
+        }
+        if (!notified.has(String(art.userId))) pushNotify(art.userId, 'comment', { ...actorInfo(req.user), title: art.title, text: body.slice(0, 140), link });
         const populated = await Comment.findById(c._id).populate('userId', AUTHOR_FIELDS).lean();
-        res.json({ comment: publicComment(populated, req.user) });
+        res.json({ comment: { ...publicComment(populated, req.user), replies: [] } });
     } catch (e) {
         res.status(500).json({ error: 'comment' });
     }
@@ -1130,11 +1187,23 @@ app.delete('/api/comments/:id', requireUser, async (req, res) => {
         const c = await Comment.findById(req.params.id).lean();
         if (!c) return res.status(404).json({ error: 'not_found' });
         if (String(c.userId) !== String(req.user._id) && !isAdmin(req.user)) return res.status(403).json({ error: 'forbidden' });
-        await Comment.deleteOne({ _id: c._id });
-        await Article.updateOne({ _id: c.articleId }, { $inc: { commentCount: -1 } });
-        res.json({ success: true });
+        const kids = await Comment.countDocuments({ parentId: c._id });
+        await Comment.deleteMany({ $or: [{ _id: c._id }, { parentId: c._id }] });
+        await Article.updateOne({ _id: c.articleId }, { $inc: { commentCount: -(1 + kids) } });
+        res.json({ success: true, removed: 1 + kids });
     } catch (e) {
         res.status(500).json({ error: 'delete' });
+    }
+});
+
+app.get('/api/users-suggest', limiter(90, 60 * 1000), async (req, res) => {
+    const q = cut(req.query.q, 20).toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+    if (!dbReady() || q.length < 1) return res.json({ users: [] });
+    try {
+        const docs = await User.find({ username: new RegExp('^' + escapeRe(q)), banned: { $ne: true } }).select('username firstName lastName avatarId').limit(6).lean();
+        res.json({ users: docs.map(u => ({ username: u.username, name: nameOf(u), avatarUrl: avatarUrlOf(u) })) });
+    } catch (e) {
+        res.json({ users: [] });
     }
 });
 
@@ -1147,7 +1216,8 @@ async function pushNotify(userId, type, data) {
         const u = await User.findById(userId).select('notify banned').lean();
         if (!u || u.banned) return;
         const p = prefsOf(u);
-        if (!p.all || p[type] === false) return;
+        const key = type === 'reply' || type === 'mention' ? 'comment' : type;
+        if (!p.all || p[key] === false) return;
         await Notification.create({ userId: u._id, type, ...data });
     } catch (e) { }
 }
@@ -1500,6 +1570,8 @@ app.get('/sitemap.xml', async (req, res) => {
     const today = new Date().toISOString().slice(0, 10);
     const urls = [
         { loc: SITE + '/', lastmod: today, freq: 'daily', priority: '1.0' },
+        { loc: SITE + '/explore', lastmod: today, freq: 'hourly', priority: '0.9' },
+        { loc: SITE + '/live', lastmod: today, freq: 'hourly', priority: '0.9' },
         { loc: SITE + '/articles', lastmod: today, freq: 'daily', priority: '0.8' }
     ];
     if (dbReady()) {
@@ -1518,6 +1590,13 @@ app.get('/sitemap.xml', async (req, res) => {
         '\n</urlset>';
     res.set('Cache-Control', 'public, max-age=3600');
     res.type('application/xml').send(xml);
+});
+
+['explore', 'live'].forEach(page => {
+    app.get(['/' + page, '/' + page + '.html'], (req, res) => {
+        res.set('Cache-Control', 'no-cache');
+        res.sendFile(path.join(ROOT, page + '.html'));
+    });
 });
 
 app.get(['/', '/index.html'], (req, res) => {
