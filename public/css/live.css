@@ -520,3 +520,18 @@
     justify-content: center;
     margin: 0;
 }
+
+
+.page-live .page-head .live-status {
+    position: static;
+    transform: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: none;
+    margin: 10px auto 0;
+    padding: 0;
+    text-align: center;
+}
