@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark" data-tr-title>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('vero_theme');
+                if (t !== 'light' && t !== 'dark') {
+                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PJW06HEYF5"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-PJW06HEYF5');
+    </script>
+    <title>Explore | VERO</title>
+    <meta name="description" content="Search any region, leader or crisis across 18 vetted sources in 7 languages. Related reports, ranked by relevance.">
+    <meta name="author" content="VERO">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0A0A0C">
+    <link rel="canonical" href="https://veropol.onrender.com/">
+    <link rel="icon" href="https://veropol.onrender.com/favicon.ico" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="48x48" href="https://veropol.onrender.com/assets/icon-48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://veropol.onrender.com/assets/icon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://veropol.onrender.com/assets/icon-16.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://veropol.onrender.com/assets/icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://veropol.onrender.com/assets/icon-180.png">
+    <link rel="canonical" href="https://veropol.onrender.com/explore">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="VERO">
+    <meta property="og:title" content="Explore | VERO">
+    <meta property="og:description" content="Search any region, leader or crisis across 18 vetted sources in 7 languages. Related reports, ranked by relevance.">
+    <meta property="og:url" content="https://veropol.onrender.com/explore">
+    <meta property="og:image" content="https://veropol.onrender.com/assets/BANNER.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="/css/style.css?v=17">
+    <link rel="stylesheet" href="/css/nav.css?v=17">
+    <link rel="stylesheet" href="/css/explore.css?v=17">
+</head>
+
+<body class="page-explore">
+    <div class="toast-box" id="toastBox" role="status"></div>
+    <nav class="nav-container" id="navbar">
+        <a href="/" class="brand" aria-label="VERO">
+            <img src="/assets/logo-96.webp" srcset="/assets/logo-96.webp 1x, /assets/logo-192.webp 2x" width="36" height="36" alt="VERO" class="brand-logo" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/assets/icon-192.png'">
+            <span>VERO</span>
+        </a>
+        <div class="nav-menu" id="navMenu">
+            <div class="nav-center" id="navLinks">
+                <a href="/live" class="nav-link" data-nav="/live"><span data-tr>Live</span></a>
+                <a href="/explore" class="nav-link" data-nav="/explore"><span data-tr>Explore</span></a>
+                <a href="/articles" class="nav-link" data-nav="/articles"><span data-tr>Articles</span></a>
+            </div>
+            <div class="nav-tools" id="navTools">
+            <div class="lang-dropdown">
+                <button class="lang-btn" id="langToggle" type="button" aria-haspopup="true" aria-expanded="false"
+                    data-tr-aria aria-label="Change language">
+                    <img class="flag-icon" id="langFlag" src="https://hatscripts.github.io/circle-flags/flags/gb.svg"
+                        alt="" width="20" height="20">
+                    <span id="langCode">EN</span>
+                    <i class="ph ph-caret-down"></i>
+                </button>
+                <div class="lang-menu" id="langMenu">
+                    <button type="button" class="lang-item" data-lang="en"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/gb.svg" alt="" width="22"
+                            height="22"><span>English</span></button>
+                    <button type="button" class="lang-item" data-lang="fr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/fr.svg" alt="" width="22"
+                            height="22"><span>Français</span></button>
+                    <button type="button" class="lang-item" data-lang="es"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/es.svg" alt="" width="22"
+                            height="22"><span>Español</span></button>
+                    <button type="button" class="lang-item" data-lang="ru"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/ru.svg" alt="" width="22"
+                            height="22"><span>Русский</span></button>
+                    <button type="button" class="lang-item" data-lang="ar"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/sa.svg" alt="" width="22"
+                            height="22"><span>العربية</span></button>
+                    <button type="button" class="lang-item" data-lang="zh"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/cn.svg" alt="" width="22"
+                            height="22"><span>中文</span></button>
+                    <button type="button" class="lang-item" data-lang="tr"><img class="flag-icon"
+                            src="https://hatscripts.github.io/circle-flags/flags/tr.svg" alt="" width="22"
+                            height="22"><span>Türkçe</span></button>
+                </div>
+            </div>
+            <a href="/#feedback" class="btn-nav" data-tr>Feedback</a>
+            <a href="/articles#account" class="icon-btn" id="accountBtn" data-tr-aria aria-label="Account"><svg class="user-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.7" /><path d="M5 20c.9-4 3.6-6.2 7-6.2s6.1 2.2 7 6.2" /></svg></a>
+            <button id="themeToggle" class="theme-toggle-btn" type="button" data-tr-aria aria-label="Toggle theme"><i class="ph ph-moon" id="themeIcon"></i></button>
+            </div>
+        </div>
+        <button class="nav-toggle" id="navBurger" type="button" aria-expanded="false" aria-controls="navMenu" data-tr-aria aria-label="Menu"><i class="ph ph-list"></i></button>
+    </nav>
+
+    <div class="search-dock" id="searchDock">
+        <i class="ph ph-magnifying-glass"></i>
+        <input type="text" id="dockInput" autocomplete="off" spellcheck="false" data-tr-ph
+            placeholder="Search any region, leader or crisis" data-tr-aria aria-label="Search">
+        <button class="dock-btn" id="dockTrigger" type="button" data-tr-aria aria-label="Run search">
+            <svg class="radar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="4.8" />
+                <path d="M12 12L19.8 7.5" />
+                <circle cx="15.8" cy="16" r="1.1" fill="currentColor" stroke="none" />
+            </svg>
+        </button>
+    </div>
+
+    <main class="container explore-main">
+        <header class="page-head">
+            <h1 data-tr>Explore</h1>
+            <p data-tr>Search any region, leader or crisis across 18 vetted sources.</p>
+        </header>
+        <div class="search-hero-container">
+            <div class="search-bar massive">
+                    <i class="ph ph-magnifying-glass search-icon"></i>
+                    <input type="text" id="searchInput" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="searchAc" data-tr-ph placeholder="Search any region, leader or crisis" data-tr-aria aria-label="Search">
+                    <button class="search-pulse-btn" id="searchTrigger" type="button" data-tr-aria aria-label="Run search">
+                        <svg class="radar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <circle cx="12" cy="12" r="4.8" />
+                            <g class="radar-sweep"><path d="M12 12L19.8 7.5" /><path d="M12 12V3A9 9 0 0 1 19.8 7.5Z" fill="currentColor" fill-opacity="0.35" stroke="none" /></g>
+                            <circle class="radar-blip" cx="15.8" cy="16" r="1.1" fill="currentColor" stroke="none" />
+                        </svg>
+                    </button>
+                    <ul class="ac-box" id="searchAc" role="listbox" hidden></ul>
+                </div>
+            <p class="search-hint"><i class="ph ph-translate"></i><span data-tr>Search in any language</span></p>
+            <div class="search-suggestions" id="searchSuggestions"></div>
+            <div class="search-suggestions recent-searches" id="recentSearches"></div>
+        </div>
+        <section class="controls-section" id="intelligence">
+            <div class="filters" id="filterContainer">
+                <button type="button" class="filter-btn active" data-filter="all"><i
+                        class="ph ph-globe-hemisphere-west"></i><span data-tr>Global Overview</span></button>
+                <button type="button" class="filter-btn" data-filter="diplomacy"><i class="ph ph-handshake"></i><span
+                        data-tr>Diplomacy</span></button>
+                <button type="button" class="filter-btn" data-filter="military"><i class="ph ph-crosshair"></i><span
+                        data-tr>Military</span></button>
+                <button type="button" class="filter-btn" data-filter="economy"><i class="ph ph-chart-line-up"></i><span
+                        data-tr>Economy</span></button>
+                <button type="button" class="filter-btn" data-filter="energy"><i class="ph ph-gas-pump"></i><span
+                        data-tr>Energy</span></button>
+                <button type="button" class="filter-btn" data-filter="humanitarian"><i
+                        class="ph ph-first-aid-kit"></i><span data-tr>Humanitarian</span></button>
+                <button type="button" class="filter-btn" data-filter="security"><i
+                        class="ph ph-shield-warning"></i><span data-tr>Security</span></button>
+                <button type="button" class="filter-btn" data-filter="cyber"><i class="ph ph-cpu"></i><span
+                        data-tr>Cyber &amp; Tech</span></button>
+                <button type="button" class="filter-btn" data-filter="middleeast"><i class="ph ph-mosque"></i><span
+                        data-tr>Middle East</span></button>
+                <button type="button" class="filter-btn" data-filter="europe"><i class="ph ph-castle-turret"></i><span
+                        data-tr>Europe</span></button>
+                <button type="button" class="filter-btn" data-filter="asia"><i class="ph ph-buildings"></i><span
+                        data-tr>Asia-Pacific</span></button>
+                <button type="button" class="filter-btn" data-filter="africa"><i class="ph ph-compass"></i><span
+                        data-tr>Africa</span></button>
+                <button type="button" class="filter-btn" data-filter="americas"><i class="ph ph-flag"></i><span
+                        data-tr>Americas</span></button>
+            </div>
+            <div class="range-filters" id="rangeContainer">
+                <span class="range-label"><i class="ph ph-clock"></i> <span data-tr>Timeframe</span></span>
+                <button type="button" class="range-btn active" data-range="all" data-tr>Any time</button>
+                <button type="button" class="range-btn" data-range="24h" data-tr>24h</button>
+                <button type="button" class="range-btn" data-range="7d" data-tr>7 days</button>
+                <button type="button" class="range-btn" data-range="30d" data-tr>30 days</button>
+            </div>
+            <div class="range-filters" id="rangeContainer">
+                <span class="range-label"><i class="ph ph-clock"></i> <span data-tr>Timeframe</span></span>
+                <button type="button" class="range-btn active" data-range="all" data-tr>Any time</button>
+                <button type="button" class="range-btn" data-range="24h" data-tr>24h</button>
+                <button type="button" class="range-btn" data-range="7d" data-tr>7 days</button>
+                <button type="button" class="range-btn" data-range="30d" data-tr>30 days</button>
+            </div>
+            <p class="focus-note" id="focusNote" hidden></p>
+            <p class="results-meta" id="resultsMeta"></p>
+            <div class="related-box" id="relatedBox" hidden></div>
+        </section>
+        <section class="flex-grid news-grid" id="newsGrid" aria-live="polite"></section>
+        <nav class="pagination" id="pagination" data-tr-aria aria-label="Pagination" hidden></nav>
+    </main>
+
+<footer class="site-footer">
+        <div class="banner-wrap">
+            <img src="https://veropol.onrender.com/assets/BANNER.png" width="1584" height="672" loading="lazy"
+                decoding="async" alt="VERO Banner" class="banner-img"
+                onerror="if(!this.dataset.f){this.dataset.f=1;this.src='/assets/BANNER.png'}else{this.parentElement.style.display='none'}">
+        </div>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="brand-line">
+                    <img src="/assets/logo-192.webp" width="44" height="44" alt="VERO" class="brand-logo"
+                        onerror="this.onerror=null;this.src='/assets/icon-192.png'">
+                    <span>VERO</span>
+                </div>
+                <p data-tr>Independent global intelligence and diplomatic monitoring observatory.</p>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Explore</h4>
+                <a href="/live"><i class="ph ph-broadcast"></i> <span data-tr>Live</span></a>
+                <a href="/explore"><i class="ph ph-compass"></i> <span data-tr>Explore</span></a>
+                <a href="/articles"><i class="ph ph-newspaper"></i> <span data-tr>Articles</span></a>
+                <a href="/articles#write"><i class="ph ph-pen-nib"></i> <span data-tr>Write for VERO</span></a>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Transparency</h4>
+                <a href="/#modal-methodology"><i class="ph ph-book-open-text"></i> <span
+                        data-tr>Sources & Methodology</span></a>
+                <a href="/#modal-privacy"><i class="ph ph-shield-check"></i> <span data-tr>Privacy
+                        Policy</span></a>
+                <a href="/#modal-terms"><i class="ph ph-file-text"></i> <span data-tr>Terms of
+                        Service</span></a>
+                <a href="/#feedback"><i class="ph ph-chat-circle-dots"></i> <span data-tr>Feedback</span></a>
+            </div>
+            <div class="footer-col">
+                <h4 data-tr>Contact</h4>
+                <a href="mailto:veropol@proton.me"><i class="ph ph-envelope-simple"></i> <span><small data-tr>Secure
+                            Email</small>veropol@proton.me</span></a>
+                <a href="mailto:legateau@proton.me"><i class="ph ph-envelope-simple-open"></i> <span><small
+                            data-tr>Developers Email</small>legateau@proton.me</span></a>
+                <a href="https://github.com/verointels" target="_blank" rel="noopener noreferrer"><i
+                        class="ph ph-github-logo"></i> <span><small data-tr>Organization
+                            Repository</small>github.com/verointels</span></a>
+                <a href="https://github.com/leclavier" target="_blank" rel="noopener noreferrer"><i
+                        class="ph ph-code-simple"></i> <span><small data-tr>Lead
+                            Developer</small>github.com/leclavier</span></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 VERO</span>
+            <span data-tr>Machine translation by Google Cloud Translation. Original reports open in their source
+                language.</span>
+        </div>
+    </footer>
+    <script defer src="/javascript/common.js?v=17"></script>
+    <script defer src="/javascript/script.js?v=17"></script>
+</body>
+
+</html>
