@@ -47,9 +47,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Rubik:ital,wght@0,300..900;1,300..900&family=Unbounded:wght@700;800&display=swap">
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="/css/style.css?v=18">
-    <link rel="stylesheet" href="/css/nav.css?v=18">
-    <link rel="stylesheet" href="/css/live.css?v=18">
+    <link rel="stylesheet" href="/css/style.css?v=19">
+    <link rel="stylesheet" href="/css/nav.css?v=19">
+    <link rel="stylesheet" href="/css/live.css?v=19">
 </head>
 
 <body class="page-live">
@@ -111,7 +111,12 @@
             <h1 data-tr>Live Theaters</h1>
             <p class="live-status"><span class="dot"></span><span data-tr>Updated every 5 minutes.</span></p>
         </header>
-        <div class="flex-grid theaters-grid" id="theatersGrid">
+        <section class="live-section" id="warTheaters">
+            <div class="live-section-head">
+                <h2><i class="ph ph-crosshair"></i> <span data-tr>War Theaters</span></h2>
+                <p data-tr>Active fronts, each with a live map.</p>
+            </div>
+            <div class="flex-grid theaters-grid" id="warTheatersGrid">
                 <article class="theater-card reveal" data-theater="ukraine">
                     <div class="theater-cover cv-ukraine">
                         <div class="theater-badge danger"><i class="ph ph-warning-diamond"></i> <span data-tr>Active
@@ -132,13 +137,11 @@
                         <div class="theater-actions">
                             <button type="button" class="btn-theater-action" data-quick="Ukraine war Russia conflict"><i
                                     class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
-                            <a href="https://liveuamap.com/" target="_blank" rel="noopener noreferrer"
-                                class="theater-link"><span data-tr>Live Map</span> <i
-                                    class="ph ph-arrow-square-out"></i></a>
+                            <a href="https://liveuamap.com/" target="_blank" rel="noopener noreferrer" class="theater-link"><span data-tr>Live Map</span> <i class="ph ph-arrow-square-out"></i></a>
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal" data-theater="mideast">
+<article class="theater-card reveal" data-theater="mideast">
                     <div class="theater-cover cv-mideast">
                         <div class="theater-badge danger"><i class="ph ph-crosshair"></i> <span data-tr>Escalation
                                 Index</span></div>
@@ -159,10 +162,11 @@
                             <button type="button" class="btn-theater-action"
                                 data-quick="Israel Lebanon Iran Middle East"><i class="ph ph-arrows-clockwise"></i>
                                 <span data-tr>Load Intelligence</span></button>
+                            <a href="https://israelpalestine.liveuamap.com/" target="_blank" rel="noopener noreferrer" class="theater-link"><span data-tr>Live Map</span> <i class="ph ph-arrow-square-out"></i></a>
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal" data-theater="yemen">
+<article class="theater-card reveal" data-theater="yemen">
                     <div class="theater-cover cv-yemen">
                         <div class="theater-badge danger"><i class="ph ph-anchor"></i> <span data-tr>Chokepoint
                                 Crisis</span></div>
@@ -189,6 +193,71 @@
                         </div>
                     </div>
                 </article>
+<article class="theater-card reveal" data-theater="syria">
+                    <div class="theater-cover cv-syria">
+                        <div class="theater-badge danger"><i class="ph ph-flag-banner"></i> <span data-tr>Transition Watch</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Syria, Israel &amp; the Druze</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>Transitional authorities, Suwayda tensions, Israeli strikes and the Golan line.</p>
+                        <div class="theater-stats"><div class="stat-box"><span class="stat-label" data-tr>Transition</span><span class="stat-val alert" data-tr>Fragile</span></div><div class="stat-box"><span class="stat-label" data-tr>Southern Front</span><span class="stat-val" data-tr>Tense</span></div></div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action" data-quick="Syria Israel Druze Suwayda"><i class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
+                            <a href="https://syria.liveuamap.com/" target="_blank" rel="noopener noreferrer" class="theater-link"><span data-tr>Live Map</span> <i class="ph ph-arrow-square-out"></i></a>
+                        </div>
+                    </div>
+                </article>
+<article class="theater-card reveal" data-theater="lebanon">
+                    <div class="theater-cover cv-lebanon">
+                        <div class="theater-badge danger"><i class="ph ph-crosshair"></i> <span data-tr>Border Front</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Lebanon, Israel &amp; Hezbollah</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>South Lebanon strikes, ceasefire terms, Hezbollah disarmament and reconstruction.</p>
+                        <div class="theater-stats"><div class="stat-box"><span class="stat-label" data-tr>Ceasefire</span><span class="stat-val alert" data-tr>Contested</span></div><div class="stat-box"><span class="stat-label" data-tr>Border Strikes</span><span class="stat-val" data-tr>Ongoing</span></div></div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action" data-quick="Lebanon Israel Hezbollah ceasefire"><i class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
+                            <a href="https://lebanon.liveuamap.com/" target="_blank" rel="noopener noreferrer" class="theater-link"><span data-tr>Live Map</span> <i class="ph ph-arrow-square-out"></i></a>
+                        </div>
+                    </div>
+                </article>
+<article class="theater-card reveal" data-theater="sudan">
+                    <div class="theater-cover cv-sudan">
+                        <div class="theater-badge danger"><i class="ph ph-first-aid"></i> <span data-tr>Humanitarian Crisis</span></div>
+                    </div>
+                    <div class="theater-info">
+                        <h3 data-tr>Sudan War</h3>
+                        <span class="theater-overview-label" data-tr>VERO Overview</span>
+                        <p class="theater-desc" data-tr>Army and Rapid Support Forces fighting, El Fasher, famine and displacement.</p>
+                        <div class="theater-stats"><div class="stat-box"><span class="stat-label" data-tr>Fronts</span><span class="stat-val alert" data-tr>Multiple</span></div><div class="stat-box"><span class="stat-label" data-tr>Displacement</span><span class="stat-val" data-tr>Critical</span></div></div>
+                        <a class="theater-live" target="_blank" rel="noopener noreferrer" hidden></a>
+                        <div class="theater-actions">
+                            <button type="button" class="btn-theater-action" data-quick="Sudan RSF army El Fasher"><i class="ph ph-arrows-clockwise"></i> <span data-tr>Load Intelligence</span></button>
+                            <a href="https://sudan.liveuamap.com/" target="_blank" rel="noopener noreferrer" class="theater-link"><span data-tr>Live Map</span> <i class="ph ph-arrow-square-out"></i></a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+        <section class="live-section" id="developing" hidden>
+            <div class="live-section-head">
+                <h2><i class="ph ph-trend-up"></i> <span data-tr>Developing</span></h2>
+                <p data-tr>Stories gaining coverage now. Removed when the trend ends.</p>
+            </div>
+            <div class="flex-grid theaters-grid" id="developingGrid">
+                
+            </div>
+        </section>
+        <section class="live-section" id="watchTheaters">
+            <div class="live-section-head">
+                <h2><i class="ph ph-binoculars"></i> <span data-tr>Strategic Watch</span></h2>
+                <p data-tr>Diplomatic and economic flashpoints.</p>
+            </div>
+            <div class="flex-grid theaters-grid" id="watchTheatersGrid">
                 <article class="theater-card reveal" data-theater="taiwan">
                     <div class="theater-cover cv-taiwan">
                         <div class="theater-badge warning"><i class="ph ph-eye"></i> <span data-tr>Indo-Pacific
@@ -212,7 +281,7 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal" data-theater="brics">
+<article class="theater-card reveal" data-theater="brics">
                     <div class="theater-cover cv-brics">
                         <div class="theater-badge info"><i class="ph ph-currency-dollar-simple"></i> <span
                                 data-tr>Geo-Economics</span></div>
@@ -236,7 +305,7 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal" data-theater="korea">
+<article class="theater-card reveal" data-theater="korea">
                     <div class="theater-cover cv-korea">
                         <div class="theater-badge warning"><i class="ph ph-warning"></i> <span data-tr>East Asia
                                 Watch</span></div>
@@ -260,7 +329,7 @@
                         </div>
                     </div>
                 </article>
-                <article class="theater-card reveal" data-theater="sahel">
+<article class="theater-card reveal" data-theater="sahel">
                     <div class="theater-cover cv-sahel">
                         <div class="theater-badge danger"><i class="ph ph-fire"></i> <span data-tr>High
                                 Instability</span></div>
@@ -284,6 +353,7 @@
                     </div>
                 </article>
             </div>
+        </section>
     </main>
 
 <footer class="site-footer">
@@ -338,8 +408,9 @@
                 language.</span>
         </div>
     </footer>
-    <script defer src="/javascript/common.js?v=18"></script>
-    <script defer src="/javascript/script.js?v=18"></script>
+    <script defer src="/javascript/i18n.js?v=19"></script>
+    <script defer src="/javascript/common.js?v=19"></script>
+    <script defer src="/javascript/script.js?v=19"></script>
 </body>
 
 </html>
