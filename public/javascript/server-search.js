@@ -144,6 +144,18 @@ const THEATER_DEFS = {
         ['ukrain', 'kyiv', 'kiev', 'zelensk', 'donbas', 'donetsk', 'kharkiv', 'kherson', 'zaporizh', 'crimea', 'odesa', 'odessa', 'kremlin', 'moscow', 'putin', 'poutine', 'ucrania', 'ukrayna'],
         ['украин', 'киев', 'зеленск', 'донбас', 'донецк', 'харьков', 'херсон', 'запорож', 'крым', 'одесс', 'кремл', 'москв', 'путин', 'أوكرانيا', 'كييف', 'زيلينسكي', 'دونباس', 'القرم', 'الكرملين', 'موسكو', 'بوتين', '乌克兰', '基辅', '泽连斯基', '顿巴斯', '克里米亚', '克里姆林', '莫斯科', '普京']
     ),
+    syria: mk(
+        ['syria', 'syrian', 'damascus', 'druze', 'suwayda', 'sweida', 'sharaa', 'golan', 'syrie', 'siria', 'suriye', 'süveyda', 'dürzi'],
+        ['سوريا', 'سوري', 'دمشق', 'الدروز', 'السويداء', 'الجولان', 'الشرع', 'сири', 'дамаск', 'друз', 'сувейд', 'голан', '叙利亚', '大马士革', '德鲁兹', '戈兰']
+    ),
+    lebanon: mk(
+        ['lebanon', 'lebanese', 'beirut', 'hezbollah', 'hizbullah', 'litani', 'nabatieh', 'south lebanon', 'liban\\b', 'líbano', 'lübnan', 'hizbullah'],
+        ['لبنان', 'لبناني', 'بيروت', 'حزب الله', 'الليطاني', 'جنوب لبنان', 'ливан', 'бейрут', 'хезболл', '黎巴嫩', '贝鲁特', '真主党']
+    ),
+    sudan: mk(
+        ['sudan\\b', 'sudanese', 'khartoum', 'darfur', 'rsf\\b', 'rapid support forces', 'el fasher', 'al fashir', 'omdurman', 'soudan', 'sudán', 'sudan ordusu'],
+        ['السودان', 'سوداني', 'الخرطوم', 'دارفور', 'الدعم السريع', 'الفاشر', 'أم درمان', 'судан', 'хартум', 'дарфур', '苏丹', '喀土穆', '达尔富尔']
+    ),
     taiwan: mk(
         ['taiwan', 'taipei', 'taïwan', 'tayvan', 'south china sea', 'pla\\b', 'indo-pacific', 'senkaku', 'philippine sea', 'mer de chine', 'mar de china'],
         ['台湾', '台海', '南海', '解放军', '印太', 'тайван', 'южно-китайск', 'تايوان', 'بحر الصين الجنوبي']
@@ -165,40 +177,12 @@ const THEATER_DEFS = {
         ['إسرائيل', 'غزة', 'حماس', 'حزب الله', 'لبنان', 'بيروت', 'إيران', 'طهران', 'سوريا', 'دمشق', 'العراق', 'بغداد', 'الضفة', 'فلسطين', 'القدس', 'الشرق الأوسط', 'израил', 'сектор.? газа', 'хамас', 'хезболл', 'ливан', 'иран', 'тегеран', 'сири', 'дамаск', 'ирак', 'ближн\\S* восток', '以色列', '加沙', '哈马斯', '真主党', '黎巴嫩', '伊朗', '叙利亚', '伊拉克', '中东']
     )
 };
-const THEATER_ORDER = ['yemen', 'ukraine', 'taiwan', 'korea', 'sahel', 'brics', 'mideast'];
+const THEATER_ORDER = ['yemen', 'ukraine', 'syria', 'lebanon', 'sudan', 'taiwan', 'korea', 'sahel', 'brics', 'mideast'];
 
 const ENTITY_WORDS = ['afghanistan', 'africa', 'algeria', 'america', 'argentina', 'armenia', 'assad', 'azerbaijan', 'bahrain', 'baghdad', 'beijing', 'beirut', 'belarus', 'biden', 'brazil', 'brics', 'britain', 'canada', 'china', 'council', 'crimea', 'cuba', 'cyprus', 'damascus', 'donbas', 'egypt', 'erdogan', 'ethiopia', 'europe', 'france', 'gaza', 'germany', 'greece', 'hamas', 'hezbollah', 'houthi', 'india', 'indonesia', 'iran', 'iraq', 'israel', 'italy', 'japan', 'jerusalem', 'jordan', 'kashmir', 'khamenei', 'korea', 'kremlin', 'kuwait', 'lebanon', 'libya', 'macron', 'mexico', 'morocco', 'moscow', 'myanmar', 'nato', 'netanyahu', 'nigeria', 'north', 'opec', 'pakistan', 'palestine', 'pentagon', 'poland', 'putin', 'pyongyang', 'qatar', 'russia', 'sahel', 'saudi', 'security', 'sharaa', 'somalia', 'south', 'strait', 'strip', 'sudan', 'syria', 'taiwan', 'tehran', 'trump', 'tunisia', 'turkey', 'turkiye', 'ukraine', 'vietnam', 'yemen', 'zelensky', 'zelenskyy'];
 const ENTITY_TOKENS = new Set(ENTITY_WORDS);
 
-const CONCEPTS = [
-    { keys: ['الاسد', 'بشار الاسد', 'assad', 'al assad', 'alassad', 'asad', 'al asad', 'esad', 'esed', 'bashar al assad', 'bashar', 'bachar', 'эсад', 'асад', 'башар', '阿萨德'], en: 'Bashar al-Assad', vars: ['Assad', 'Syria', 'الأسد'] },
-    { keys: ['الجولاني', 'الشرع', 'احمد الشرع', 'jolani', 'julani', 'golani', 'al sharaa', 'sharaa', 'şara', 'шараа', 'джулани', '朱拉尼'], en: 'Ahmed al-Sharaa', vars: ['Sharaa', 'Jolani', 'Syria', 'الشرع'] },
-    { keys: ['حزب الله', 'hezbollah', 'hizbullah', 'hizballah', 'hizbollah', 'hezbolah', 'hizbullah', 'хезболла', 'хизбалла', '真主党'], en: 'Hezbollah', vars: ['Hezbollah', 'Lebanon', 'حزب الله'] },
-    { keys: ['حماس', 'hamas', 'hamaz', 'hammas', 'хамас', '哈马斯'], en: 'Hamas', vars: ['Hamas', 'Gaza', 'حماس'] },
-    { keys: ['الحوثي', 'الحوثيين', 'houthi', 'houthis', 'houti', 'husi', 'hutiler', 'хуситы', 'хуси', '胡塞'], en: 'Houthi', vars: ['Houthi', 'Yemen', 'الحوثي'] },
-    { keys: ['زيلينسكي', 'zelensky', 'zelenskyy', 'zelenski', 'zelenskiy', 'zelenskyi', 'зеленский', '泽连斯基'], en: 'Zelensky', vars: ['Zelensky', 'Ukraine', 'زيلينسكي'] },
-    { keys: ['نتنياهو', 'netanyahu', 'netanyau', 'natanyahu', 'nethanyahu', 'netanyahou', 'нетаньяху', '内塔尼亚胡'], en: 'Netanyahu', vars: ['Netanyahu', 'Israel', 'نتنياهو'] },
-    { keys: ['اردوغان', 'erdogan', 'erdoğan', 'erdowan', 'erdoan', 'эрдоган', '埃尔多安'], en: 'Erdogan', vars: ['Erdogan', 'Turkey', 'أردوغان'] },
-    { keys: ['خامنئي', 'khamenei', 'khamanei', 'hamaney', 'хаменеи', '哈梅内伊'], en: 'Khamenei', vars: ['Khamenei', 'Iran', 'خامنئي'] },
-    { keys: ['السيسي', 'sisi', 'el sisi', 'al sisi', 'сиси', '塞西'], en: 'Sisi', vars: ['Sisi', 'Egypt', 'السيسي'] }
-].map(c => ({ ...c, keys: c.keys.map(k => norm(k)) }));
 
-const MORE_CONCEPTS = [
-    { keys: ['ترامب', 'دونالد ترامب', 'trump', 'donald trump', 'donald j trump', 'tramp', 'трамп', 'дональд трамп', '特朗普', '川普'], en: 'Donald Trump', vars: ['Donald Trump', 'Trump', 'ترامب'], ctx: ['white house', 'us president', 'washington', 'tariff', 'tariffs', 'republican', 'mar a lago', 'oval office', 'vance', 'rubio'] },
-    { keys: ['بوتين', 'فلاديمير بوتين', 'putin', 'vladimir putin', 'poutine', 'путин', 'владимир путин', '普京'], en: 'Vladimir Putin', vars: ['Vladimir Putin', 'Putin', 'بوتين'], ctx: ['kremlin', 'moscow', 'russia', 'russian president', 'lavrov', 'peskov'] },
-    { keys: ['شي جين بينغ', 'شي جينبينغ', 'xi jinping', 'xi', 'si cinping', 'си цзиньпин', '习近平'], en: 'Xi Jinping', vars: ['Xi Jinping', 'Xi', 'شي جين بينغ'], ctx: ['beijing', 'china', 'chinese president', 'communist party', 'politburo'] },
-    { keys: ['ماكرون', 'ايمانويل ماكرون', 'macron', 'emmanuel macron', 'макрон', 'эммануэль макрон', '马克龙'], en: 'Emmanuel Macron', vars: ['Emmanuel Macron', 'Macron', 'ماكرون'], ctx: ['elysee', 'paris', 'france', 'french president'] },
-    { keys: ['كيم جونغ اون', 'kim jong un', 'kim jong-un', 'kim jong', 'kim cong un', 'ким чен ын', '金正恩'], en: 'Kim Jong Un', vars: ['Kim Jong Un', 'North Korea', 'كيم جونغ أون'], ctx: ['pyongyang', 'north korea', 'korean'] },
-    { keys: ['محمد بن سلمان', 'ولي العهد السعودي', 'mohammed bin salman', 'mohammad bin salman', 'mbs', 'bin salman', 'muhammed bin selman', 'мухаммед бен сальман', '穆罕默德 本 萨勒曼'], en: 'Mohammed bin Salman', vars: ['Mohammed bin Salman', 'Saudi Arabia', 'بن سلمان'], ctx: ['riyadh', 'saudi', 'crown prince'] },
-    { keys: ['مودي', 'ناريندرا مودي', 'modi', 'narendra modi', 'моди', 'нарендра моди', '莫迪'], en: 'Narendra Modi', vars: ['Narendra Modi', 'Modi', 'India'], ctx: ['india', 'delhi', 'indian prime minister', 'bjp'] },
-    { keys: ['ستارمر', 'كير ستارمر', 'starmer', 'keir starmer', 'стармер', '斯塔默'], en: 'Keir Starmer', vars: ['Keir Starmer', 'Starmer', 'Britain'], ctx: ['downing street', 'britain', 'uk prime minister', 'labour'] },
-    { keys: ['ميرتس', 'فريدريش ميرتس', 'merz', 'friedrich merz', 'мерц', 'фридрих мерц', '默茨'], en: 'Friedrich Merz', vars: ['Friedrich Merz', 'Merz', 'Germany'], ctx: ['berlin', 'germany', 'chancellor', 'german'] },
-    { keys: ['لولا', 'لولا دا سيلفا', 'lula', 'lula da silva', 'лула', 'лула да силва', '卢拉'], en: 'Lula da Silva', vars: ['Lula da Silva', 'Lula', 'Brazil'], ctx: ['brazil', 'brasilia', 'brazilian president'] },
-    { keys: ['لافروف', 'سيرغي لافروف', 'lavrov', 'sergey lavrov', 'sergei lavrov', 'лавров', 'сергей лавров', '拉夫罗夫'], en: 'Sergey Lavrov', vars: ['Sergey Lavrov', 'Lavrov', 'Russia'], ctx: ['kremlin', 'moscow', 'russia', 'foreign minister'] },
-    { keys: ['روبيو', 'ماركو روبيو', 'rubio', 'marco rubio', 'рубио', 'марко рубио', '卢比奥'], en: 'Marco Rubio', vars: ['Marco Rubio', 'Rubio', 'United States'], ctx: ['state department', 'secretary of state', 'washington', 'us'] },
-    { keys: ['ميلوني', 'جورجيا ميلوني', 'meloni', 'giorgia meloni', 'мелони', 'джорджа мелони', '梅洛尼'], en: 'Giorgia Meloni', vars: ['Giorgia Meloni', 'Meloni', 'Italy'], ctx: ['rome', 'italy', 'italian prime minister'] },
-    { keys: ['ميلي', 'خافيير ميلي', 'milei', 'javier milei', 'милей', 'хавьер милей', '米莱'], en: 'Javier Milei', vars: ['Javier Milei', 'Milei', 'Argentina'], ctx: ['buenos aires', 'argentina', 'argentine president'] }
-];
 
 function hits(re, text) {
     if (!text) return 0;
@@ -223,21 +207,6 @@ function annotate(it) {
     return it;
 }
 
-MORE_CONCEPTS.forEach(c => CONCEPTS.push({ ...c, keys: c.keys.map(k => norm(k)), ctx: c.ctx.map(k => norm(k)), person: true }));
-CONCEPTS.forEach(c => {
-    if (!c.ctx) c.ctx = c.vars.filter(v => /^[A-Za-z ]+$/.test(v)).slice(1).map(v => norm(v));
-});
-const EXTRA_KEYS = {
-    'Ahmed al-Sharaa': ['ahmed al sharaa', 'ahmed alsharaa', 'ahmad al sharaa', 'ahmed al shaara', 'ahmed al shara', 'al shaara', 'shaara', 'ahmet sara', 'ahmed el sara', 'احمد الشرع', 'الرئيس الشرع', 'ahmed al-sharaa'],
-    Sisi: ['abdel fattah el sisi', 'abdel fattah al sisi', 'abdelfattah elsisi', 'abdulfettah sisi', 'abdulfattah sisi', 'abdul fattah al sisi', 'abd al fattah al sisi', 'sissi', 'عبد الفتاح السيسي', 'عبدالفتاح السيسي', 'سيسي'],
-    Erdogan: ['recep tayyip erdogan', 'tayyip erdogan', 'rajab tayyib erdogan', 'رجب طيب اردوغان', 'recep tayyip erdoğan'],
-    Netanyahu: ['benjamin netanyahu', 'binyamin netanyahu', 'bibi netanyahu', 'بنيامين نتنياهو'],
-    Zelensky: ['volodymyr zelensky', 'volodymyr zelenskyy', 'vladimir zelensky', 'فولوديمير زيلينسكي'],
-    Khamenei: ['ali khamenei', 'ayatollah khamenei', 'علي خامنئي'],
-    'Bashar al-Assad': ['bashar assad', 'bashar al assad', 'بشار الأسد']
-};
-['Bashar al-Assad', 'Ahmed al-Sharaa', 'Zelensky', 'Netanyahu', 'Erdogan', 'Khamenei', 'Sisi'].forEach(n => { const c = CONCEPTS.find(x => x.en === n); if (c) c.person = true; });
-CONCEPTS.forEach(c => { (EXTRA_KEYS[c.en] || []).forEach(k => { const n = norm(k); if (!c.keys.includes(n)) c.keys.push(n); }); });
 
 const RANGE_HOURS = { '24h': 24, '7d': 168, '30d': 720 };
 const FEED_TTL = 5 * 60 * 1000;
@@ -398,6 +367,11 @@ module.exports = function createSearch({ translator, matchSource }) {
     const imageSet = new Set();
     const knownUrls = new Set();
     const ogCache = new Map();
+    const ogUses = new Map();
+    const entityCache = new Map();
+    const suggestCache = new Map();
+    const webCache = new Map();
+    const devState = new Map();
     let trending = [];
 
     function allowImage(u) {
@@ -497,32 +471,286 @@ module.exports = function createSearch({ translator, matchSource }) {
         return [...counts.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([p]) => p);
     }
 
-    function suggest(q) {
-        const nq = norm(q || '');
+    const LANG_SCRIPT = q => (/[\u0600-\u06FF]/.test(q) ? 'ar' : /[\u0400-\u04FF]/.test(q) ? 'ru' : /[\u3400-\u9FFF]/.test(q) ? 'zh' : null);
+    const WD = 'https://www.wikidata.org/w/api.php';
+    const WD_HEADERS = { 'User-Agent': UA, Accept: 'application/json' };
+    const KIND_RULES = [
+        ['Leader', /\b(president|prime minister|head of state|head of government|chancellor|monarch|king of|queen of|emir|sultan|supreme leader|dictator|minister of|governor|mayor|politician|statesman|leader of)\b/i],
+        ['Company', /\b(company|corporation|conglomerate|manufacturer|startup|retailer|bank|airline|firm|brand|publisher|studio|enterprise)\b/i],
+        ['Market', /\b(stock exchange|stock market|stock index|securities exchange|currency|cryptocurrency|commodity|index of|financial market)\b/i],
+        ['Software', /\b(software|operating system|chatbot|language model|artificial intelligence|programming language|framework|library for|web browser|search engine|application|mobile app|platform|online service|distribution service|website|social network|messaging)\b/i],
+        ['Game', /\b(video game|mobile game|board game|computer game|game series|esports|role-playing|strategy game)\b/i],
+        ['Country', /\b(sovereign state|country in|country of|nation state|federal republic|kingdom in|republic in|emirate)\b/i],
+        ['Place', /\b(city|town|village|river|mountain|range|region|territory|island|sea|strait|capital|province|county|desert|lake|peninsula|plateau|municipality|district|valley|bay|gulf|ocean|continent|canal|port|airport|state of|area in|neighbourhood|border)\b/i],
+        ['Organization', /\b(organization|organisation|alliance|union|political party|agency|movement|group|council|militant|army|armed forces|association|institution|committee|ministry|court|university)\b/i],
+        ['Event', /\b(election|war|battle|conflict|summit|crisis|disaster|earthquake|treaty|revolution|attack|protest|referendum|pandemic|hurricane|siege)\b/i],
+        ['Person', /\b(businessman|entrepreneur|actor|actress|singer|rapper|footballer|player|journalist|activist|scientist|writer|author|engineer|billionaire|investor|born|philosopher|physicist|astronaut|youtuber|streamer|comedian|director|producer|musician|artist|economist|general|commander)\b/i]
+    ];
+
+    function kindOf(description) {
+        const d = String(description || '');
+        for (const [kind, re] of KIND_RULES) if (re.test(d)) return kind;
+        return 'Topic';
+    }
+
+    async function wdFetch(params) {
+        const r = await fetch(WD + '?format=json&origin=*&' + params, { headers: WD_HEADERS, signal: AbortSignal.timeout(4500) });
+        if (!r.ok) throw new Error('wd');
+        return r.json();
+    }
+
+    async function resolveEntity(q) {
+        const text = String(q || '').trim();
+        const nq = norm(text);
+        if (!nq || nq.length < 2 || text.length > 60 || text.split(/\s+/).length > 5 || /[0-9]{3,}/.test(text)) return null;
+        const hit = entityCache.get(nq);
+        if (hit && hit.exp > Date.now()) return hit.v;
+        let value = null;
+        try {
+            const lang = LANG_SCRIPT(text) || 'en';
+            const found = await wdFetch('action=wbsearchentities&type=item&limit=6&language=' + lang + '&uselang=en&search=' + encodeURIComponent(text));
+            const list = Array.isArray(found.search) ? found.search : [];
+            const exact = list.find(e => {
+                const label = norm(e.label || '');
+                const alias = norm((e.match && e.match.text) || '');
+                if (label === nq || alias === nq) return true;
+                if (!isCJK(nq) && nq.length >= 6 && !nq.includes(' ') && (dist(nq, label, 1) <= 1 || dist(nq, alias, 1) <= 1)) return true;
+                return false;
+            });
+            if (exact && (exact.description || '').length) {
+                const info = await wdFetch('action=wbgetentities&props=labels|aliases&languages=en|ar|tr|fr|es|ru|zh&ids=' + exact.id);
+                const ent = info.entities && info.entities[exact.id];
+                const labels = ent && ent.labels ? Object.values(ent.labels).map(l => l.value) : [exact.label];
+                const aliases = ent && ent.aliases ? [].concat(...Object.values(ent.aliases).map(a => a.map(x => x.value))) : [];
+                const names = [...new Set([exact.label].concat(labels, aliases, [text]))].slice(0, 60);
+                const kind = kindOf(exact.description);
+                const ctx = [...new Set(String(exact.description).toLowerCase().replace(/[^a-z\s-]/g, ' ').split(/\s+/).filter(w => w.length >= 5 && !STOP.has(w) && !['which', 'since', 'their', 'between', 'known', 'former', 'current', 'country', 'american'].includes(w)))].slice(0, 6);
+                value = { en: exact.label, keys: [...new Set(names.map(n => norm(n)).filter(Boolean))], vars: names.filter(n => n.length <= 60).slice(0, 14), ctx, person: kind === 'Leader' || kind === 'Person', kind, desc: exact.description };
+            }
+        } catch (e) {
+            value = null;
+        }
+        if (entityCache.size > 600) entityCache.clear();
+        entityCache.set(nq, { v: value, exp: Date.now() + (value ? 24 * 3600000 : 30 * 60000) });
+        return value;
+    }
+
+    async function suggestAsync(q, uiLang) {
+        const text = String(q || '').trim().slice(0, 60);
+        const key = norm(text) + '|' + (LANG_SCRIPT(text) || 'x');
+        const hit = suggestCache.get(key);
+        if (hit && hit.exp > Date.now()) return hit.v;
         const out = [];
-        const add = (text, type) => {
-            if (out.length >= 8 || out.some(o => o.text.toLowerCase() === text.toLowerCase())) return;
-            out.push({ text, type });
+        const add = (item, front) => {
+            if (out.length >= 8 || out.some(o => o.text.toLowerCase() === item.text.toLowerCase())) return;
+            if (front) out.unshift(item);
+            else out.push(item);
         };
+        const nq = norm(text);
         if (!nq) {
-            trending.slice(0, 8).forEach(t => add(t, 'trending'));
+            trending.slice(0, 8).forEach(t => add({ text: t, type: 'Trending', desc: '' }));
             return out;
         }
-        const starts = k => k.startsWith(nq) || (nq.length >= 3 && k.split(' ').some(w => w.startsWith(nq)));
-        CONCEPTS.forEach(c => { if (c.keys.some(starts) || norm(c.en).split(' ').some(w => w.startsWith(nq))) add(c.en, c.person ? 'person' : 'entity'); });
-        COUNTRIES.forEach(c => { if (c.startsWith(nq)) add(c.charAt(0).toUpperCase() + c.slice(1), 'place'); });
-        trending.forEach(t => { const n = norm(t); if (n.startsWith(nq) || n.split(' ').some(w => w.startsWith(nq))) add(t, 'trending'); });
-        THEATER_ORDER.forEach(id => { if (id.startsWith(nq)) add(id.charAt(0).toUpperCase() + id.slice(1), 'place'); });
+        const tasks = [];
+        const lang = LANG_SCRIPT(text) || 'en';
+        tasks.push(wdFetch('action=wbsearchentities&type=item&limit=7&language=' + lang + '&uselang=en&search=' + encodeURIComponent(text)).then(d => d.search || []).catch(() => []));
+        if (lang !== 'en' || /[^\x00-\x7f]/.test(text)) tasks.push(Promise.resolve([]));
+        const [entities] = await Promise.all(tasks);
+        entities.forEach(e => {
+            if (!e.label || !(e.description || '').length) return;
+            add({ text: e.label, type: kindOf(e.description), desc: e.description.slice(0, 64) });
+        });
+        trending.forEach(t => {
+            const n = norm(t);
+            if (n.startsWith(nq) || n.split(' ').some(w => w.startsWith(nq))) add({ text: t, type: 'Trending', desc: '' });
+        });
         if (out.length < 3 && nq.length >= 4 && !isCJK(nq) && !/[^\x00-\x7f]/.test(nq)) {
-            for (const c of CONCEPTS) {
-                for (const k of c.keys) {
-                    if (!k.includes(' ') && !/[^\x00-\x7f]/.test(k) && k.length >= 4 && dist(nq, k, 1) <= 1) add(c.en, c.person ? 'person' : 'entity');
-                }
-            }
             const fix = correct(nq);
-            if (fix) add(fix.charAt(0).toUpperCase() + fix.slice(1), 'topic');
+            if (fix && fix !== nq) add({ text: fix.charAt(0).toUpperCase() + fix.slice(1), type: 'Topic', desc: '' });
         }
+        if (suggestCache.size > 400) suggestCache.clear();
+        suggestCache.set(key, { v: out, exp: Date.now() + 10 * 60000 });
         return out;
+    }
+
+    const WEB_LOCALES = { en: ['en-US', 'US', 'en'], tr: ['tr-TR', 'TR', 'tr'], ar: ['ar-SA', 'SA', 'ar'], fr: ['fr-FR', 'FR', 'fr'], es: ['es-ES', 'ES', 'es'], ru: ['ru-RU', 'RU', 'ru'], zh: ['zh-CN', 'CN', 'zh-Hans'] };
+
+    function xmlText(block, tag) {
+        const m = block.match(new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)</' + tag + '>', 'i'));
+        if (!m) return '';
+        return decodeEntities(m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')).trim();
+    }
+
+    function webItem(title, description, url, image, source, when, lang) {
+        const t = stripHtml(title);
+        const d = stripHtml(description || '');
+        const ts = Number.isFinite(new Date(when).getTime()) ? new Date(when).getTime() : Date.now();
+        if (!t || !url || ts > Date.now() + 3600000) return null;
+        knownUrls.add(url);
+        const item = {
+            title: t,
+            description: d,
+            url,
+            image: image && /^https?:\/\//.test(image) ? image : null,
+            publishedAt: new Date(ts).toISOString(),
+            ts,
+            source: source || new URL(url).hostname.replace(/^www\./, ''),
+            lang,
+            _tl: tokensOf(t),
+            _dl: tokensOf(d),
+            _t: new Set(tokensOf(t)),
+            _d: new Set(tokensOf(d)),
+            _tn: norm(t),
+            _dn: norm(d),
+            web: true
+        };
+        return annotate(item);
+    }
+
+    async function bingNews(query, uiLang) {
+        const [mkt, , setlang] = WEB_LOCALES[uiLang] || WEB_LOCALES.en;
+        const r = await fetch('https://www.bing.com/news/search?q=' + encodeURIComponent(query) + '&format=rss&mkt=' + mkt + '&setlang=' + setlang, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36', 'Accept-Language': mkt }, signal: AbortSignal.timeout(6000) });
+        if (!r.ok) return [];
+        const xml = await r.text();
+        const out = [];
+        (xml.match(/<item>[\s\S]*?<\/item>/gi) || []).slice(0, 20).forEach(block => {
+            const link = xmlText(block, 'link');
+            let real = link;
+            try {
+                const u = new URL(link);
+                real = u.searchParams.get('url') || link;
+            } catch (e) { }
+            const item = webItem(xmlText(block, 'title'), xmlText(block, 'description'), real, xmlText(block, 'News:Image'), xmlText(block, 'News:Source'), xmlText(block, 'pubDate'), uiLang);
+            if (item) out.push(item);
+        });
+        return out;
+    }
+
+    async function googleNews(query, uiLang) {
+        const [hl, gl, ceidLang] = WEB_LOCALES[uiLang] || WEB_LOCALES.en;
+        const r = await fetch('https://news.google.com/rss/search?q=' + encodeURIComponent(query) + '&hl=' + hl + '&gl=' + gl + '&ceid=' + gl + ':' + ceidLang, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(6000) });
+        if (!r.ok) return [];
+        const xml = await r.text();
+        const out = [];
+        (xml.match(/<item>[\s\S]*?<\/item>/gi) || []).slice(0, 20).forEach(block => {
+            const source = xmlText(block, 'source');
+            let title = xmlText(block, 'title');
+            if (source && title.endsWith(' - ' + source)) title = title.slice(0, -(source.length + 3));
+            const item = webItem(title, '', xmlText(block, 'link'), null, source, xmlText(block, 'pubDate'), uiLang);
+            if (item) out.push(item);
+        });
+        return out;
+    }
+
+    async function webNews(query, uiLang) {
+        const q = String(query || '').trim().slice(0, 100);
+        if (!q) return [];
+        const key = q.toLowerCase() + '|' + uiLang;
+        const hit = webCache.get(key);
+        if (hit && hit.exp > Date.now()) return hit.v;
+        let list = [];
+        try {
+            list = await bingNews(q, uiLang);
+        } catch (e) { }
+        if (list.length < 5) {
+            try {
+                list = list.concat(await googleNews(q, uiLang));
+            } catch (e) { }
+        }
+        const seen = new Set();
+        list = list.filter(it => {
+            const k = it._tn.slice(0, 80);
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
+        if (webCache.size > 200) webCache.clear();
+        webCache.set(key, { v: list, exp: Date.now() + (list.length ? 20 : 3) * 60000 });
+        return list;
+    }
+
+    const GENERIC_WORDS = new Set(['after', 'about', 'their', 'would', 'could', 'people', 'government', 'president', 'minister', 'officials', 'police', 'killed', 'attack', 'attacks', 'country', 'report', 'reports', 'says', 'said', 'news', 'latest', 'world', 'years', 'since', 'first', 'second', 'amid', 'where', 'while', 'during', 'against', 'between', 'under', 'ahead', 'without', 'within', 'three', 'several', 'another', 'other', 'there', 'these', 'those', 'being', 'become', 'becomes', 'across', 'update', 'live', 'video', 'photos', 'watch', 'week', 'month', 'today', 'tonight', 'yesterday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'military', 'forces', 'troops', 'state', 'states', 'united', 'foreign', 'national', 'international', 'american', 'russian', 'israeli', 'iranian', 'ukrainian', 'chinese', 'european', 'british', 'french', 'german', 'trump', 'putin']);
+
+    function developing(now) {
+        const recent = [];
+        const older = [];
+        for (const it of corpus) {
+            if (it.lang !== 'en') continue;
+            const age = now - it.ts;
+            if (age <= 12 * 3600000) recent.push(it);
+            else if (age <= 60 * 3600000) older.push(it);
+        }
+        const termsOf = it => {
+            const set = new Set();
+            phrases(it.title).forEach(p => { if (p.split(' ').length >= 1 && !GENERIC_WORDS.has(p.toLowerCase())) set.add(p.toLowerCase()); });
+            tokensOf(it.title).forEach(t => { if (t.length >= 6 && !STOP.has(t) && !GENERIC_WORDS.has(t) && /^[a-z]+$/.test(t)) set.add(t); });
+            return set;
+        };
+        const recentMap = new Map();
+        recent.forEach(it => termsOf(it).forEach(t => {
+            if (!recentMap.has(t)) recentMap.set(t, { sources: new Set(), items: [] });
+            const e = recentMap.get(t);
+            e.sources.add(it.source);
+            e.items.push(it);
+        }));
+        const baseMap = new Map();
+        older.forEach(it => termsOf(it).forEach(t => {
+            if (!baseMap.has(t)) baseMap.set(t, new Set());
+            baseMap.get(t).add(it.source);
+        }));
+        const candidates = [];
+        recentMap.forEach((e, t) => {
+            const sources = e.sources.size;
+            if (sources < 7 || e.items.length < 8) return;
+            const base = (baseMap.get(t) ? baseMap.get(t).size : 0) / 4;
+            const burst = sources / (base + 1);
+            if (burst >= 2.2) candidates.push({ term: t, sources, burst, items: e.items });
+        });
+        candidates.sort((a, b) => b.burst * b.sources - a.burst * a.sources);
+        const chosen = [];
+        for (const c of candidates) {
+            const urls = new Set(c.items.map(i => i.url));
+            const overlap = chosen.some(x => {
+                let shared = 0;
+                x.items.forEach(i => { if (urls.has(i.url)) shared++; });
+                return shared / Math.min(urls.size, x.items.length) >= 0.5;
+            });
+            if (!overlap) chosen.push(c);
+            if (chosen.length >= 3) break;
+        }
+        const out = [];
+        const capital = w => w.replace(/\b[a-z]/g, m => m.toUpperCase());
+        chosen.forEach(c => {
+            const counts = new Map();
+            c.items.forEach(it => new Set(phrases(it.title)).forEach(p => {
+                const low = p.toLowerCase();
+                if (low === c.term || c.term.includes(low) || low.includes(c.term) || GENERIC_WORDS.has(low)) return;
+                counts.set(p, (counts.get(p) || 0) + 1);
+            }));
+            const co = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+            const isEntity = c.items.some(it => phrases(it.title).some(p => p.toLowerCase() === c.term));
+            const title = isEntity ? capital(c.term) : (co && co[1] >= 2 ? co[0] + ' ' + capital(c.term) : capital(c.term));
+            const id = 'dev-' + c.term.replace(/[^a-z0-9]+/g, '-');
+            devState.set(id, { title, term: c.term, at: now, query: (co && co[1] >= 2 && !isEntity ? co[0] + ' ' : '') + c.term });
+            out.push(id);
+        });
+        const keep = [];
+        devState.forEach((st, id) => {
+            if (out.includes(id)) keep.push(id);
+            else if (now - st.at < 3 * 3600000 && keep.length + out.length < 3) keep.push(id);
+            else if (now - st.at >= 3 * 3600000) devState.delete(id);
+        });
+        const cards = [];
+        keep.slice(0, 3).forEach(id => {
+            const st = devState.get(id);
+            const list = corpus.filter(it => now - it.ts <= 72 * 3600000 && it._tn.includes(st.term)).sort((a, b) => b.ts - a.ts);
+            if (!list.length) return;
+            const day = list.filter(it => now - it.ts <= 24 * 3600000);
+            const lead = list[0];
+            const h = (now - lead.ts) / 3600000;
+            cards.push({ id, title: st.title, query: st.query, lead: pub(lead), more: list.slice(1, 3).map(pub), tag: h < 1.5 ? 'breaking' : h < 8 ? 'new' : 'latest', count24h: day.length, sources24h: new Set(day.map(it => it.source)).size });
+        });
+        return cards;
     }
 
     async function ogImage(u) {
@@ -543,7 +771,7 @@ module.exports = function createSearch({ translator, matchSource }) {
                     if (!content) continue;
                     try {
                         const abs = new URL(decodeEntities(content), r.url || u).href;
-                        if (/^https?:\/\//.test(abs) && !/logo|favicon|placeholder|default[-_]|sprite|blank|1x1/i.test(abs)) {
+                        if (/^https?:\/\//.test(abs) && !/logo|favicon|placeholder|default[-_]|sprite|blank|1x1|share[-_]?(image|img)|social[-_]|og[-_]?(default|image)\\.|brand|fallback|generic/i.test(abs)) {
                             if (/^og:image/i.test(key)) { best = abs; break; }
                             if (!best) best = abs;
                         }
@@ -552,6 +780,12 @@ module.exports = function createSearch({ translator, matchSource }) {
                 v = best ? upgradeImage(best) : null;
             }
         } catch (e) { }
+        if (v) {
+            const uses = (ogUses.get(v) || 0) + 1;
+            ogUses.set(v, uses);
+            if (ogUses.size > 4000) ogUses.clear();
+            if (uses >= 3) v = null;
+        }
         if (ogCache.size > 1500) ogCache.clear();
         ogCache.set(u, { v, exp: Date.now() + (v ? 24 * 3600000 : 20 * 60000) });
         if (v) allowImage(v);
@@ -593,24 +827,8 @@ module.exports = function createSearch({ translator, matchSource }) {
         return nearest(token, vocab, token.length >= 5 ? 2 : 1);
     }
 
-    function findConcept(q) {
-        const nq = norm(q);
-        if (!nq) return { exact: null, partial: null };
-        const arabic = /[\u0600-\u06FF]/.test(nq);
-        const tokens = nq.split(' ');
-        let partial = null;
-        for (const c of CONCEPTS) {
-            for (const k of c.keys) {
-                if (nq === k) return { exact: c, partial: null };
-                if (!arabic && k.length >= 5 && !k.includes(' ') && Math.abs(nq.length - k.length) <= 1 && dist(nq, k, 1) <= 1) return { exact: c, partial: null };
-                if (!partial && tokens.length > 1 && !k.includes(' ') && tokens.includes(k)) partial = c;
-            }
-        }
-        return { exact: null, partial };
-    }
-
     async function expand(q, client) {
-        const found = findConcept(q);
+        const found = { exact: await resolveEntity(q), partial: null };
         const d = await translator.detectToEnglish(q);
         let english = q;
         let detected = null;
@@ -864,6 +1082,31 @@ module.exports = function createSearch({ translator, matchSource }) {
             }
         }
 
+        if (q) {
+            const webQ = focusInfo ? focusInfo.name : english;
+            if (webQ && results.length < 18) {
+                const editions = [webQ];
+                let web = await webNews(webQ, uiLang).catch(() => []);
+                if (uiLang !== 'en' && !web.length) web = await webNews(webQ, 'en').catch(() => []);
+                const seenTitles = new Set(results.map(r => r.it._tn.slice(0, 80)));
+                const want = tokensOf(editions[0]).filter(t => t.length >= 3 && !STOP.has(t));
+                let added = 0;
+                web.forEach(it => {
+                    if (it.ts < cutoff || !catOk(it)) return;
+                    const key = it._tn.slice(0, 80);
+                    if (seenTitles.has(key)) return;
+                    const hay = it._tn + ' ' + it._dn;
+                    const matched = want.filter(t => hay.includes(t)).length;
+                    if (want.length && !matched) return;
+                    seenTitles.add(key);
+                    results.push({ it, score: 1.5 + matched * 1.5 + recency(it) + (it.image ? 0.3 : 0) });
+                    added++;
+                });
+                if (focusInfo && added && results.length - added < 3) focusInfo = { ...focusInfo, tier: 'web' };
+                if (!focusInfo && added && results.length === added) broadened = false;
+            }
+        }
+
         results.sort((a, b) => b.score - a.score || b.it.ts - a.it.ts);
         const total = results.length;
         const totalPages = Math.max(1, Math.ceil(total / size));
@@ -876,7 +1119,8 @@ module.exports = function createSearch({ translator, matchSource }) {
             publishedAt: r.it.publishedAt,
             source: r.it.source,
             lang: r.it.lang,
-            cat: r.it._cat
+            cat: r.it._cat,
+            web: !!r.it.web
         }));
         const exclude = q ? tokensOf(english).concat(tokensOf(q)).concat(focusInfo ? [focusInfo.name] : []) : [];
         const related = q ? relatedFor(results, exclude) : [];
@@ -885,7 +1129,7 @@ module.exports = function createSearch({ translator, matchSource }) {
 
     function pub(it) {
         allowImage(it.image);
-        return { title: it.title, description: it.description, url: it.url, image: it.image, publishedAt: it.publishedAt, source: it.source, lang: it.lang };
+        return { title: it.title, description: it.description, url: it.url, image: it.image, publishedAt: it.publishedAt, source: it.source, lang: it.lang, web: !!it.web };
     }
 
     let theaterCache = { at: 0, data: null };
@@ -918,7 +1162,7 @@ module.exports = function createSearch({ translator, matchSource }) {
                 sources24h: new Set(day.map(it => it.source)).size
             };
         });
-        theaterCache = { at: now, data: { theaters: out, updatedAt: lastRefresh ? new Date(lastRefresh).toISOString() : null } };
+        theaterCache = { at: now, data: { theaters: out, developing: developing(now), updatedAt: lastRefresh ? new Date(lastRefresh).toISOString() : null } };
         return theaterCache.data;
     }
 
@@ -942,5 +1186,5 @@ module.exports = function createSearch({ translator, matchSource }) {
         return theaters();
     }
 
-    return { search, suggest, og: ogImage, feedHealth, warm, theaters: theatersLive, imageAllowed: u => imageSet.has(u) };
+    return { search, suggest: suggestAsync, og: ogImage, feedHealth, warm, theaters: theatersLive, imageAllowed: u => imageSet.has(u) };
 };
