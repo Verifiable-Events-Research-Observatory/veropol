@@ -10,7 +10,10 @@ const THEATER_TERMS = {
     taiwan: ['Taiwan Strait', 'Taiwan'],
     brics: ['BRICS summit', 'BRICS'],
     korea: ['North Korea', 'Korean Peninsula'],
-    sahel: ['Sahel', 'Niger']
+    sahel: ['Sahel', 'Niger'],
+    syria: ['Syria', 'Damascus'],
+    lebanon: ['Lebanon', 'Beirut'],
+    sudan: ['Sudan', 'Khartoum']
 };
 
 const TOPICS = [
@@ -116,7 +119,9 @@ function pick(pages, q, id) {
 
 async function compute(id, title) {
     const queries = buildQueries(id, title);
+    const generic = new Set((THEATER_TERMS[id] || []).map(t => t.toLowerCase()));
     for (const q of queries) {
+        if (generic.has(q.toLowerCase())) continue;
         try {
             const pages = await search(q);
             const chosen = pick(pages, q, id);
