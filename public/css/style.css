@@ -2229,69 +2229,91 @@ img {
     border-radius: 0;
 }
 
+.ac-main {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ac-main b {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ac-main em {
+    font-style: normal;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.web-tag {
+    margin-inline-start: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+
 .filter-groups {
     display: grid;
-    gap: 14px;
-    max-width: 1100px;
-    margin: 26px auto 0;
+    gap: 18px;
+    max-width: 980px;
+    margin: 28px auto 0;
 }
 
 .filter-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    display: grid;
+    justify-items: center;
+    gap: 9px;
 }
 
 .filter-label {
-    flex: none;
-    width: 78px;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 800;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted);
-    text-align: end;
 }
 
 .filter-row .filters,
 .filter-row .range-filters {
-    flex: 1;
-    min-width: 0;
-    justify-content: flex-start;
-    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
+    width: 100%;
+    margin: 0;
 }
 
-@media (max-width: 760px) {
-    .filter-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-    }
-
-    .filter-label {
-        width: auto;
-        text-align: start;
-        padding-inline: 4px;
+@media (max-width: 640px) {
+    .filter-groups {
+        gap: 14px;
+        margin-top: 20px;
     }
 
     .filter-row .filters,
     .filter-row .range-filters {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        padding-bottom: 6px;
-        scrollbar-width: none;
-        -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent);
-        mask-image: linear-gradient(90deg, #000 88%, transparent);
-    }
-
-    .filter-row .filters::-webkit-scrollbar,
-    .filter-row .range-filters::-webkit-scrollbar {
-        display: none;
+        gap: 6px;
     }
 
     .filter-btn,
     .range-btn {
-        flex: none;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .filter-btn i {
+        display: none;
     }
 }
