@@ -535,3 +535,53 @@
     padding: 0;
     text-align: center;
 }
+
+.theater-cover.cv-syria {
+    background-image: radial-gradient(420px 260px at 20% 10%, rgba(120, 190, 130, 0.3), transparent 62%), radial-gradient(520px 320px at 90% 100%, rgba(190, 60, 50, 0.5), transparent 64%), linear-gradient(160deg, #1b2b22, #0f1210);
+}
+
+.theater-cover.cv-lebanon {
+    background-image: radial-gradient(420px 260px at 82% 10%, rgba(80, 200, 120, 0.3), transparent 62%), radial-gradient(520px 320px at 10% 100%, rgba(200, 40, 50, 0.5), transparent 64%), linear-gradient(160deg, #2a1517, #0e1012);
+}
+
+.theater-cover.cv-sudan {
+    background-image: radial-gradient(420px 260px at 80% 10%, rgba(250, 190, 80, 0.32), transparent 62%), radial-gradient(520px 320px at 10% 100%, rgba(150, 40, 40, 0.55), transparent 64%), linear-gradient(160deg, #2c1d10, #100c0a);
+}
+
+.theater-cover.cv-dev {
+    background-image: radial-gradient(420px 260px at 20% 10%, rgba(255, 138, 76, 0.4), transparent 62%), radial-gradient(520px 320px at 90% 100%, rgba(160, 70, 220, 0.4), transparent 64%), linear-gradient(160deg, #241422, #0e0f16);
+}
+
+.live-section {
+    margin-bottom: clamp(28px, 5vh, 52px);
+}
+
+.live-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px 18px;
+    margin: 0 4px 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+.live-section-head h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+}
+
+.live-section-head h2 i {
+    color: var(--accent);
+}
+
+.live-section-head p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 600;
+}
