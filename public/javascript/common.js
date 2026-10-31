@@ -95,6 +95,7 @@
     async function load(texts, l, auto) {
         const target = l || lang;
         if (target === 'en' && !auto) return;
+        if (!auto) texts.forEach(x => { const c = curated(x, target); if (c) mem.set(target + '|' + x, c); });
         const need = [...new Set(texts.filter(x => x && x.trim() && x.length <= 1500 && !mem.has(target + '|' + x) && !tried.has(target + '|' + x)))];
         if (!need.length) return;
         need.forEach(x => tried.add(target + '|' + x));
@@ -143,14 +144,19 @@
         saveCache();
     }
 
+    function curated(text, l) {
+        const dict = window.VERO_I18N && window.VERO_I18N[l];
+        return dict ? dict[text] : undefined;
+    }
+
     function s(text) {
         if (lang === 'en' || !text) return text;
-        return mem.get(lang + '|' + text) || text;
+        return curated(text, lang) || mem.get(lang + '|' + text) || text;
     }
 
     function tx(text) {
         if (!text) return text;
-        return mem.get(lang + '|' + text) || text;
+        return curated(text, lang) || mem.get(lang + '|' + text) || text;
     }
 
     async function t(text) {
@@ -173,7 +179,7 @@
     function collect(root) {
         const items = [];
         root.querySelectorAll('[data-tr]').forEach(el => {
-            if (el._en === undefined) el._en = el.textContent.trim();
+            if (el._en === undefined) el._en = el.textContent.trim().replace(/\s+/g, ' ');
             items.push({ el, attr: null, en: el._en });
         });
         Object.keys(ATTRS).forEach(sel => {
