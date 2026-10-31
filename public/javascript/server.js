@@ -888,6 +888,10 @@ app.get('/api/theaters', limiter(60, 60 * 1000), async (req, res) => {
             const found0 = await Promise.race([coverFinder.resolve(id, t.lead.title), new Promise(r => setTimeout(() => r(null), 1500))]);
             if (found0) out.theaters[id] = { ...t, cover: { url: found0.url, page: found0.page, label: [found0.credit, found0.license, 'Wikimedia Commons'].filter(Boolean).join(' · ') } };
         }));
+        out.developing = await Promise.all((data.developing || []).map(async card => {
+            const og = await Promise.race([search.og(card.lead.url), new Promise(r => setTimeout(() => r(null), 2500))]);
+            return og ? { ...card, cover: { url: '/img?u=' + encodeURIComponent(og), page: card.lead.url, label: card.lead.source || '' } } : card;
+        }));
         res.json(out);
     } catch (e) {
         res.status(500).json({ error: 'theaters' });
@@ -896,7 +900,7 @@ app.get('/api/theaters', limiter(60, 60 * 1000), async (req, res) => {
 app.get('/api/suggest', limiter(120, 60 * 1000), async (req, res) => {
     try {
         await search.theaters();
-        res.json({ suggestions: search.suggest(String(req.query.q || '').slice(0, 60)) });
+        res.json({ suggestions: await search.suggest(String(req.query.q || '').slice(0, 60), String(req.query.lang || 'en')) });
     } catch (e) {
         res.json({ suggestions: [] });
     }
