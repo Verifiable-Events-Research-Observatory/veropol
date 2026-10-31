@@ -201,3 +201,79 @@
         font-size: 1.05rem;
     }
 }
+
+
+.nav-tools>.theme-toggle-btn {
+    margin: 0;
+}
+
+@media (max-width: 1020px) {
+    .nav-menu {
+        align-items: stretch;
+    }
+
+    .nav-center {
+        gap: 6px;
+    }
+
+    .nav-link {
+        border-radius: 16px;
+    }
+
+    .nav-tools {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        align-items: center;
+        justify-items: stretch;
+    }
+
+    .nav-tools .lang-dropdown {
+        justify-self: stretch;
+    }
+
+    .nav-tools .lang-btn {
+        width: 100%;
+        height: 46px;
+        justify-content: center;
+    }
+
+    .nav-tools .btn-nav {
+        width: 100%;
+        height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-tools>.icon-btn,
+    .nav-tools>.theme-toggle-btn {
+        justify-self: center;
+    }
+
+    .nav-tools .icon-row {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 1020px) {
+    .nav-tools {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .nav-tools .lang-dropdown,
+    .nav-tools .btn-nav {
+        flex: 1 1 calc(50% - 5px);
+        min-width: 130px;
+    }
+
+    .nav-tools>.icon-btn,
+    .nav-tools>.theme-toggle-btn {
+        flex: none;
+        justify-self: auto;
+    }
+}
