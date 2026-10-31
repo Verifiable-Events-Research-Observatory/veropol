@@ -1595,35 +1595,6 @@ img {
     }
 }
 
-@media (max-width: 1100px) {
-    .flex-grid.theaters-grid {
-        grid-template-columns: 1fr;
-        max-width: 760px;
-    }
-
-    .theaters-grid>.theater-card:last-child:nth-child(odd) .theater-cover {
-        flex-basis: 38%;
-    }
-}
-
-@media (max-width: 680px) {
-    .theaters-grid>.theater-card {
-        flex-direction: column;
-        min-height: 0;
-    }
-
-    .theaters-grid .theater-cover,
-    .theaters-grid>.theater-card:last-child:nth-child(odd) .theater-cover {
-        flex: none;
-        height: 200px;
-        min-height: 0;
-    }
-
-    .theaters-grid .theater-info {
-        padding: 22px;
-    }
-}
-
 .articles-cta::before {
     content: '';
     position: absolute;
@@ -1650,13 +1621,6 @@ img {
     background:
         radial-gradient(340px 200px at 80% 0%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
         linear-gradient(135deg, var(--surface-2), var(--bg-2));
-}
-
-@media (max-width: 820px) {
-    .search-dock {
-        top: auto;
-        bottom: 16px;
-    }
 }
 
 .nav-container {
