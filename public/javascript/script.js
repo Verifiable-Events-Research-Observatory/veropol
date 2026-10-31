@@ -1,9 +1,22 @@
 (function () {
     const TXT = {
-        acPerson: 'Person',
-        acPlace: 'Place',
-        acTopic: 'Topic',
-        acTrending: 'Trending',
+        devBadge: 'Developing',
+        devLabel: 'Developing story',
+        loadIntel: 'Load Intelligence',
+        kLeader: 'Leader',
+        kPerson: 'Person',
+        kCountry: 'Country',
+        kPlace: 'Place',
+        kOrganization: 'Organization',
+        kCompany: 'Company',
+        kGame: 'Game',
+        kSoftware: 'Software',
+        kMarket: 'Market',
+        kEvent: 'Event',
+        kTopic: 'Topic',
+        kTrending: 'Trending',
+        focusWeb: 'Showing reports from the wider web for {name}',
+        webTag: 'Web',
         acHead: 'Trending now',
         relatedLabel: 'Related',
         focusExact: 'Focused on {name}',
@@ -363,6 +376,7 @@
             const src = el('div', 'source-info');
             src.appendChild(el('i', 'ph ph-newspaper-clipping'));
             src.appendChild(el('span', '', item.source || ''));
+            if (item.web) src.appendChild(el('span', 'web-tag', T('webTag')));
             const more = el('div', 'read-more');
             more.appendChild(document.createTextNode(T('readSource') + ' '));
             more.appendChild(el('i', 'ph ph-arrow-up-right'));
@@ -496,7 +510,7 @@
             let key = '';
             let name = '';
             if (data.focus) {
-                key = data.focus.tier === 'exact' ? 'focusExact' : data.focus.tier === 'broad' ? 'focusBroad' : 'focusRelated';
+                key = data.focus.tier === 'exact' ? 'focusExact' : data.focus.tier === 'broad' ? 'focusBroad' : data.focus.tier === 'web' ? 'focusWeb' : 'focusRelated';
                 name = data.focus.name;
             } else if (data.broadened) key = 'broadened';
             if (!key) fn.hidden = true;
@@ -527,8 +541,7 @@
         }
     }
 
-    const AC_ICON = { person: 'ph-user-circle', place: 'ph-map-pin', entity: 'ph-hash', topic: 'ph-hash', trending: 'ph-trend-up' };
-    const AC_KEY = { person: 'acPerson', place: 'acPlace', entity: 'acTopic', topic: 'acTopic', trending: 'acTrending' };
+    const AC_ICON = { Leader: 'ph-crown-simple', Person: 'ph-user-circle', Country: 'ph-flag', Place: 'ph-map-pin', Organization: 'ph-buildings', Company: 'ph-briefcase', Game: 'ph-game-controller', Software: 'ph-cpu', Market: 'ph-chart-line-up', Event: 'ph-lightning', Topic: 'ph-hash', Trending: 'ph-trend-up' };
 
     function attachAutocomplete(input, box, onPick) {
         if (!input || !box) return;
@@ -557,8 +570,11 @@
                 const li = el('li', 'ac-item');
                 li.setAttribute('role', 'option');
                 li.appendChild(el('i', 'ph ' + (AC_ICON[it.type] || 'ph-hash')));
-                li.appendChild(el('span', '', it.text));
-                li.appendChild(el('small', '', T(AC_KEY[it.type] || 'acTopic')));
+                const main = el('span', 'ac-main');
+                main.appendChild(el('b', '', it.text));
+                if (it.desc) main.appendChild(el('em', '', it.desc));
+                li.appendChild(main);
+                li.appendChild(el('small', '', T('k' + (AC_ICON[it.type] ? it.type : 'Topic'))));
                 li.addEventListener('mousedown', e => e.preventDefault());
                 li.addEventListener('click', () => pick(it));
                 li.addEventListener('mouseenter', () => { active = i; mark(); });
@@ -573,7 +589,7 @@
             const id = ++seq;
             try {
                 await preload();
-                const r = await fetch('/api/suggest?q=' + encodeURIComponent(q));
+                const r = await fetch('/api/suggest?q=' + encodeURIComponent(q) + '&lang=' + encodeURIComponent(VT.lang));
                 if (!r.ok || id !== seq) return;
                 const d = await r.json();
                 if (id !== seq || document.activeElement !== input) return;
@@ -822,52 +838,103 @@
         credit.hidden = !c.label;
     }
 
+    function fillLive(card, d) {
+        const box = card.querySelector('.theater-live');
+        applyBreakingCover(card.querySelector('.theater-cover'), d ? d.cover : null);
+        if (!box) return;
+        if (!d || !d.lead) {
+            box.hidden = true;
+            return;
+        }
+        const lead = d.lead;
+        box.hidden = false;
+        box.href = lead.url;
+        box.innerHTML = '';
+        const head = el('div', 'live-head');
+        const tagKey = d.tag === 'breaking' ? 'breaking' : d.tag === 'new' ? 'fresh' : 'latest';
+        head.appendChild(el('span', 'live-tag ' + d.tag, T(tagKey)));
+        const time = el('span', 'live-time', VT.ago(lead.publishedAt));
+        time.dataset.t = lead.publishedAt;
+        head.appendChild(time);
+        box.appendChild(head);
+        const title = el('span', 'live-title', lead.title);
+        title.setAttribute('dir', 'auto');
+        box.appendChild(title);
+        if (lead.lang && lead.lang !== VT.lang) theaterTitles.push({ node: title, text: lead.title });
+        const foot = el('div', 'live-foot');
+        foot.appendChild(el('span', '', lead.source || ''));
+        const go = el('span', 'go');
+        go.appendChild(document.createTextNode(T('readSource') + ' '));
+        go.appendChild(el('i', 'ph ph-arrow-up-right'));
+        foot.appendChild(go);
+        box.appendChild(foot);
+        const meta = el('div', 'live-meta');
+        const a = el('span', '', T('reports24') + ': ');
+        a.appendChild(el('b', '', String(d.count24h)));
+        const b = el('span', '', T('sources') + ': ');
+        b.appendChild(el('b', '', String(d.sources24h)));
+        meta.appendChild(a);
+        meta.appendChild(b);
+        box.appendChild(meta);
+    }
+
+    function devCard(d) {
+        const card = el('article', 'theater-card');
+        card.dataset.dev = d.id;
+        const cover = el('div', 'theater-cover cv-dev');
+        const badge = el('div', 'theater-badge warning');
+        badge.appendChild(el('i', 'ph ph-trend-up'));
+        badge.appendChild(document.createTextNode(' ' + T('devBadge')));
+        cover.appendChild(badge);
+        card.appendChild(cover);
+        const info = el('div', 'theater-info');
+        const h = el('h3', '', d.title);
+        h.setAttribute('dir', 'auto');
+        info.appendChild(h);
+        theaterTitles.push({ node: h, text: d.title });
+        info.appendChild(el('span', 'theater-overview-label', T('devLabel')));
+        const live = el('a', 'theater-live');
+        live.target = '_blank';
+        live.rel = 'noopener noreferrer';
+        info.appendChild(live);
+        const actions = el('div', 'theater-actions');
+        const btn = el('button', 'btn-theater-action');
+        btn.type = 'button';
+        btn.appendChild(el('i', 'ph ph-arrows-clockwise'));
+        btn.appendChild(document.createTextNode(' ' + T('loadIntel')));
+        btn.addEventListener('click', () => { location.href = '/explore?q=' + encodeURIComponent(d.query || d.title); });
+        actions.appendChild(btn);
+        info.appendChild(actions);
+        card.appendChild(info);
+        return card;
+    }
+
+    function renderDeveloping() {
+        const section = document.getElementById('developing');
+        const grid = document.getElementById('developingGrid');
+        if (!section || !grid || !theaterData) return;
+        const list = theaterData.developing || [];
+        const ids = new Set(list.map(d => d.id));
+        grid.querySelectorAll('[data-dev]').forEach(n => { if (!ids.has(n.dataset.dev)) n.remove(); });
+        list.forEach(d => {
+            let card = grid.querySelector('[data-dev="' + d.id + '"]');
+            if (!card) {
+                card = devCard(d);
+                grid.appendChild(card);
+            }
+            fillLive(card, { lead: d.lead, tag: d.tag, count24h: d.count24h, sources24h: d.sources24h, cover: d.cover });
+        });
+        section.hidden = !list.length;
+    }
+
     function renderTheaters() {
         if (!theaterData) return;
         theaterTitles = [];
-        document.querySelectorAll('.theater-card[data-theater]').forEach(card => {
-            const d = theaterData.theaters[card.dataset.theater];
-            const box = card.querySelector('.theater-live');
-            applyBreakingCover(card.querySelector('.theater-cover'), d ? d.cover : null);
-            if (!box) return;
-            if (!d || !d.lead) {
-                box.hidden = true;
-                return;
-            }
-            const lead = d.lead;
-            box.hidden = false;
-            box.href = lead.url;
-            box.innerHTML = '';
-            const head = el('div', 'live-head');
-            const tagKey = d.tag === 'breaking' ? 'breaking' : d.tag === 'new' ? 'fresh' : 'latest';
-            head.appendChild(el('span', 'live-tag ' + d.tag, T(tagKey)));
-            const time = el('span', 'live-time', VT.ago(lead.publishedAt));
-            time.dataset.t = lead.publishedAt;
-            head.appendChild(time);
-            box.appendChild(head);
-            const title = el('span', 'live-title', lead.title);
-            title.setAttribute('dir', 'auto');
-            box.appendChild(title);
-            if (lead.lang && lead.lang !== VT.lang) theaterTitles.push({ node: title, text: lead.title });
-            const foot = el('div', 'live-foot');
-            foot.appendChild(el('span', '', lead.source || ''));
-            const go = el('span', 'go');
-            go.appendChild(document.createTextNode(T('readSource') + ' '));
-            go.appendChild(el('i', 'ph ph-arrow-up-right'));
-            foot.appendChild(go);
-            box.appendChild(foot);
-            const meta = el('div', 'live-meta');
-            const a = el('span', '', T('reports24') + ': ');
-            a.appendChild(el('b', '', String(d.count24h)));
-            const b = el('span', '', T('sources') + ': ');
-            b.appendChild(el('b', '', String(d.sources24h)));
-            meta.appendChild(a);
-            meta.appendChild(b);
-            box.appendChild(meta);
-        });
+        document.querySelectorAll('.theater-card[data-theater]').forEach(card => fillLive(card, theaterData.theaters[card.dataset.theater]));
+        renderDeveloping();
     }
 
-    const THEATER_NAMES = { ukraine: 'Ukraine', mideast: 'Middle East', yemen: 'Yemen & Red Sea', taiwan: 'Taiwan Strait', brics: 'BRICS', korea: 'Korean Peninsula', sahel: 'Sahel' };
+    const THEATER_NAMES = { ukraine: 'Ukraine', mideast: 'Middle East', yemen: 'Yemen & Red Sea', syria: 'Syria', lebanon: 'Lebanon', sudan: 'Sudan', taiwan: 'Taiwan Strait', brics: 'BRICS', korea: 'Korean Peninsula', sahel: 'Sahel' };
 
     function renderPreview() {
         const list = document.getElementById('previewList');
